@@ -31,7 +31,7 @@ class Fighter extends Actor {
     if (this.onHit) this.onHit(dmg, from);
     if (this.hp <= 0) { this.hp = 0; this.defeat(dir); return; }
     this.poise -= o.heavy ? 40 : 12;
-    if (o.heavy || this.poise <= 0) { this.poise = this.poiseMax; this.state = 'down'; this.stateT = 0; this.model.play('knock'); this.kv.addScaledVector(dir, 3); }
+    if (o.heavy || (this.poiseMax > 0 && this.poise <= 0)) { this.poise = this.poiseMax; this.state = 'down'; this.stateT = 0; this.model.play('knock'); this.kv.addScaledVector(dir, 3); }
     else if (!(this.ai.armor && this.state === 'windup')) { this.state = 'hitstun'; this.stateT = 0; this.model.play('hit'); }
     this.faceTo(from);
   }

@@ -41,6 +41,10 @@ class Level {
     if (this.arena) { const A = this.arena, dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz); if (d > A.r - r) { p.x = A.x + dx / d * (A.r - r); p.z = A.z + dz / d * (A.r - r); } }
     if (this.extraResolve) this.extraResolve(p, r);
   }
+  blocked(x, z, pad = 0.25) {
+    for (const b of this.boxes) { const dx = x - b.x, dz = z - b.z; if (Math.abs(dx) > b.hw + b.hd + 1 && Math.abs(dz) > b.hw + b.hd + 1) continue; const lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c; if (Math.abs(lx) < b.hw + pad && Math.abs(lz) < b.hd + pad && b.hw > 0.6 && b.hd > 0.6) return true; }
+    return false;
+  }
   update(dt) { for (const a of this.anims) a(dt); }
   dispose() {
     this.group.traverse(o => { if (o.isMesh || o.isPoints || o.isLine) { if (!Object.values(PRIM).includes(o.geometry)) o.geometry.dispose(); } });

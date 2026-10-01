@@ -37,6 +37,13 @@ const Cam = {
     const d = this.dist * Math.max(0.8, sc);
     const want = V3(tgt.x + Math.sin(this.yaw) * Math.cos(this.pitch) * d, tgt.y + Math.sin(this.pitch) * d, tgt.z + Math.cos(this.yaw) * Math.cos(this.pitch) * d);
     const L = G.level;
+    if (L && !L.interior) {
+      // binalara girmesin: hedeften kameraya doğru tara
+      const steps = 14; let ok = 1;
+      for (let i = 2; i <= steps; i++) { const u = i / steps; const x = lerp(tgt.x, want.x, u), z = lerp(tgt.z, want.z, u), y = lerp(tgt.y, want.y, u); if (y < L.h(x, z) + 5.2 && L.blocked(x, z)) { ok = (i - 1) / steps; break; } }
+      this.camK = damp(this.camK === undefined ? 1 : this.camK, ok, ok < (this.camK || 1) ? 25 : 3, dt || 0.016);
+      if (this.camK < 0.999) { want.x = lerp(tgt.x, want.x, this.camK); want.z = lerp(tgt.z, want.z, this.camK); want.y = lerp(tgt.y, want.y, this.camK) + (1 - this.camK) * 0.6; }
+    }
     if (L) { const gh = L.h(want.x, want.z) + 0.4; if (want.y < gh) want.y = gh; if (L.camBox) { const B = L.camBox; want.x = clamp(want.x, B.x0, B.x1); want.y = clamp(want.y, B.y0, B.y1); want.z = clamp(want.z, B.z0, B.z1); } }
     if (snap) { this.pos.copy(want); this.look.copy(tgt); }
     else { this.pos.lerp(want, 1 - Math.exp(-14 * dt)); this.look.lerp(tgt, 1 - Math.exp(-18 * dt)); }

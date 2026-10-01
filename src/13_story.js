@@ -39,7 +39,7 @@ function makeS(my) {
   const S = {
     my, chk,
     async wait(sec) { if (Story.skipping && G.inCine) { chk(); return; } await new Promise(res => Story.waiters.push({ time: sec, t: 0, res, skippable: true })); chk(); },
-    async until(fn) { const t0 = G.t; await new Promise(res => Story.waiters.push({ fn: G.auto ? () => fn() || G.t - t0 > 2.5 : fn, res })); chk(); },
+    async until(fn) { const t0 = G.t; await new Promise(res => Story.waiters.push({ fn: G.auto ? () => fn() || G.t - t0 > 14 : fn, res })); chk(); },
     async level(build, tod, envOpts = {}) {
       $('#loading').hidden = false; await sleep(30); chk();
       Game.clearWorld();
@@ -75,7 +75,13 @@ function makeS(my) {
     async walk(actor, pts, speed) {
       if (!Array.isArray(pts)) pts = [pts];
       if (Story.skipping && G.inCine) { const last = pts[pts.length - 1]; const v = last.isVector3 ? last : V3(last[0], 0, last[1]); actor.place(v.x, v.z, actor.facing); return; }
-      await actor.walkTo(pts, speed); chk();
+      const last = pts[pts.length - 1], lv = last.isVector3 ? last : V3(last[0], 0, last[1]);
+      let len = 0, prev = actor.pos; for (const q of pts) { const v = q.isVector3 ? q : V3(q[0], 0, q[1]); len += distXZ(prev, v); prev = v; }
+      const limit = len / (speed || actor.walkSpeed) * 1.8 + 2.5; const t0 = G.t;
+      const pr = actor.walkTo(pts, speed);
+      await S.until(() => !actor.path || G.t - t0 > limit);
+      if (actor.path) { actor.stopWalk(); actor.place(lv.x, lv.z, actor.facing); }
+      chk();
     },
     music(t) { Audio.play(t); }, amb(n, on = true) { Audio.ambience(n, on); },
     sfx(n, v) { Audio.sfx(n, v); },

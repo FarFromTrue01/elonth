@@ -21,7 +21,7 @@ class Actor {
   say(on) { this.model.talking = on; }
   walkTo(pts, speed) {
     if (!Array.isArray(pts)) pts = [pts];
-    this.path = pts.map(p => p.isVector3 ? p.clone() : V3(p[0], 0, p[1])); this.pathSpeed = speed || this.walkSpeed; this.follow = null;
+    this.path = pts.map(p => p.isVector3 ? p.clone() : V3(p[0], 0, p[1])); this.pathSpeed = speed || this.walkSpeed; this.follow = null; this._pd = undefined; this._side = 0; this._pt = 0;
     if (this.pathResolve) this.pathResolve();
     return new Promise(r => { this.pathResolve = r; });
   }
@@ -35,7 +35,13 @@ class Actor {
     if (this.path && this.path.length) {
       const t = this.path[0]; dx = t.x - this.pos.x; dz = t.z - this.pos.z; const d = Math.hypot(dx, dz);
       if (d < 0.25 + (this.path.length > 1 ? 0.4 : 0)) { this.path.shift(); if (!this.path.length) { this.path = null; if (this.pathResolve) { const r = this.pathResolve; this.pathResolve = null; r(); } } }
-      else { want = this.pathSpeed; if (this.path.length === 1 && d < 0.8) want *= Math.max(0.35, d / 0.8); dx /= d; dz /= d; }
+      else {
+        want = this.pathSpeed; if (this.path.length === 1 && d < 0.8) want *= Math.max(0.35, d / 0.8); dx /= d; dz /= d;
+        // takılma: ilerleme yoksa duvar boyunca kay
+        this._pd = this._pd === undefined ? d : this._pd; this._pt = (this._pt || 0) + dt;
+        if (this._pt > 0.6) { if (this._pd - d < 0.15 * want * 0.6) this._side = 0.9 * (this._sideSign || (this._sideSign = Math.random() < 0.5 ? 1 : -1)); else this._side = 0; this._pd = d; this._pt = 0; }
+        if (this._side) { const a = Math.atan2(dx, dz) + this._side * 1.1; dx = Math.sin(a); dz = Math.cos(a); }
+      }
     } else if (this.follow) {
       const f = this.follow, fp = f.pos || f; dx = fp.x - this.pos.x; dz = fp.z - this.pos.z; const d = Math.hypot(dx, dz);
       if (d > this.followDist) { want = clamp((d - this.followDist) * 2, 0, (f.speed || 2) + 0.6); dx /= d; dz /= d; }

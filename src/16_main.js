@@ -150,4 +150,4 @@ const Game = {
   showError(e) { const el = $('#err'); el.hidden = false; el.textContent = 'Hata: ' + (e && e.stack ? e.stack : e); setTimeout(() => el.hidden = true, 12000); },
 };
 window.addEventListener('load', () => { try { Game.init(); } catch (e) { Game.showError(e); } });
-window.__G = G; window.__Story = Story; window.__Game = Game; window.__Cam = Cam;
+window.__G = G; window.__Story = Story; window.__Game = Game; window.__Cam = Cam; window.__Input = () => Input;

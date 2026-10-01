@@ -172,7 +172,7 @@ function buildVillage(o = {}) {
     const h = peasantHouse(L, x, z, ry, opt); L.houses.push(h);
     if (opt.home) L.pts.homeDoor = h.door; if (opt.leo) { L.pts.leoDoor = h.door; L.pts.leoHouse = V3(x, 0, z); }
     // bahçe çiti bazı evlere
-    if (!opt.home && rng() < 0.35) { const c = Math.cos(ry), s = Math.sin(ry); const fx = x - s * 4.2, fz = z - c * 4.2; fence(L, fx - c * 3, fz + s * 3, fx + c * 3, fz - s * 3); }
+    if (!opt.home && rng() < 0.35 && Math.hypot(x - 16.5, z - 15.5) > 13) { const c = Math.cos(ry), s = Math.sin(ry); const fx = x - s * 4.2, fz = z - c * 4.2; fence(L, fx - c * 3, fz + s * 3, fx + c * 3, fz - s * 3); }
   }
   // ev bahçesi (Joseph)
   fence(L, -23, 3, -23, 13); fence(L, -23, 13, -16, 13.5); fence(L, -23, 3, -16, 3.2);
@@ -183,8 +183,8 @@ function buildVillage(o = {}) {
   L.pts.elder = V3(5.4, 0, -3.2);
   cart(L, -6, 6.5, 1.1); barrel(L, 4, 5); barrel(L, 4.8, 5.6, 0.9); crate(L, -4.8, -5.8, 1, 0.4); haystack(L, 7.5, 4.5, 0.8);
   // ara sokak (dövüş alanı) — Leo'nun evi ile 19,22 arası
-  L.pts.alley = V3(15, 0, 17.5);
-  crate(L, 12.2, 16.2, 0.9, 0.2); crate(L, 12.2, 16.2 + 0.0, 0.7, 0.5, L.h(12.2, 16.2) + 0.72); barrel(L, 18.5, 14.2); crate(L, 17.4, 20.5, 0.8, 0.9); barrel(L, 12.8, 20.2, 0.85);
+  L.pts.alley = V3(16.5, 0, 15.5);
+  crate(L, 13.0, 19.8, 0.9, 0.2); crate(L, 13.0, 19.8, 0.7, 0.5, L.h(13, 19.8) + 0.72); barrel(L, 21.4, 11.6); crate(L, 21.0, 18.9, 0.8, 0.9); barrel(L, 14.6, 11.8, 0.85); haystack(L, 20.2, 20.0, 0.7);
   // tarlalar
   for (let z = 41.5; z < 57.5; z += 1.4) { if (W) break; b.add('box', z % 2.8 < 1.4 ? COL.wheat : COL.wheat2, -13, L.h(-13, z) + 0.35, z, 36, 0.7, 0.55, 0, 0, 0, 0.05); for (let x = -30; x < 4; x += 1.1) b.add('cone4', COL.wheat, x + rnd(-0.3, 0.3), L.h(x, z) + 0.82, z + rnd(-0.1, 0.1), 0.22, 0.35, 0.22, 0, rnd(0, 1), 0, 0.12); }
   fence(L, -33, 39.5, -33, 59, { collide: false }); fence(L, -33, 59, 7, 59, { collide: false }); fence(L, 7, 39.5, 7, 59, { collide: false });
@@ -236,7 +236,7 @@ function buildEros(o = {}) {
     for (let i = -4; i <= 4; i++) b.box(COL.beam, i * 2, 7, 4.85, 0.18, 4, 0.08);
     b.add('roof', COL.slate, 0, 11, 0, 11.4, 4.5, 18, 0, Math.PI / 2, 0);
     b.add('roof', '#d8ccae', 0, 10.9, 4.8, 3.5, 2.6, 0.2, 0, 0, 0); b.add('roof', COL.slate, 0, 11, 3.6, 4.2, 3, 3, 0, 0, 0);
-    b.box('#3a2618', 0, 0, 4.55, 2.6, 3.6, 0.1); b.add('cyl12', COL.stoneD, 0, 3.6, 4.55, 2.7, 0.3, 2.7, Math.PI / 2, 0, 0);
+    b.box('#3a2618', 0, 0, 4.55, 2.6, 3.6, 0.1); b.add('cyl12', '#3a2618', 0, 3.55, 4.55, 2.6, 0.1, 2.6, Math.PI / 2, 0, 0);
     b.box(COL.stoneD, 0, -0.1, 5.5, 5, 0.25, 2.2); b.box(COL.stoneD, 0, -0.25, 6.6, 6, 0.25, 1.4);
     for (const sx of [-1, 1]) { for (let i = 1; i <= 3; i++) L.gb.box('#ffd890', sx * (1.6 + i * 1.6), 1.6, 4.56, 0.8, 1.6, 0.04); for (let i = 0; i < 4; i++) L.gb.box('#ffd890', sx * (1 + i * 2), 8.1, 4.86, 0.7, 1.2, 0.04); }
     // tabela
@@ -297,8 +297,10 @@ function buildHall() {
   const sMesh = new T.Mesh(prim('octa'), sm); sMesh.scale.set(1.3, 2.4, 1.3); stone.add(sMesh);
   const sIn = new T.Mesh(prim('octa'), new T.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35 })); sIn.scale.set(0.7, 1.4, 0.7); stone.add(sIn);
   const sl = new T.PointLight('#a8d8ff', 8, 16, 1.4); sl.position.copy(stone.position); L.light(sl);
+  const halo = new T.Mesh(prim('sph12'), new T.MeshBasicMaterial({ color: '#a8d8ff', transparent: true, opacity: 0.12, depthWrite: false, blending: T.AdditiveBlending, fog: false })); halo.scale.set(3, 4.6, 3); stone.add(halo);
+  const pillar = new T.Mesh(new T.CylinderGeometry(1.3, 1.6, 14, 16, 1, true), new T.MeshBasicMaterial({ color: '#a8d8ff', transparent: true, opacity: 0.0, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide, fog: false })); pillar.position.set(0, 7, dz - 0.6); L.add(pillar);
   L.stone = { group: stone, mat: sm, light: sl, glow: 0, color: new T.Color('#7aa8d8') };
-  L.anims.push(dt => { stone.rotation.y += dt * 0.25; stone.position.y = 3.1 + Math.sin(G.t * 1.2) * 0.12; const g = L.stone.glow; sm.emissive.copy(L.stone.color); sm.emissiveIntensity = 0.5 + g * 1.5 + Math.sin(G.t * 2) * 0.1; sl.color.copy(L.stone.color); sl.intensity = 7 + g * 25; });
+  L.anims.push(dt => { stone.rotation.y += dt * 0.25; stone.position.y = 3.1 + Math.sin(G.t * 1.2) * 0.12; const g = L.stone.glow; sm.emissive.copy(L.stone.color); sm.emissiveIntensity = 0.5 + g * 2.6 + Math.sin(G.t * 2) * 0.1; sl.color.copy(L.stone.color); sl.intensity = 7 + g * 30; halo.material.color.copy(L.stone.color); halo.material.opacity = 0.1 + g * 0.3 + Math.sin(G.t * 3) * 0.02; halo.scale.set(3 + g, 4.6 + g * 1.5, 3 + g); pillar.material.color.copy(L.stone.color); pillar.material.opacity = g * 0.16; });
   // tahtlar
   for (const sx of [-1, 1]) { b.box('#5a2a1e', sx * 4.6, 0.9, dz - 2.6, 1.2, 1.6, 1.0); b.box(COL.gold, sx * 4.6, 2.5, dz - 3.0, 1.2, 1.2, 0.2); }
   // şamdanlar

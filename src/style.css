@@ -121,6 +121,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .sys-body .row { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px dashed rgba(116,216,255,.18); padding: 2px 0; font-variant-numeric: tabular-nums; }
 .sys-body .row b { color: #fff; font-weight: 600; }
 .sys-body .warn { color: #ff8a7a; text-shadow: 0 0 8px rgba(255,90,70,.5); }
+.sys-body .reveal b { color: var(--sys); letter-spacing: .2em; text-shadow: 0 0 12px rgba(116,216,255,.9); }
 .sys-body .dim { color: #8fb8cc; font-size: 14px; }
 .sys-body .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; text-align: center; margin: 8px 0; }
 .sys-body .stats div { border: 1px solid rgba(116,216,255,.3); padding: 4px 0; }

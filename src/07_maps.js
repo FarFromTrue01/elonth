@@ -98,7 +98,7 @@ function buildHut(variant = 'day') {
   L.addBox(1.25, -2.55, 0.3, 0.3); L.pts.basin = V3(1.25, 0, -2.0);
   // halı
   b.box('#8a4a3a', -0.4, -0.04, 0.2, 2.2, 0.02, 1.6, 0, 0, 0); b.box('#a86a4a', -0.4, -0.03, 0.2, 1.8, 0.02, 1.2, 0, 0, 0);
-  L.pts = { bedJoseph: V3(-2.5, 0, -1.4), bedLily: V3(2.6, 0, -2.1), door: V3(-1.6, 0, 2.4), window: V3(0, 0, -2.4), table: V3(0.3, 0, 0.9), hearth: V3(2.4, 0, 0.9) };
+  L.pts = Object.assign(L.pts, { bedJoseph: V3(-2.5, 0, -1.4), bedLily: V3(2.6, 0, -2.1), door: V3(-1.6, 0, 2.4), window: V3(0, 0, -2.4), table: V3(0.3, 0, 0.9), hearth: V3(2.4, 0, 0.9) });
   L.finalize();
   return L;
 }

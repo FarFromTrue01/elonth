@@ -103,8 +103,8 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   daniel.model.setWeapon(null); S.sfx('door'); S.sfx('splash', 0.6);
   await S.shot(V3(-3.05, 1.55, -0.3), V3(-1.6, 1.2, 2.2), 0.8);
   await S.say('daniel', 'Uyandı mı? Gerçekten uyandı mı?');
-  S.walk(daniel, [V3(-1.5, 0, 0.4), V3(-1.75, 0, -0.55)], 2.6);
-  await S.shot(V3(-0.2, 1.6, -0.6), V3(-2.3, 0.6, -1.4), 1.6);
+  S.walk(daniel, [V3(-1.2, 0, 0.6), V3(-1.55, 0, -0.25)], 2.6);
+  await S.shot(V3(-0.5, 1.7, -2.55), V3(-2.3, 0.75, -0.9), 1.6);
   daniel.faceTo(p); daniel.lookAt(p.root);
   await S.say('marta', 'İki hafta, Daniel. İki hafta ateşler içinde yattı...');
   lily.model.play('jump'); S.sfx('ui');
@@ -139,7 +139,7 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   await S.shot(V3(-1.55, 0.95, -1.05), V3(-2.12, 0.62, -1.3), 0);
   await S.fadeIn(0.6);
   p.model.play('reach'); p.model.act.hold = true; p.model.lookTarget = V3(-1.6, 0.55, -1.3);
-  await S.shot(V3(-1.85, 0.95, -1.05), V3(-1.75, 0.6, -1.3), 1.5);
+  await S.shot(V3(-1.15, 1.0, -0.7), V3(-1.9, 0.62, -1.3), 1.5);
   await S.think('Bu eller... küçük. Bir çocuğun elleri.');
   await S.think('Yağmur. Kamyonun farları. Camın kırılma sesi.');
   await S.think('Ben... ölmüştüm.');
@@ -150,9 +150,9 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   // kontrol
   await S.fadeOut(0.4);
   p.model.setStance(null, true); p.lockY = null; p.solid = true; p.place(-1.7, -0.7, Math.PI * 0.8);
-  marta.place(-0.9, 0.9, -2.2); marta.model.setStance('crossArms'); daniel.place(0.3, 1.75, Math.PI); daniel.model.setStance('sit', true); daniel.lockY = 0.02; daniel.pinned = true;
+  marta.place(-0.9, 0.9, -2.2); marta.model.setStance('crossArms'); daniel.place(2.3, 1.75, -2.4); daniel.model.setStance('crossArms', true);
   lily.place(-1.0, -0.2, -2.0);
-  S.cine(false); p.speedMul = 0.55; p.allowRun = false; Cam.yaw = 0.6; Cam.pitch = 0.42;
+  S.cine(false); p.speedMul = 0.55; p.allowRun = false; Cam.yaw = 0.15; Cam.pitch = 0.5;
   await S.fadeIn(0.5);
   S.objective('Leğene git ve suya bak', L.pts.basin);
   S.tip('Sol tarafa dokunup sürükle: yürü · Sağ tarafı sürükle: kamerayı çevir', 6000);

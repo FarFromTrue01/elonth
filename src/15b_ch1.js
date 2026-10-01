@@ -719,7 +719,7 @@ Story.def('c1_system', { chapter: 'Bölüm 1 · Taban', title: 'Sistem', sub: 'O
     '<div class="stats"><div><small>STR</small><b>0</b></div><div><small>AGI</small><b>0</b></div><div><small>VIT</small><b>0</b></div><div><small>PER</small><b>0</b></div><div><small>INT</small><b>0</b></div></div>',
     '<div class="row warn"><span>Durum</span><b>ZAYIFLAMIŞ</b></div>',
     '<div class="dim">Bedensel kapasite: normal bir insanın %50\'si</div>',
-    '<div class="row"><span>Sınır</span><b>YOK</b></div>',
+    '<div class="row reveal"><span>Sınır</span><b>YOK</b></div>',
   ], { speed: 420 });
   await S.think('Seviye. Statlar. Durum. Bir oyunun ekranı gibi.');
   await S.think('Hayır. Bu bir sözleşme.');

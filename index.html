@@ -129,6 +129,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .sys-body .row { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px dashed rgba(116,216,255,.18); padding: 2px 0; font-variant-numeric: tabular-nums; }
 .sys-body .row b { color: #fff; font-weight: 600; }
 .sys-body .warn { color: #ff8a7a; text-shadow: 0 0 8px rgba(255,90,70,.5); }
+.sys-body .reveal b { color: var(--sys); letter-spacing: .2em; text-shadow: 0 0 12px rgba(116,216,255,.9); }
 .sys-body .dim { color: #8fb8cc; font-size: 14px; }
 .sys-body .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; text-align: center; margin: 8px 0; }
 .sys-body .stats div { border: 1px solid rgba(116,216,255,.3); padding: 4px 0; }
@@ -1519,7 +1520,7 @@ function buildHut(variant = 'day') {
   L.addBox(1.25, -2.55, 0.3, 0.3); L.pts.basin = V3(1.25, 0, -2.0);
   // halı
   b.box('#8a4a3a', -0.4, -0.04, 0.2, 2.2, 0.02, 1.6, 0, 0, 0); b.box('#a86a4a', -0.4, -0.03, 0.2, 1.8, 0.02, 1.2, 0, 0, 0);
-  L.pts = { bedJoseph: V3(-2.5, 0, -1.4), bedLily: V3(2.6, 0, -2.1), door: V3(-1.6, 0, 2.4), window: V3(0, 0, -2.4), table: V3(0.3, 0, 0.9), hearth: V3(2.4, 0, 0.9) };
+  L.pts = Object.assign(L.pts, { bedJoseph: V3(-2.5, 0, -1.4), bedLily: V3(2.6, 0, -2.1), door: V3(-1.6, 0, 2.4), window: V3(0, 0, -2.4), table: V3(0.3, 0, 0.9), hearth: V3(2.4, 0, 0.9) });
   L.finalize();
   return L;
 }
@@ -2840,8 +2841,8 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   daniel.model.setWeapon(null); S.sfx('door'); S.sfx('splash', 0.6);
   await S.shot(V3(-3.05, 1.55, -0.3), V3(-1.6, 1.2, 2.2), 0.8);
   await S.say('daniel', 'Uyandı mı? Gerçekten uyandı mı?');
-  S.walk(daniel, [V3(-1.5, 0, 0.4), V3(-1.75, 0, -0.55)], 2.6);
-  await S.shot(V3(-0.2, 1.6, -0.6), V3(-2.3, 0.6, -1.4), 1.6);
+  S.walk(daniel, [V3(-1.2, 0, 0.6), V3(-1.55, 0, -0.25)], 2.6);
+  await S.shot(V3(-0.5, 1.7, -2.55), V3(-2.3, 0.75, -0.9), 1.6);
   daniel.faceTo(p); daniel.lookAt(p.root);
   await S.say('marta', 'İki hafta, Daniel. İki hafta ateşler içinde yattı...');
   lily.model.play('jump'); S.sfx('ui');
@@ -2876,7 +2877,7 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   await S.shot(V3(-1.55, 0.95, -1.05), V3(-2.12, 0.62, -1.3), 0);
   await S.fadeIn(0.6);
   p.model.play('reach'); p.model.act.hold = true; p.model.lookTarget = V3(-1.6, 0.55, -1.3);
-  await S.shot(V3(-1.85, 0.95, -1.05), V3(-1.75, 0.6, -1.3), 1.5);
+  await S.shot(V3(-1.15, 1.0, -0.7), V3(-1.9, 0.62, -1.3), 1.5);
   await S.think('Bu eller... küçük. Bir çocuğun elleri.');
   await S.think('Yağmur. Kamyonun farları. Camın kırılma sesi.');
   await S.think('Ben... ölmüştüm.');
@@ -2887,9 +2888,9 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   // kontrol
   await S.fadeOut(0.4);
   p.model.setStance(null, true); p.lockY = null; p.solid = true; p.place(-1.7, -0.7, Math.PI * 0.8);
-  marta.place(-0.9, 0.9, -2.2); marta.model.setStance('crossArms'); daniel.place(0.3, 1.75, Math.PI); daniel.model.setStance('sit', true); daniel.lockY = 0.02; daniel.pinned = true;
+  marta.place(-0.9, 0.9, -2.2); marta.model.setStance('crossArms'); daniel.place(2.3, 1.75, -2.4); daniel.model.setStance('crossArms', true);
   lily.place(-1.0, -0.2, -2.0);
-  S.cine(false); p.speedMul = 0.55; p.allowRun = false; Cam.yaw = 0.6; Cam.pitch = 0.42;
+  S.cine(false); p.speedMul = 0.55; p.allowRun = false; Cam.yaw = 0.15; Cam.pitch = 0.5;
   await S.fadeIn(0.5);
   S.objective('Leğene git ve suya bak', L.pts.basin);
   S.tip('Sol tarafa dokunup sürükle: yürü · Sağ tarafı sürükle: kamerayı çevir', 6000);
@@ -3811,7 +3812,7 @@ Story.def('c1_system', { chapter: 'Bölüm 1 · Taban', title: 'Sistem', sub: 'O
     '<div class="stats"><div><small>STR</small><b>0</b></div><div><small>AGI</small><b>0</b></div><div><small>VIT</small><b>0</b></div><div><small>PER</small><b>0</b></div><div><small>INT</small><b>0</b></div></div>',
     '<div class="row warn"><span>Durum</span><b>ZAYIFLAMIŞ</b></div>',
     '<div class="dim">Bedensel kapasite: normal bir insanın %50\'si</div>',
-    '<div class="row"><span>Sınır</span><b>YOK</b></div>',
+    '<div class="row reveal"><span>Sınır</span><b>YOK</b></div>',
   ], { speed: 420 });
   await S.think('Seviye. Statlar. Durum. Bir oyunun ekranı gibi.');
   await S.think('Hayır. Bu bir sözleşme.');
@@ -3992,7 +3993,7 @@ const Game = {
   showError(e) { const el = $('#err'); el.hidden = false; el.textContent = 'Hata: ' + (e && e.stack ? e.stack : e); setTimeout(() => el.hidden = true, 12000); },
 };
 window.addEventListener('load', () => { try { Game.init(); } catch (e) { Game.showError(e); } });
-window.__G = G; window.__Story = Story; window.__Game = Game; window.__Cam = Cam; window.__Input = () => Input;
+window.__G = G; window.__Story = Story; window.__Game = Game; window.__Cam = Cam; window.__Input = () => Input; window.__UI = UI;
 
 
 })();</script>

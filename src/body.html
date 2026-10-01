@@ -1,0 +1,66 @@
+<div id="app">
+  <div id="view"></div>
+  <div id="vignette"></div><div id="redflash"></div><div id="edgeflash"></div><div id="tint"></div>
+  <div id="fxlayer"></div>
+  <div id="touch"></div>
+  <div id="stick"><div id="knob"></div></div>
+  <div id="hud" hidden>
+    <div id="objective" hidden><span class="lbl">Görev</span><span id="obj-text"></span></div>
+    <div id="counter" hidden></div>
+    <div id="bars" hidden>
+      <div class="who">Joseph <span id="agebadge"></span></div>
+      <div class="bar hp"><i></i><em></em></div>
+      <div class="bar st"><i></i></div>
+    </div>
+    <div id="bossbar" hidden><div class="bname"></div><div class="bbar"><em></em><i></i></div></div>
+    <div id="marker" hidden><div class="arrow"></div><span id="marker-d"></span></div>
+    <div id="hpbars"></div>
+    <button id="pausebtn" type="button" aria-label="Duraklat"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+    <div id="actions" hidden>
+      <button class="act big" data-btn="attack" type="button" aria-label="Saldır"><svg viewBox="0 0 48 48"><path d="M14 22c0-3 2-5 5-5h2v-3c0-2 1.5-3 3-3s3 1 3 3v3h1c3 0 6 2 6 5v8c0 6-4 10-10 10h-1c-5 0-9-4-9-9z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M19 17v6M24 17v6M29 18v5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><span>Saldır</span></button>
+      <button class="act" data-btn="dodge" type="button" aria-label="Kaç"><svg viewBox="0 0 48 48"><path d="M10 28c3-9 11-14 20-12M30 10l6 6-7 4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M38 22c-3 9-11 14-20 12M18 40l-6-6 7-4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Kaç</span></button>
+      <button class="act" data-btn="heavy" type="button" aria-label="Ağır vuruş"><svg viewBox="0 0 48 48"><path d="M16 8h9v16l12 4c3 1 4 3 4 6v4H12V20z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M12 38h29" stroke="currentColor" stroke-width="3"/></svg><span id="heavylbl">Tekme</span></button>
+    </div>
+    <button id="interact" data-btn="interact" type="button" hidden><span id="interact-l">Konuş</span></button>
+  </div>
+  <div id="cine-top"></div><div id="cine-bot"></div>
+  <button id="skip" type="button" hidden>Atla ››</button>
+  <div id="dlgcatch" hidden></div>
+  <div id="dialog" hidden><div class="dname"><span class="nm"></span><span class="badge" hidden></span></div><div class="dtext"></div><div class="dnext">▾</div></div>
+  <div id="choices" hidden></div>
+  <div id="titlecard" hidden><div class="kicker"></div><h1></h1><div class="rule"></div><div class="sub"></div></div>
+  <div id="toast" hidden></div>
+  <div id="system" hidden><div class="sys-frame"><div class="sys-head"><span class="sys-dot"></span><span>SİSTEM</span><span class="sys-dot"></span></div><div class="sys-body"></div><div class="sys-foot">dokun</div></div></div>
+  <div id="fade"></div>
+  <div id="menu" hidden>
+    <div class="m-left">
+      <div class="m-kicker">Arc 1 · Tabandaki Çocuk</div>
+      <h1 class="m-title">Elonth</h1>
+      <p class="m-tag">Bir avukat öldü. Eros'un en yoksul köyünde, on yaşında bir çocuk uyandı.</p>
+      <nav class="m-nav">
+        <button type="button" data-m="continue" id="m-continue">Devam et <small id="m-cont-sub"></small></button>
+        <button type="button" data-m="new">Yeni oyun</button>
+        <button type="button" data-m="chapters">Bölümler</button>
+        <button type="button" data-m="settings">Ayarlar</button>
+        <button type="button" data-m="fullscreen" id="m-fs">Tam ekran</button>
+      </nav>
+      <div class="m-foot"><span id="m-ver"></span> · Prolog + Bölüm 1</div>
+    </div>
+  </div>
+  <div id="panel" hidden><div class="p-box"><div class="p-head"><h2 id="p-title"></h2><button type="button" id="p-close" aria-label="Kapat">✕</button></div><div id="p-body"></div></div></div>
+  <div id="pause" hidden>
+    <div class="pz-box">
+      <h2>Duraklatıldı</h2>
+      <div class="pz-where" id="pz-where"></div>
+      <button type="button" data-p="resume">Devam et</button>
+      <button type="button" data-p="restart">Sahneyi yeniden başlat</button>
+      <button type="button" data-p="chapters">Bölümler</button>
+      <button type="button" data-p="settings">Ayarlar</button>
+      <button type="button" data-p="menu">Ana menü</button>
+      <div class="pz-help"><b>Kontroller</b> Sol taraf: hareket · Sağ taraf: kamerayı çevir · Diyalog: ekrana dokun</div>
+    </div>
+  </div>
+  <div id="loading" hidden><div class="ld-mark"></div><div class="ld-text">Yükleniyor</div></div>
+  <div id="rotate" hidden><div>Daha iyi bir deneyim için tableti yatay çevir.</div><button type="button" id="rotate-ok">Yine de devam et</button></div>
+  <div id="err" hidden></div>
+</div>

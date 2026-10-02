@@ -322,7 +322,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 <script src="vendor/three-vrm.js"></script>
 <script>window.ELONTH_PWA=true;</script>
 <script>(function(){'use strict';
-const BUILD="0.2.0";
+const BUILD="0.3.0";
 
 // ==== 00_util.js ====
 // ---------- Temel yardımcılar ----------
@@ -370,7 +370,7 @@ const G = {
   t: 0, dt: 0, rawDt: 0, timeScale: 1, slowmo: 0, hitstop: 0, paused: false,
   renderer: null, scene: null, camera: null, level: null, player: null,
   actors: [], allies: [], enemies: [], npcs: [],
-  settings: { sens: 1, music: 0.7, sfx: 0.9, quality: 'high', invertY: false, textSpeed: 1, shiftLock: true, uiScale: 1.25, shake: 0.6 },
+  settings: { sens: 1, music: 0.7, sfx: 0.9, quality: 'high', invertY: false, textSpeed: 1, shiftLock: true, uiScale: 1.25, shake: 0.6, chars: 'anime' },
   inScript: false, controlEnabled: true, combat: false,
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1115,9 +1115,23 @@ class PoseRig {
       p.shLx = s * (0.4 + 0.45 * r) * a; p.shRx = -s * (0.4 + 0.45 * r) * a;
       p.elL = -0.2 - 1.0 * r; p.elR = -0.2 - 1.0 * r;
       p.bob = Math.abs(c) * (0.03 + 0.05 * r) * a - 0.02 * r;
-      p.spX += 0.06 * a + 0.16 * r; p.spY = s * 0.1 * a; p.hdY = -s * 0.06 * a;
+      p.spX += 0.06 * a + 0.16 * r; p.hipY = -s * 0.07 * a; p.spY = s * 0.14 * a; p.hdY = -s * 0.06 * a;
       this.stepPhase = ph;
-    } else if (!full) { this.phase = 0; }
+    } else if (!full) {
+      this.phase = 0;
+      // boşta: yavaş ağırlık aktarma ve ara sıra etrafa bakınma (duruş/aksiyon yokken)
+      if (!st && !this.act && !this.noIdle) {
+        const w = Math.sin(t * 0.42) * 0.8 + Math.sin(t * 0.17) * 0.2;
+        p.knL += Math.max(0, w) * 0.09; p.knR += Math.max(0, -w) * 0.09; p.lgLx -= Math.max(0, w) * 0.04; p.lgRx -= Math.max(0, -w) * 0.04;
+        p.spZ += w * 0.022; p.hdZ -= w * 0.015; p.lift -= Math.abs(w) * 0.004;
+        if (!this.lookTarget && !this.talking) {
+          this.glanceT = (this.glanceT === undefined ? frand(1, 4) : this.glanceT) - dt;
+          if (this.glanceT < 0) { this.glanceT = frand(2.5, 7); const look = Math.random() < 0.55; this.glY = look ? frand(-0.55, 0.55) : 0; this.glX = look ? frand(-0.12, 0.1) : 0; }
+          this.gY = damp(this.gY || 0, this.glY || 0, 3, dt); this.gX = damp(this.gX || 0, this.glX || 0, 3, dt);
+          p.hdY += this.gY; p.spY += this.gY * 0.2; p.hdX += this.gX;
+        }
+      }
+    }
     // duruş
     if (st) { this.stanceW = Math.min(1, this.stanceW + dt * 5); }
     const P = this.pose;
@@ -1484,7 +1498,7 @@ class Humanoid extends PoseRig {
 
 // Kalabalıklar için statik pişirme
 function bakeHumanoid(b, opts, stance, x, y, z, ry, extraPose) {
-  if (VRMKit.ready && !(opts && opts.noVRM)) { CrowdKit.queue(b, opts, stance, x, y, z, ry, extraPose); return; }
+  if (VRMKit.ready && G.settings.chars !== 'simple' && !(opts && opts.noVRM)) { CrowdKit.queue(b, opts, stance, x, y, z, ry, extraPose); return; }
   const h = new Humanoid(opts);
   if (stance) h.setStance(stance); h.stanceW = 1;
   h.update(0.016, 0);
@@ -1526,7 +1540,7 @@ const VRMKit = {
   // m: erkek (AvatarSample_C), fa: küt saçlı kız (AvatarSample_A), fg: uzun saçlı kız (three-vrm-girl)
   FILES: { m: 'assets/vrm/m.vrm', fa: 'assets/vrm/fa.vrm', fg: 'assets/vrm/fg.vrm' },
   async load(onProgress) {
-    if (!window.VRMLib || location.hash.includes('novrm')) { this.failed = true; return false; }
+    if (!window.VRMLib || location.hash.includes('novrm') || G.settings.chars === 'simple') { this.failed = true; return false; }
     const L = new VRMLib.GLTFLoader(); L.register(p => new VRMLib.VRMLoaderPlugin(p));
     const keys = Object.keys(this.FILES); let done = 0;
     try {
@@ -2448,7 +2462,7 @@ function vrmSpecFor(o) {
 }
 // Karakter üretici: VRM hazırsa anime model, değilse eski prosedürel model
 function makeHumanoid(look) {
-  if (VRMKit.ready && !(look && look.noVRM)) { try { return new VRMHumanoid(look || {}); } catch (e) { console.error('VRM karakter hatası', e); } }
+  if (VRMKit.ready && G.settings.chars !== 'simple' && !(look && look.noVRM)) { try { return new VRMHumanoid(look || {}); } catch (e) { console.error('VRM karakter hatası', e); } }
   return new Humanoid(look || {});
 }
 
@@ -5668,6 +5682,17 @@ Story.def('c1_harvest', { chapter: 'Bölüm 1 · Taban', title: 'Hasat', sub: '1
   await S.fadeOut(1.5);
 });
 
+// Pencerede duran kadın silüeti (tuvalden), aydınlık camın önünde koyu gölge
+function ladySilhouette() {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 192; const x = c.getContext('2d');
+  x.fillStyle = '#1a1210'; x.filter = 'blur(2px)';
+  x.beginPath(); x.ellipse(64, 58, 21, 26, 0, 0, TAU); x.fill();                  // baş
+  x.beginPath(); x.moveTo(40, 52); x.quadraticCurveTo(30, 120, 34, 150); x.lineTo(94, 150); x.quadraticCurveTo(98, 120, 88, 52); x.closePath(); x.fill(); // uzun saç
+  x.beginPath(); x.moveTo(56, 80); x.lineTo(72, 80); x.lineTo(76, 98); x.quadraticCurveTo(118, 106, 124, 192); x.lineTo(4, 192); x.quadraticCurveTo(10, 106, 52, 98); x.closePath(); x.fill(); // omuzlar
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace;
+  const m = new T.Mesh(new T.PlaneGeometry(0.76, 1.14), new T.MeshBasicMaterial({ map: t, transparent: true, opacity: 0, depthWrite: false, fog: false }));
+  return m;
+}
 Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', sub: '17 yaş · Eros çarşısı', kind: 'Hikâye' }, async S => {
   let L = await S.level(() => buildEros({}), 'day');
   S.amb('crowd'); S.music('village');
@@ -5732,6 +5757,16 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   await S.say('rowena', 'Seraphine? Gel hadi, hamamlar kapanacak.');
   ser.walkTo([V3(8, 0, -7), V3(14, 0, 3)], 1.5);
   await S.wait(1.2);
+  // üst kat penceresinde bir gölge: Lonca Hanımı
+  {
+    const sil = ladySilhouette(); sil.position.set(3.05, 8.12, -15.98); L.add(sil);
+    await S.shot(V3(p.pos.x - 0.6, 1.0, p.pos.z + 0.8), V3(3.05, 7.9, -16), 1.4);
+    let a = 0; L.anims.push(dt => { a = Math.min(1, a + dt * 1.4); if (!sil.userData.out) sil.material.opacity = a * 0.92; else { sil.material.opacity = Math.max(0, sil.material.opacity - dt * 1.2); } });
+    S.sfx('crowd', 0.5); UI.toast('— Bak... Lonca Hanımı yine pencerede.', 2600);
+    await S.wait(2.2);
+    sil.userData.out = true;
+    await S.think('Üst kattaki pencerede biri vardı. Bir an. Sonra gitti.');
+  }
   await S.shot(V3(p.pos.x + 0.8, 2.6, p.pos.z + 1.8), V3(p.pos.x, 0.3, p.pos.z), 2);
   await S.think('Yere düştüğümde kimse elini uzatmadı.');
   await S.think('Bunu da öğrendim.');
@@ -5794,13 +5829,27 @@ Story.def('c1_ceremony', { chapter: 'Bölüm 1 · Taban', title: 'Tanrı\'nın �
   await S.say('priest', 'Enkron! Tanrı, Harrowmere Hanesi\'ni bir kez daha kutsadı!');
   S.sfx('crowd', 1.4); st.glow = 0; st.color.set('#7aa8d8'); lady.model.act = null;
   lady.walkTo([V3(-3.4, 0, E.stone.z + 4)], 1.5);
+  const mark = (a, color) => { const m = new T.Mesh(prim('sph8'), new T.MeshBasicMaterial({ color })); m.scale.setScalar(0.12); m.position.set(0, -0.05, 0.02); a.model.handR.add(m); const l = new T.PointLight(color, 2, 3, 1.5); a.model.handR.add(l); return m; };
   await S.wait(0.6);
+  // Victor: Holloway Hanesi'nin oğlu
+  await S.say('priest', 'Victor Holloway, Lord Holloway\'un oğlu.');
+  victor.model.setStance(null);
+  await S.walk(victor, [V3(1.0, 0, -7), V3(0, 0, E.stone.z + 2.2)], 1.8);
+  victor.faceNow(V3(0, 0, E.stone.z)); victor.model.play('reach'); victor.model.act.hold = true;
+  await S.shot(V3(-2.4, 2.2, E.stone.z + 4.4), V3(0, 2.2, E.stone.z + 0.6), 0.6);
+  await S.wait(0.4); st.color.set('#d8323e'); st.glow = 1.2; S.sfx('stone'); mark(victor, '#ff4050'); UI.flashEdge('#d8323e');
+  await S.wait(1.4);
+  await S.say('priest', 'Enkron! Holloway Hanesi bu yıl da eli boş dönmüyor.');
+  S.sfx('crowd', 1.3); st.glow = 0; st.color.set('#7aa8d8'); victor.model.act = null; victor.model.setExpression('smile');
+  await S.say('crowd', 'Holloway\'un oğlu da kutsandı... Tanrı korusun bizi.');
+  victor.walkTo([V3(2.4, 0, -4.0)], 1.7);
+  await S.wait(0.4);
   await S.shot(V3(1.5, 1.8, 15.5), V3(-0.4, 1.5, 17.6), 0.8);
   await S.say('leo', 'Elim terliyor. Elimin terlediğini Tanrı görür mü sizce?');
   await S.say('clara', 'Görse ne olur, Leo?');
   await S.say('leo', 'Bilmiyorum! Belki terli diye vermez!');
   await S.say('nora', 'Sessiz olun. Sıra bize geldi.');
-  const mark = (a, color) => { const m = new T.Mesh(prim('sph8'), new T.MeshBasicMaterial({ color })); m.scale.setScalar(0.12); m.position.set(0, -0.05, 0.02); a.model.handR.add(m); const l = new T.PointLight(color, 2, 3, 1.5); a.model.handR.add(l); return m; };
+  victor.place(2.4, -4.0, -Math.PI / 2); victor.model.setStance('crossArms');
   const touch = async (a, color, line, crowd) => {
     await S.walk(a, [V3(0, 0, 4), V3(0, 0, E.stone.z + 2.2)], 1.8);
     a.faceNow(V3(0, 0, E.stone.z)); a.model.play('reach'); a.model.act.hold = true;
@@ -6019,7 +6068,8 @@ const Game = {
   },
   applyQuality() {
     const hi = G.settings.quality === 'high';
-    G.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, hi ? 1.6 : 1.0));
+    this.prMax = Math.min(window.devicePixelRatio || 1, hi ? 1.6 : 1.0); this.pr = this.prMax; this.frameAvg = 16; this.prT = 0;
+    G.renderer.setPixelRatio(this.pr);
     G.renderer.shadowMap.enabled = true;
     G.env.sun.shadow.mapSize.set(hi ? 2048 : 1024, hi ? 2048 : 1024); if (G.env.sun.shadow.map) { G.env.sun.shadow.map.dispose(); G.env.sun.shadow.map = null; }
   },
@@ -6037,6 +6087,7 @@ const Game = {
     requestAnimationFrame(t => this.loop(t));
     let raw = Math.min(0.05, (now - this.last) / 1000); this.last = now;
     G.rawDt = raw;
+    this.dynRes(raw);
     if (G.paused) { G.renderer.render(G.scene, G.camera); return; }
     let ts = G.timeScale;
     if (G.slowmo > 0) { G.slowmo -= raw; ts *= 0.28; }
@@ -6056,6 +6107,17 @@ const Game = {
     Input.endFrame();
     Portrait.process();
     G.renderer.render(G.scene, G.camera);
+  },
+  // Dinamik çözünürlük: kare süresi uzun süre yüksekse piksel oranını düşür, rahatsa geri yükselt
+  dynRes(raw) {
+    if (!this.prMax || document.hidden || G.paused) return;
+    this.frameAvg = lerp(this.frameAvg, raw * 1000, 0.03); this.prT += raw;
+    if (this.prT < 3) return;
+    let pr = this.pr;
+    if (this.frameAvg > 24 && pr > 0.75) pr = Math.max(0.75, pr - 0.15);
+    else if (this.frameAvg < 14 && pr < this.prMax) pr = Math.min(this.prMax, pr + 0.1);
+    this.prT = 0;
+    if (pr !== this.pr) { this.pr = pr; G.renderer.setPixelRatio(pr); this.resize(); }
   },
   startAudio() { Audio.init(); Audio.resume(); },
   bindMenus() {
@@ -6137,10 +6199,17 @@ const Game = {
       + `<div class="set-row"><label>Shift lock</label><div class="seg" id="s-sl"><button type="button" data-v="1">Açık</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Ekran sarsıntısı</label><div class="seg" id="s-shk"><button type="button" data-v="1">Tam</button><button type="button" data-v="0.6">Az</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Grafik</label><div class="seg" id="s-q"><button type="button" data-v="low">Akıcı</button><button type="button" data-v="high">Kaliteli</button></div></div>`
+      + `<div class="set-row"><label>Karakterler</label><div class="seg" id="s-ch"><button type="button" data-v="anime">Anime</button><button type="button" data-v="simple">Basit</button></div></div>`
       + `<div class="set-row"><label>Dikey kamera</label><div class="seg" id="s-inv"><button type="button" data-v="0">Normal</button><button type="button" data-v="1">Ters</button></div></div>`;
     body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); UI.applyScale(); Save.store(); }));
     const seg = (id, get, set) => { const el = $(id); const upd = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === get())); el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.v); upd(); Save.store(); }); upd(); };
     seg('#s-q', () => S.quality, v => { S.quality = v; this.applyQuality(); });
+    seg('#s-ch', () => S.chars || 'anime', v => {
+      const was = S.chars || 'anime'; S.chars = v; if (v === was) return;
+      // anime seçildiyse ve modeller yüklenmediyse şimdi yükle; sonraki sahneden itibaren geçerli
+      if (v === 'anime' && !VRMKit.ready) { VRMKit.failed = false; UI.toast('Anime karakterler yükleniyor…', 2500); VRMKit.load().then(ok => UI.toast(ok ? 'Anime karakterler hazır. Bir sonraki sahnede görünecek.' : 'Modeller yüklenemedi.', 3500)); }
+      else UI.toast('Karakter görünümü bir sonraki sahnede değişecek.', 3000);
+    });
     seg('#s-inv', () => S.invertY ? '1' : '0', v => { S.invertY = v === '1'; });
     seg('#s-sl', () => S.shiftLock ? '1' : '0', v => { S.shiftLock = v === '1'; UI.syncLock(); });
     seg('#s-shk', () => String(S.shake === undefined ? 1 : S.shake), v => { S.shake = parseFloat(v); });
@@ -6172,6 +6241,8 @@ const CODEX = [
   { id: 'selen', cat: 'Kişiler', t: 'Selen', at: 'c1_selen', x: 'Leo\'nun ablası, E rütbe maceracı. Kardeşiyle durmadan alay eder; ama geceleri kapısına merhem bırakan da odur.' },
   { id: 'silver', cat: 'Kişiler', t: 'Gümüş Kılıçlar', at: 'c1_guild', x: 'D rütbe Isolde\'nin ekibi. Yanında hiç konuşmayan büyücü Seraphine (D) ve dilini hiç tutmayan okçu Rowena (E). Köylülere toprağa bakan insanlar gözüyle bakarlar.' },
   { id: 'charm', cat: 'Eşyalar', t: 'Kayın tılsımı', at: 'c1_harvest', x: 'Daniel\'in kayın dalından oyduğu küçük halka. "Tören günü cebinde dursun" dedi. "O taş ne derse desin, sen benim oğlumsun."' },
+  { id: 'holloway', cat: 'Kişiler', t: 'Victor Holloway', at: 'c1_ceremony', x: 'Aynı törende taş Victor için de parladı: kan kırmızısı. Enkron\'unun ne yaptığını kimse bilmiyor; ama gülüşü artık eskisinden soğuk.' },
+  { id: 'guildlady', cat: 'Kişiler', t: 'Lonca Hanımı', at: 'c1_guild', x: 'Eros loncasının başı. Köyde görülmüş tek C rütbe olduğu söylenir. Kimse onu yakından görmedi; bazen üst kattaki pencerede bir gölge belirir, o kadar.' },
   { id: 'system', cat: 'Dünya', t: 'Sistem', at: 'c1_system', x: 'Joseph\'in Enkron\'u. Gözlerini kapattığında bile orada duran mavi bir pencere. Tören sırasında bir şey ters gitti ve pencere zayıfladı. Ama yazılarından biri "sınır yok" diyor.' },
 ];
 function openCodex() {

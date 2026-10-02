@@ -12,6 +12,8 @@ const CODEX = [
   { id: 'selen', cat: 'Kişiler', t: 'Selen', at: 'c1_selen', x: 'Leo\'nun ablası, E rütbe maceracı. Kardeşiyle durmadan alay eder; ama geceleri kapısına merhem bırakan da odur.' },
   { id: 'silver', cat: 'Kişiler', t: 'Gümüş Kılıçlar', at: 'c1_guild', x: 'D rütbe Isolde\'nin ekibi. Yanında hiç konuşmayan büyücü Seraphine (D) ve dilini hiç tutmayan okçu Rowena (E). Köylülere toprağa bakan insanlar gözüyle bakarlar.' },
   { id: 'charm', cat: 'Eşyalar', t: 'Kayın tılsımı', at: 'c1_harvest', x: 'Daniel\'in kayın dalından oyduğu küçük halka. "Tören günü cebinde dursun" dedi. "O taş ne derse desin, sen benim oğlumsun."' },
+  { id: 'holloway', cat: 'Kişiler', t: 'Victor Holloway', at: 'c1_ceremony', x: 'Aynı törende taş Victor için de parladı: kan kırmızısı. Enkron\'unun ne yaptığını kimse bilmiyor; ama gülüşü artık eskisinden soğuk.' },
+  { id: 'guildlady', cat: 'Kişiler', t: 'Lonca Hanımı', at: 'c1_guild', x: 'Eros loncasının başı. Köyde görülmüş tek C rütbe olduğu söylenir. Kimse onu yakından görmedi; bazen üst kattaki pencerede bir gölge belirir, o kadar.' },
   { id: 'system', cat: 'Dünya', t: 'Sistem', at: 'c1_system', x: 'Joseph\'in Enkron\'u. Gözlerini kapattığında bile orada duran mavi bir pencere. Tören sırasında bir şey ters gitti ve pencere zayıfladı. Ama yazılarından biri "sınır yok" diyor.' },
 ];
 function openCodex() {

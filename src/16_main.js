@@ -32,7 +32,8 @@ const Game = {
   },
   applyQuality() {
     const hi = G.settings.quality === 'high';
-    G.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, hi ? 1.6 : 1.0));
+    this.prMax = Math.min(window.devicePixelRatio || 1, hi ? 1.6 : 1.0); this.pr = this.prMax; this.frameAvg = 16; this.prT = 0;
+    G.renderer.setPixelRatio(this.pr);
     G.renderer.shadowMap.enabled = true;
     G.env.sun.shadow.mapSize.set(hi ? 2048 : 1024, hi ? 2048 : 1024); if (G.env.sun.shadow.map) { G.env.sun.shadow.map.dispose(); G.env.sun.shadow.map = null; }
   },
@@ -50,6 +51,7 @@ const Game = {
     requestAnimationFrame(t => this.loop(t));
     let raw = Math.min(0.05, (now - this.last) / 1000); this.last = now;
     G.rawDt = raw;
+    this.dynRes(raw);
     if (G.paused) { G.renderer.render(G.scene, G.camera); return; }
     let ts = G.timeScale;
     if (G.slowmo > 0) { G.slowmo -= raw; ts *= 0.28; }
@@ -69,6 +71,17 @@ const Game = {
     Input.endFrame();
     Portrait.process();
     G.renderer.render(G.scene, G.camera);
+  },
+  // Dinamik çözünürlük: kare süresi uzun süre yüksekse piksel oranını düşür, rahatsa geri yükselt
+  dynRes(raw) {
+    if (!this.prMax || document.hidden || G.paused) return;
+    this.frameAvg = lerp(this.frameAvg, raw * 1000, 0.03); this.prT += raw;
+    if (this.prT < 3) return;
+    let pr = this.pr;
+    if (this.frameAvg > 24 && pr > 0.75) pr = Math.max(0.75, pr - 0.15);
+    else if (this.frameAvg < 14 && pr < this.prMax) pr = Math.min(this.prMax, pr + 0.1);
+    this.prT = 0;
+    if (pr !== this.pr) { this.pr = pr; G.renderer.setPixelRatio(pr); this.resize(); }
   },
   startAudio() { Audio.init(); Audio.resume(); },
   bindMenus() {
@@ -150,10 +163,17 @@ const Game = {
       + `<div class="set-row"><label>Shift lock</label><div class="seg" id="s-sl"><button type="button" data-v="1">Açık</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Ekran sarsıntısı</label><div class="seg" id="s-shk"><button type="button" data-v="1">Tam</button><button type="button" data-v="0.6">Az</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Grafik</label><div class="seg" id="s-q"><button type="button" data-v="low">Akıcı</button><button type="button" data-v="high">Kaliteli</button></div></div>`
+      + `<div class="set-row"><label>Karakterler</label><div class="seg" id="s-ch"><button type="button" data-v="anime">Anime</button><button type="button" data-v="simple">Basit</button></div></div>`
       + `<div class="set-row"><label>Dikey kamera</label><div class="seg" id="s-inv"><button type="button" data-v="0">Normal</button><button type="button" data-v="1">Ters</button></div></div>`;
     body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); UI.applyScale(); Save.store(); }));
     const seg = (id, get, set) => { const el = $(id); const upd = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === get())); el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.v); upd(); Save.store(); }); upd(); };
     seg('#s-q', () => S.quality, v => { S.quality = v; this.applyQuality(); });
+    seg('#s-ch', () => S.chars || 'anime', v => {
+      const was = S.chars || 'anime'; S.chars = v; if (v === was) return;
+      // anime seçildiyse ve modeller yüklenmediyse şimdi yükle; sonraki sahneden itibaren geçerli
+      if (v === 'anime' && !VRMKit.ready) { VRMKit.failed = false; UI.toast('Anime karakterler yükleniyor…', 2500); VRMKit.load().then(ok => UI.toast(ok ? 'Anime karakterler hazır. Bir sonraki sahnede görünecek.' : 'Modeller yüklenemedi.', 3500)); }
+      else UI.toast('Karakter görünümü bir sonraki sahnede değişecek.', 3000);
+    });
     seg('#s-inv', () => S.invertY ? '1' : '0', v => { S.invertY = v === '1'; });
     seg('#s-sl', () => S.shiftLock ? '1' : '0', v => { S.shiftLock = v === '1'; UI.syncLock(); });
     seg('#s-shk', () => String(S.shake === undefined ? 1 : S.shake), v => { S.shake = parseFloat(v); });

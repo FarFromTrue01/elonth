@@ -43,7 +43,7 @@ const G = {
   t: 0, dt: 0, rawDt: 0, timeScale: 1, slowmo: 0, hitstop: 0, paused: false,
   renderer: null, scene: null, camera: null, level: null, player: null,
   actors: [], allies: [], enemies: [], npcs: [],
-  settings: { sens: 1, music: 0.7, sfx: 0.9, quality: 'high', invertY: false, textSpeed: 1, shiftLock: true, uiScale: 1.25, shake: 0.6 },
+  settings: { sens: 1, music: 0.7, sfx: 0.9, quality: 'high', invertY: false, textSpeed: 1, shiftLock: true, uiScale: 1.25, shake: 0.6, chars: 'anime' },
   inScript: false, controlEnabled: true, combat: false,
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));

@@ -449,6 +449,17 @@ Story.def('c1_harvest', { chapter: 'Bölüm 1 · Taban', title: 'Hasat', sub: '1
   await S.fadeOut(1.5);
 });
 
+// Pencerede duran kadın silüeti (tuvalden), aydınlık camın önünde koyu gölge
+function ladySilhouette() {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 192; const x = c.getContext('2d');
+  x.fillStyle = '#1a1210'; x.filter = 'blur(2px)';
+  x.beginPath(); x.ellipse(64, 58, 21, 26, 0, 0, TAU); x.fill();                  // baş
+  x.beginPath(); x.moveTo(40, 52); x.quadraticCurveTo(30, 120, 34, 150); x.lineTo(94, 150); x.quadraticCurveTo(98, 120, 88, 52); x.closePath(); x.fill(); // uzun saç
+  x.beginPath(); x.moveTo(56, 80); x.lineTo(72, 80); x.lineTo(76, 98); x.quadraticCurveTo(118, 106, 124, 192); x.lineTo(4, 192); x.quadraticCurveTo(10, 106, 52, 98); x.closePath(); x.fill(); // omuzlar
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace;
+  const m = new T.Mesh(new T.PlaneGeometry(0.76, 1.14), new T.MeshBasicMaterial({ map: t, transparent: true, opacity: 0, depthWrite: false, fog: false }));
+  return m;
+}
 Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', sub: '17 yaş · Eros çarşısı', kind: 'Hikâye' }, async S => {
   let L = await S.level(() => buildEros({}), 'day');
   S.amb('crowd'); S.music('village');
@@ -513,6 +524,16 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   await S.say('rowena', 'Seraphine? Gel hadi, hamamlar kapanacak.');
   ser.walkTo([V3(8, 0, -7), V3(14, 0, 3)], 1.5);
   await S.wait(1.2);
+  // üst kat penceresinde bir gölge: Lonca Hanımı
+  {
+    const sil = ladySilhouette(); sil.position.set(3.05, 8.12, -15.98); L.add(sil);
+    await S.shot(V3(p.pos.x - 0.6, 1.0, p.pos.z + 0.8), V3(3.05, 7.9, -16), 1.4);
+    let a = 0; L.anims.push(dt => { a = Math.min(1, a + dt * 1.4); if (!sil.userData.out) sil.material.opacity = a * 0.92; else { sil.material.opacity = Math.max(0, sil.material.opacity - dt * 1.2); } });
+    S.sfx('crowd', 0.5); UI.toast('— Bak... Lonca Hanımı yine pencerede.', 2600);
+    await S.wait(2.2);
+    sil.userData.out = true;
+    await S.think('Üst kattaki pencerede biri vardı. Bir an. Sonra gitti.');
+  }
   await S.shot(V3(p.pos.x + 0.8, 2.6, p.pos.z + 1.8), V3(p.pos.x, 0.3, p.pos.z), 2);
   await S.think('Yere düştüğümde kimse elini uzatmadı.');
   await S.think('Bunu da öğrendim.');
@@ -575,13 +596,27 @@ Story.def('c1_ceremony', { chapter: 'Bölüm 1 · Taban', title: 'Tanrı\'nın �
   await S.say('priest', 'Enkron! Tanrı, Harrowmere Hanesi\'ni bir kez daha kutsadı!');
   S.sfx('crowd', 1.4); st.glow = 0; st.color.set('#7aa8d8'); lady.model.act = null;
   lady.walkTo([V3(-3.4, 0, E.stone.z + 4)], 1.5);
+  const mark = (a, color) => { const m = new T.Mesh(prim('sph8'), new T.MeshBasicMaterial({ color })); m.scale.setScalar(0.12); m.position.set(0, -0.05, 0.02); a.model.handR.add(m); const l = new T.PointLight(color, 2, 3, 1.5); a.model.handR.add(l); return m; };
   await S.wait(0.6);
+  // Victor: Holloway Hanesi'nin oğlu
+  await S.say('priest', 'Victor Holloway, Lord Holloway\'un oğlu.');
+  victor.model.setStance(null);
+  await S.walk(victor, [V3(1.0, 0, -7), V3(0, 0, E.stone.z + 2.2)], 1.8);
+  victor.faceNow(V3(0, 0, E.stone.z)); victor.model.play('reach'); victor.model.act.hold = true;
+  await S.shot(V3(-2.4, 2.2, E.stone.z + 4.4), V3(0, 2.2, E.stone.z + 0.6), 0.6);
+  await S.wait(0.4); st.color.set('#d8323e'); st.glow = 1.2; S.sfx('stone'); mark(victor, '#ff4050'); UI.flashEdge('#d8323e');
+  await S.wait(1.4);
+  await S.say('priest', 'Enkron! Holloway Hanesi bu yıl da eli boş dönmüyor.');
+  S.sfx('crowd', 1.3); st.glow = 0; st.color.set('#7aa8d8'); victor.model.act = null; victor.model.setExpression('smile');
+  await S.say('crowd', 'Holloway\'un oğlu da kutsandı... Tanrı korusun bizi.');
+  victor.walkTo([V3(2.4, 0, -4.0)], 1.7);
+  await S.wait(0.4);
   await S.shot(V3(1.5, 1.8, 15.5), V3(-0.4, 1.5, 17.6), 0.8);
   await S.say('leo', 'Elim terliyor. Elimin terlediğini Tanrı görür mü sizce?');
   await S.say('clara', 'Görse ne olur, Leo?');
   await S.say('leo', 'Bilmiyorum! Belki terli diye vermez!');
   await S.say('nora', 'Sessiz olun. Sıra bize geldi.');
-  const mark = (a, color) => { const m = new T.Mesh(prim('sph8'), new T.MeshBasicMaterial({ color })); m.scale.setScalar(0.12); m.position.set(0, -0.05, 0.02); a.model.handR.add(m); const l = new T.PointLight(color, 2, 3, 1.5); a.model.handR.add(l); return m; };
+  victor.place(2.4, -4.0, -Math.PI / 2); victor.model.setStance('crossArms');
   const touch = async (a, color, line, crowd) => {
     await S.walk(a, [V3(0, 0, 4), V3(0, 0, E.stone.z + 2.2)], 1.8);
     a.faceNow(V3(0, 0, E.stone.z)); a.model.play('reach'); a.model.act.hold = true;

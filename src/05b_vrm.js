@@ -5,7 +5,7 @@ const VRMKit = {
   // m: erkek (AvatarSample_C), fa: küt saçlı kız (AvatarSample_A), fg: uzun saçlı kız (three-vrm-girl)
   FILES: { m: 'assets/vrm/m.vrm', fa: 'assets/vrm/fa.vrm', fg: 'assets/vrm/fg.vrm' },
   async load(onProgress) {
-    if (!window.VRMLib || location.hash.includes('novrm')) { this.failed = true; return false; }
+    if (!window.VRMLib || location.hash.includes('novrm') || G.settings.chars === 'simple') { this.failed = true; return false; }
     const L = new VRMLib.GLTFLoader(); L.register(p => new VRMLib.VRMLoaderPlugin(p));
     const keys = Object.keys(this.FILES); let done = 0;
     try {
@@ -927,7 +927,7 @@ function vrmSpecFor(o) {
 }
 // Karakter üretici: VRM hazırsa anime model, değilse eski prosedürel model
 function makeHumanoid(look) {
-  if (VRMKit.ready && !(look && look.noVRM)) { try { return new VRMHumanoid(look || {}); } catch (e) { console.error('VRM karakter hatası', e); } }
+  if (VRMKit.ready && G.settings.chars !== 'simple' && !(look && look.noVRM)) { try { return new VRMHumanoid(look || {}); } catch (e) { console.error('VRM karakter hatası', e); } }
   return new Humanoid(look || {});
 }
 

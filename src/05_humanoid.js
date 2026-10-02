@@ -95,9 +95,23 @@ class PoseRig {
       p.shLx = s * (0.4 + 0.45 * r) * a; p.shRx = -s * (0.4 + 0.45 * r) * a;
       p.elL = -0.2 - 1.0 * r; p.elR = -0.2 - 1.0 * r;
       p.bob = Math.abs(c) * (0.03 + 0.05 * r) * a - 0.02 * r;
-      p.spX += 0.06 * a + 0.16 * r; p.spY = s * 0.1 * a; p.hdY = -s * 0.06 * a;
+      p.spX += 0.06 * a + 0.16 * r; p.hipY = -s * 0.07 * a; p.spY = s * 0.14 * a; p.hdY = -s * 0.06 * a;
       this.stepPhase = ph;
-    } else if (!full) { this.phase = 0; }
+    } else if (!full) {
+      this.phase = 0;
+      // boşta: yavaş ağırlık aktarma ve ara sıra etrafa bakınma (duruş/aksiyon yokken)
+      if (!st && !this.act && !this.noIdle) {
+        const w = Math.sin(t * 0.42) * 0.8 + Math.sin(t * 0.17) * 0.2;
+        p.knL += Math.max(0, w) * 0.09; p.knR += Math.max(0, -w) * 0.09; p.lgLx -= Math.max(0, w) * 0.04; p.lgRx -= Math.max(0, -w) * 0.04;
+        p.spZ += w * 0.022; p.hdZ -= w * 0.015; p.lift -= Math.abs(w) * 0.004;
+        if (!this.lookTarget && !this.talking) {
+          this.glanceT = (this.glanceT === undefined ? frand(1, 4) : this.glanceT) - dt;
+          if (this.glanceT < 0) { this.glanceT = frand(2.5, 7); const look = Math.random() < 0.55; this.glY = look ? frand(-0.55, 0.55) : 0; this.glX = look ? frand(-0.12, 0.1) : 0; }
+          this.gY = damp(this.gY || 0, this.glY || 0, 3, dt); this.gX = damp(this.gX || 0, this.glX || 0, 3, dt);
+          p.hdY += this.gY; p.spY += this.gY * 0.2; p.hdX += this.gX;
+        }
+      }
+    }
     // duruş
     if (st) { this.stanceW = Math.min(1, this.stanceW + dt * 5); }
     const P = this.pose;
@@ -464,7 +478,7 @@ class Humanoid extends PoseRig {
 
 // Kalabalıklar için statik pişirme
 function bakeHumanoid(b, opts, stance, x, y, z, ry, extraPose) {
-  if (VRMKit.ready && !(opts && opts.noVRM)) { CrowdKit.queue(b, opts, stance, x, y, z, ry, extraPose); return; }
+  if (VRMKit.ready && G.settings.chars !== 'simple' && !(opts && opts.noVRM)) { CrowdKit.queue(b, opts, stance, x, y, z, ry, extraPose); return; }
   const h = new Humanoid(opts);
   if (stance) h.setStance(stance); h.stanceW = 1;
   h.update(0.016, 0);

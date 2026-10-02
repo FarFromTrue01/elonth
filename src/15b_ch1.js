@@ -769,6 +769,7 @@ Story.def('c1_system', { chapter: 'Bölüm 1 · Taban', title: 'Sistem', sub: 'O
     '<div class="row"><span>Senkronizasyon</span><b>%100</b></div>',
     '<div class="row"><span>Kullanıcı</span><b>Joseph</b></div>',
     '<div class="row"><span>Seviye</span><b>1</b></div>',
+    '<div class="row"><span>MP</span><b>3 / 3</b></div>',
     '<div class="stats"><div><small>STR</small><b>0</b></div><div><small>AGI</small><b>0</b></div><div><small>VIT</small><b>0</b></div><div><small>PER</small><b>0</b></div><div><small>INT</small><b>0</b></div></div>',
     '<div class="row warn"><span>Durum</span><b>ZAYIFLAMIŞ</b></div>',
     '<div class="dim">Bedensel kapasite: normal bir insanın %50\'si</div>',

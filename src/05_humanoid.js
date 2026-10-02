@@ -83,6 +83,8 @@ class PoseRig {
     p.shLz = 0.09; p.shRz = -0.09; p.elL = -0.12; p.elR = -0.12;
     p.spX = 0.015 * Math.sin(t * 1.7) * this.breathe; p.shLz += 0.015 * Math.sin(t * 1.7); p.shRz -= 0.015 * Math.sin(t * 1.7);
     p.hdY = 0.08 * Math.sin(t * 0.37); p.hdX = 0.03 * Math.sin(t * 0.53);
+    // konuşurken hafif baş hareketi
+    if (this.talking) { const k = this.talkT || 0; p.hdX += Math.sin(k * 3.1) * 0.035 + Math.sin(k * 1.3) * 0.02; p.hdZ += Math.sin(k * 2.2) * 0.02; p.spX += Math.sin(k * 1.7) * 0.012; }
     const st = this.stance;
     const full = st && st.full;
     if (speed > 0.05 && !full) {

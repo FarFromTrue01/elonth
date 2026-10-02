@@ -234,6 +234,7 @@ const VMAT = {
     if (o.rim) { m.shadingToonyFactor = 0.97; m.shadingShiftFactor = -0.15; }
     if (o.double) m.side = T.DoubleSide;
     if (o.repeat) this.repeat(m, o.repeat);
+    m.userData.fabric = true; // kalabalık atlasında düz renk
     m.needsUpdate = true;
     const out = [m];
     if (sm[1]) { const ol = sm[1].clone(); ol.outlineWidthFactor = (sm[1].outlineWidthFactor || 0.002) * (o.olw || 1); ol.outlineColorFactor = new T.Color(o.ol || shade(hex, 0.3)); ol.map = m.map; ol.color = col.clone(); ol.side = T.BackSide; ol.needsUpdate = true; out.push(ol); }
@@ -546,7 +547,7 @@ class VRMHumanoid extends PoseRig {
         if (c.isOutline) this.outlines.push(c);
         const isOl = !!c.isOutline;
         if (role === 'face' || role === 'body') {
-          if (role === 'body' && !isOl) { c.map = VRMKit.solid('#' + base.getHexString(T.SRGBColorSpace)); c.shadeMultiplyTexture = c.map; c.normalMap = null; }
+          if (role === 'body' && !isOl) { c.map = VRMKit.solid('#' + base.getHexString(T.SRGBColorSpace)); c.shadeMultiplyTexture = c.map; c.normalMap = null; c.userData.fabric = true; }
           if (c.color) c.color.multiply(tint);
           if (c.shadeColorFactor) c.shadeColorFactor.multiply(tint);
           if (isOl && c.outlineColorFactor) c.outlineColorFactor.copy(new T.Color(o.skin).multiplyScalar(0.35));
@@ -1013,34 +1014,27 @@ const CrowdKit = {
     for (const p of parts) if (p.big && S) {
       try { const ind = new Uint32Array(p.idx), fc = /Face|FACE/.test(p.mat.name || ''), target = Math.floor(ind.length * (fc ? 0.45 : 0.2) / 3) * 3; const [res] = S.simplify(ind, new Float32Array(p.pos), 3, target, fc ? 0.01 : 0.05, fc ? ['LockBorder'] : []); if (res && res.length >= 3) p.idx = Array.from(res); } catch (e) { }
     }
-    // atlas: her malzemeye bir hücre (yüz 2x2)
-    const A = 2048, C = 256, grid = A / C, used = new Set(), cells = new Map();
-    const alloc = sz => { for (let y = 0; y + sz <= grid; y++) for (let x = 0; x + sz <= grid; x++) { let ok = true; for (let a = 0; a < sz && ok; a++) for (let c = 0; c < sz; c++) if (used.has((y + a) * grid + x + c)) { ok = false; break; } if (ok) { for (let a = 0; a < sz; a++) for (let c = 0; c < sz; c++) used.add((y + a) * grid + x + c); return { x: x * C, y: y * C, s: sz * C }; } } return { x: 0, y: 0, s: C }; };
-    const cv = document.createElement('canvas'); cv.width = cv.height = A; const cx = cv.getContext('2d');
-    const flat = p => /fab\||solid\|/.test(this.texKey(p.mat.map)) || !p.mat.map;
+    // paylaşımlı atlas: aynı doku+renk bir kez yerleşir; düz renkler küçük hücrelerde
+    const flat = p => !!p.mat.userData.fabric || !p.mat.map;
+    const cells = new Map();
     for (const p of parts) {
       const mt = p.mat; if (cells.has(mt)) continue;
-      const face = /Face_00|^Face$|FACE/i.test(mt.name || '') && !/Mouth|Brow|Lash|line/i.test(mt.name || '');
-      const cell = alloc(face ? 2 : 1); cells.set(mt, cell);
       const col = mt.color ? mt.color.clone() : new T.Color(1, 1, 1);
-      const css = '#' + col.getHexString(T.SRGBColorSpace);
-      cx.save(); cx.beginPath(); cx.rect(cell.x, cell.y, cell.s, cell.s); cx.clip();
-      if (mt.map && mt.map.image && !flat(p)) {
-        cx.drawImage(mt.map.image, cell.x, cell.y, cell.s, cell.s);
-        cx.globalCompositeOperation = 'multiply'; cx.fillStyle = css; cx.fillRect(cell.x, cell.y, cell.s, cell.s);
-        cx.globalCompositeOperation = 'destination-in'; cx.drawImage(mt.map.image, cell.x, cell.y, cell.s, cell.s);
-      } else {
-        // kumaş/düz: dokunun ortalama tonu * renk
-        const k = mt.map ? 0.92 : 1; cx.fillStyle = '#' + col.clone().multiplyScalar(k).getHexString(T.SRGBColorSpace); cx.fillRect(cell.x, cell.y, cell.s, cell.s);
-      }
-      cx.restore();
+      if (flat(p)) { const k = 'flat|' + col.clone().multiplyScalar(mt.map ? 0.92 : 1).getHexString(T.SRGBColorSpace); cells.set(mt, this.cell(k, 16, x => { x.fillStyle = '#' + k.slice(5); x.fill(); })); continue; }
+      const face = /Face_00|^Face$|FACE/i.test(mt.name || '') && !/Mouth|Brow|Lash|line/i.test(mt.name || '');
+      const im = mt.map.image, css = '#' + col.getHexString(T.SRGBColorSpace);
+      cells.set(mt, this.cell('tex|' + mt.map.uuid + '|' + css, face ? 256 : 128, (x, c) => {
+        x.drawImage(im, c.x, c.y, c.s, c.s);
+        x.globalCompositeOperation = 'multiply'; x.fillStyle = css; x.fillRect(c.x, c.y, c.s, c.s);
+        x.globalCompositeOperation = 'destination-in'; x.drawImage(im, c.x, c.y, c.s, c.s);
+      }));
     }
     // birleştir
     let nv = 0, ni = 0; for (const p of parts) { nv += p.pos.length / 3; ni += p.idx.length; }
     const POS = new Float32Array(nv * 3), NOR = new Float32Array(nv * 3), UVA = new Float32Array(nv * 2), IDX = new Uint32Array(ni);
     let ov = 0, oi = 0;
     for (const p of parts) {
-      const c = cells.get(p.mat), fl = flat(p), flipY = p.mat.map ? p.mat.map.flipY : false, mg = 2;
+      const c = cells.get(p.mat), fl = flat(p), flipY = p.mat.map ? p.mat.map.flipY : false, mg = fl ? 4 : 1.5, A = this.A;
       for (let i = 0; i < p.pos.length / 3; i++) {
         POS.set([p.pos[i * 3], p.pos[i * 3 + 1], p.pos[i * 3 + 2]], (ov + i) * 3); NOR.set([p.nor[i * 3], p.nor[i * 3 + 1], p.nor[i * 3 + 2]], (ov + i) * 3);
         let u = fl ? 0.5 : clamp(p.uv[i * 2], 0, 1), w = fl ? 0.5 : clamp(p.uv[i * 2 + 1], 0, 1); if (flipY) w = 1 - w;
@@ -1054,8 +1048,7 @@ const CrowdKit = {
     let olIdx = []; { let o2 = 0; for (const p of parts) { if (!p.decal) for (const k of p.idx) olIdx.push(k + o2); o2 += p.pos.length / 3; } }
     if (S) { try { const t = Math.floor(olIdx.length * 0.1 / 3) * 3; const [res] = S.simplify(new Uint32Array(olIdx), POS, 3, t, 0.1, []); if (res && res.length >= 3) olIdx = res; } catch (e) { } }
     const olGeo = new T.BufferGeometry(); olGeo.setAttribute('position', geo.attributes.position); olGeo.setAttribute('normal', geo.attributes.normal); olGeo.setIndex(new T.BufferAttribute(new Uint32Array(olIdx), 1)); olGeo.computeBoundingSphere();
-    const tex = new T.CanvasTexture(cv); tex.colorSpace = T.SRGBColorSpace; tex.flipY = true; tex.anisotropy = 2;
-    const mat = new T.MeshToonMaterial({ map: tex, gradientMap: TOON.gradSoft, alphaTest: 0.5 });
+    const mat = this.atlasMat(); this.atlasTex.needsUpdate = true;
     m.dispose();
     return { geo, olGeo, mat, info: parts.map(p => (p.mat.name || '?').slice(0, 14) + ':' + p.idx.length / 3 + (p.big ? '*' : '')).join(',') };
   },
@@ -1085,6 +1078,26 @@ const CrowdKit = {
       }
   },
   texKey(t) { for (const [k, v] of VRMKit.texCache) if (v === t) return k; return ''; },
+  // tek, paylaşımlı kalabalık atlası (2048²): raf (shelf) yerleşimi
+  A: 2048, atlasCells: new Map(), shelf: { x: 0, y: 0, h: 0 },
+  atlasMat() {
+    if (!this.atlasCv) {
+      const cv = this.atlasCv = document.createElement('canvas'); cv.width = cv.height = this.A; this.atlasCx = cv.getContext('2d');
+      const t = this.atlasTex = new T.CanvasTexture(cv); t.colorSpace = T.SRGBColorSpace; t.flipY = true; t.anisotropy = 2;
+      this.atlasMaterial = new T.MeshToonMaterial({ map: t, gradientMap: TOON.gradSoft, alphaTest: 0.5 });
+    }
+    return this.atlasMaterial;
+  },
+  cell(key, size, draw) {
+    this.atlasMat();
+    if (this.atlasCells.has(key)) return this.atlasCells.get(key);
+    const sh = this.shelf, A = this.A;
+    if (sh.x + size > A) { sh.x = 0; sh.y += sh.h; sh.h = 0; }
+    if (sh.y + size > A) { console.warn('kalabalık atlası doldu'); sh.x = sh.y = sh.h = 0; }
+    const c = { x: sh.x, y: sh.y, s: size }; sh.x += size; sh.h = Math.max(sh.h, size);
+    const x = this.atlasCx; x.save(); x.beginPath(); x.rect(c.x, c.y, c.s, c.s); x.clip(); draw(x, c); x.restore();
+    this.atlasCells.set(key, c); return c;
+  },
 };
 
 window.__VRMKit = VRMKit; window.__CrowdKit = CrowdKit; window.__VRMHumanoid = VRMHumanoid; window.__dbgLooks = () => ({ randomNoble, randomVillager, LOOK });

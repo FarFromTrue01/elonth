@@ -16,9 +16,9 @@ const CAST = {
   osric: { name: 'Osric', color: '#a8a0b0' },
   elder: { name: 'Tobias Dede', color: '#d4cbb2' },
   kid: { name: 'Küçük Tom', color: '#c8d8a0' },
-  isolde: { name: 'Isolde', color: '#e6ecf8', rank: 'B' },
-  seraphine: { name: 'Seraphine', color: '#bda8f2', rank: 'C' },
-  rowena: { name: 'Rowena', color: '#f2c072', rank: 'C' },
+  isolde: { name: 'Isolde', color: '#e6ecf8', rank: 'D' },
+  seraphine: { name: 'Seraphine', color: '#bda8f2', rank: 'D' },
+  rowena: { name: 'Rowena', color: '#f2c072', rank: 'E' },
   guard: { name: 'Muhafız', color: '#a8b4c0' },
   priest: { name: 'Başrahip', color: '#f2e2b0' },
   crowd: { name: 'Kalabalık', color: '#a89c88' },
@@ -50,6 +50,29 @@ const LOOK = {
   priest() { return { scale: 0.98, skin: SKIN.light, hair: '#e8e4dc', hairStyle: 'bald', shirt: '#ece4d0', pants: '#d8d0bc', sleeves: 'long', extras: [{ t: 'robe', c: '#e8e0cc' }, { t: 'sash', c: '#c9a85a' }, { t: 'beard', c: '#f0ece4' }, { t: 'cape', c: '#c9a85a', len: 1.6 }] }; },
   kid(f) { const o = randomVillager(f); o.scale = rnd(0.55, 0.68); o.child = 1; o.extras = o.extras.filter(e => e.t !== 'beard' && e.t !== 'hat'); return o; },
 };
+
+// VRM (anime model) seçimleri: yüz tabanı, saç modeli ve renkleri. Kıyafetler eski tanımlardan türetilir.
+const VRM_CAST = {
+  joseph: { base: 'm', hair: 'm', hairColor: '#17110e', eyeColor: '#1c1410', browColor: '#120d0a' },
+  lily: { base: 'fa', hair: 'fa', hairColor: '#1c1412', eyeColor: '#3a2418', browColor: '#1a1210' },
+  marta: { base: 'fg', hair: 'fg', hairTrim: 0.24, hairColor: '#241914', eyeColor: '#3a2a1e', browColor: '#1c1412' },
+  daniel: { base: 'm', hair: 'm', hairColor: '#21180f', eyeColor: '#3a2a18', browColor: '#1a1410', heightMul: 1.02 },
+  nora: { base: 'fa', hair: 'm', hairColor: '#a8401c', eyeColor: '#b8742a', browColor: '#6a2a14' },
+  leo: { base: 'm', hair: 'fa', hairColor: '#a87e44', eyeColor: '#4f7a3a', browColor: '#6a4e2a' },
+  clara: { base: 'fa', hair: 'fg', hairColor: '#e2c27a', eyeColor: '#3a6aaa', browColor: '#a08048' },
+  selen: { base: 'fa', hair: 'fa', hairColor: '#a87e44', eyeColor: '#4f7a3a', browColor: '#6a4e2a' },
+  victor: { base: 'm', hair: 'm', hairColor: '#e0c88e', eyeColor: '#5a7aa8', browColor: '#a8905a' },
+  bram: { base: 'm', hair: 'm', hairColor: '#4a3020', eyeColor: '#3a2a1a' },
+  osric: { base: 'm', hair: 'm', hairColor: '#2a1d14', eyeColor: '#2a2a2a' },
+  elder: { base: 'm', hair: 'm', hairColor: '#dcd8d0', hairGain: 1.15, eyeColor: '#4a4a52', browColor: '#e0dcd4' },
+  isolde: { base: 'fg', hair: 'fa', hairColor: '#ece2c8', eyeColor: '#7a9ac8', browColor: '#c8bc9a' },
+  seraphine: { base: 'fg', hair: 'fg', hairColor: '#16121c', eyeColor: '#8a6ad8', browColor: '#141016' },
+  rowena: { base: 'fa', hair: 'fg', hairTrim: 0.2, hairColor: '#b8481e', eyeColor: '#6a8a3a', browColor: '#7a2e14' },
+  guard: { base: 'm', hair: 'none', extraAcc: [{ t: 'helmet', c: '#9aa2ac' }] },
+  knight: { base: 'm', hair: 'none', extraAcc: [{ t: 'helmet', c: '#b8bec8' }] },
+  priest: { base: 'm', hair: 'm', hairColor: '#ece8e0', hairGain: 1.15, eyeColor: '#5a5048', browColor: '#e8e4dc' },
+};
+for (const k in VRM_CAST) { const f = LOOK[k]; LOOK[k] = (...a) => { const o = f(...a); o.vrm = Object.assign({}, VRM_CAST[k], o.vrm || {}); return o; }; }
 
 // At + süvari
 class HorseModel {
@@ -120,11 +143,11 @@ class HorseModel {
 }
 function spawnRider(look) {
   const horse = new Actor({ model: new HorseModel(), radius: 0.8, name: 'At', solid: false });
-  const rider = new Humanoid(look); rider.setStance('sit', true);
+  const rider = makeHumanoid(look); rider.setStance('ride', true);
   rider.root.position.set(0, 0.11, -0.1); horse.model.body.add(rider.root);
   rider.pose.lgLz = 0.5; horse.rider = rider;
   const upd = horse.model.update.bind(horse.model);
-  horse.model.update = (dt, sp) => { upd(dt, sp); rider.update(dt, 0); rider.lgL.rotation.z = 0.45; rider.lgR.rotation.z = -0.45; rider.knL.rotation.x = 0.9; rider.knR.rotation.x = 0.9; rider.lgL.rotation.x = -0.5; rider.lgR.rotation.x = -0.5; };
+  horse.model.update = (dt, sp) => { upd(dt, sp); rider.update(dt, 0); };
   horse.collides = false;
   return horse;
 }

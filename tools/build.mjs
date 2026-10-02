@@ -37,6 +37,7 @@ ${fonts}
 <style>${css}</style></head><body>
 ${body}
 <script src="vendor/three.r160.js"></script>
+<script src="vendor/three-vrm.js"></script>
 <script>window.ELONTH_PWA=true;</script>
 <script>${game}</script>
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>

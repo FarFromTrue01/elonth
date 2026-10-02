@@ -27,7 +27,18 @@ Dövüşte hafif hedef yardımı vardır: saldırı yönün rakibe ~35° yakıns
 
 ## Ayarlar
 
-Arayüz boyutu (tablette sağ alttaki butonları büyütür), shift lock, ekran sarsıntısı, kamera hassasiyeti, metin hızı, müzik/efekt sesi ve grafik kalitesi.
+Arayüz boyutu (tablette sağ alttaki butonları büyütür), shift lock, ekran sarsıntısı, kamera hassasiyeti, metin hızı, müzik/efekt sesi, grafik kalitesi ve **karakter görünümü** (Anime: VRM modelleri / Basit: hafif modeller, zayıf cihazlar için).
+
+## Sürüm 0.3.0'da neler değişti
+
+- **Karakterler VRM anime modelleriyle baştan yapıldı.** Gerçek anime yüzleri (göz, kaş, ağız ifadeleri, göz kırpma, bakış), saç ve kıyafet fiziği, toon gölgelendirme ve kontur.
+- Ortaçağ kıyafetleri vücuttan üretilir: tunik, pantolon, çizme, yelek, elbise, cübbe, palto eteği, pelerin, zırh, miğfer, kemer ve aksesuarlar. Her karakterin kendi saç modeli, saç/göz/ten rengi var.
+- Joseph: siyah dağınık saç, siyah göz, esmer ten. Yaşa göre (10, 12, 15, 17, 18) boy ve oranlar değişir.
+- Kalabalıklar (tören salonu, Eros çarşısı) da aynı tarzda; sadeleştirilmiş, tek dokulu ve örneklenmiş (instanced) çizilir, tablet için hafiftir.
+- Dövüşte ve diyalogda canlı yüz ifadeleri: saldırırken kararlı, darbe alınca acı; ünlemde dikkat, sessizlikte hüzün.
+- Ana menü yeni açı: meşenin altında Joseph ve Lily, gün batımı.
+- Hikâye rehberiyle uyum: törende Victor Holloway da Enkron alır; Lonca Hanımı üst kattaki pencerede bir anlık gölge olarak görünür; günlüğe yeni kayıtlar.
+- Ayarlar'a "Karakterler: Anime / Basit" seçeneği eklendi.
 
 ## Sürüm 0.2.0'da neler değişti
 
@@ -46,8 +57,15 @@ Arayüz boyutu (tablette sağ alttaki butonları büyütür), shift lock, ekran 
 - `src/*.js` — oyun kodu (alfabetik sırayla tek dosyada birleşir)
 - `src/style.css`, `src/body.html` — arayüz
 - `vendor/three.r160.js` — Three.js r160 (global `THREE`)
+- `vendor/three-vrm.js` — three-vrm + GLTFLoader + meshoptimizer paketi (`tools/vrm-vendor` ile üretilir)
+- `assets/vrm/*.vrm` — temel anime modelleri (`tools/vrm_pack.py` ile kıyafetsiz, küçültülmüş)
+- `src/05b_vrm.js` — VRM karakter sistemi: yükleme, renklendirme, kıyafet üretimi, poz sürücüsü, kalabalık
 - `tools/build.mjs` — `node tools/build.mjs` ile `index.html`, `sw.js` ve `dist/elonth.html` (artifact sürümü) üretilir
 - `version.json` — sürüm numarası; her güncellemede artırılır, böylece uygulama önbelleği yenilenir
+
+## Modeller ve lisans
+
+Temel modeller VRoid Project'in (pixiv) örnek avatarlarıdır: AvatarSample_A, AvatarSample_C ve three-vrm örnek modeli. Lisansları ticari kullanım, değiştirme ve yeniden dağıtıma izin verir; kredi şartı yoktur. Oyunda orijinal kıyafetleri çıkarılmış, saçları ve renkleri değiştirilmiş hâlleri kullanılır.
 
 ## Kayıt
 

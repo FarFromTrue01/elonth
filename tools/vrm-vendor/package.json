@@ -1,0 +1,12 @@
+{
+ "private": true,
+ "scripts": {
+  "build": "node build.mjs"
+ },
+ "dependencies": {
+  "@pixiv/three-vrm": "3.5.5",
+  "esbuild": "0.25.10",
+  "meshoptimizer": "0.22.0",
+  "three": "0.160.0"
+ }
+}

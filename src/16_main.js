@@ -18,14 +18,22 @@ const Game = {
     G.env.set('dusk'); this.last = performance.now();
     requestAnimationFrame(t => this.loop(t));
     document.addEventListener('visibilitychange', () => { if (document.hidden && G.player && !$('#menu').hidden === false && !G.paused && Story.current) this.pause(true); });
-    this.showMenu();
-    $('#fade').style.opacity = 0;
     const hp = location.hash.replace('#', '').split('&'); const qs = hp[0]; G.auto = hp.includes('auto');
-    if (qs && Story.scenes[qs]) { this.startAudio(); this.start(qs); }
+    // anime karakter modellerini yükle (ilk açılışta indirilir, sonra önbellekten gelir)
+    Loading.show({ chapter: 'Elonth', title: 'Karakterler hazırlanıyor' });
+    $('#ld-tip').textContent = 'Modeller yükleniyor… %0';
+    VRMKit.load(f => { $('#ld-tip').textContent = 'Modeller yükleniyor… %' + Math.round(f * 100); }).then(() => {
+      window.__vrmReady = VRMKit.ready;
+      Loading.hide();
+      this.showMenu();
+      $('#fade').style.opacity = 0;
+      if (qs && Story.scenes[qs]) { this.startAudio(); this.start(qs); }
+    });
   },
   applyQuality() {
     const hi = G.settings.quality === 'high';
-    G.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, hi ? 1.6 : 1.0));
+    this.prMax = Math.min(window.devicePixelRatio || 1, hi ? 1.6 : 1.0); this.pr = this.prMax; this.frameAvg = 16; this.prT = 0;
+    G.renderer.setPixelRatio(this.pr);
     G.renderer.shadowMap.enabled = true;
     G.env.sun.shadow.mapSize.set(hi ? 2048 : 1024, hi ? 2048 : 1024); if (G.env.sun.shadow.map) { G.env.sun.shadow.map.dispose(); G.env.sun.shadow.map = null; }
   },
@@ -43,6 +51,7 @@ const Game = {
     requestAnimationFrame(t => this.loop(t));
     let raw = Math.min(0.05, (now - this.last) / 1000); this.last = now;
     G.rawDt = raw;
+    this.dynRes(raw);
     if (G.paused) { G.renderer.render(G.scene, G.camera); return; }
     let ts = G.timeScale;
     if (G.slowmo > 0) { G.slowmo -= raw; ts *= 0.28; }
@@ -63,6 +72,17 @@ const Game = {
     Portrait.process();
     G.renderer.render(G.scene, G.camera);
   },
+  // Dinamik çözünürlük: kare süresi uzun süre yüksekse piksel oranını düşür, rahatsa geri yükselt
+  dynRes(raw) {
+    if (!this.prMax || document.hidden || G.paused) return;
+    this.frameAvg = lerp(this.frameAvg, raw * 1000, 0.03); this.prT += raw;
+    if (this.prT < 3) return;
+    let pr = this.pr;
+    if (this.frameAvg > 24 && pr > 0.75) pr = Math.max(0.75, pr - 0.15);
+    else if (this.frameAvg < 14 && pr < this.prMax) pr = Math.min(this.prMax, pr + 0.1);
+    this.prT = 0;
+    if (pr !== this.pr) { this.pr = pr; G.renderer.setPixelRatio(pr); this.resize(); }
+  },
   startAudio() { Audio.init(); Audio.resume(); },
   bindMenus() {
     $('#menu').addEventListener('click', e => {
@@ -81,6 +101,7 @@ const Game = {
       if (p === 'restart') { this.pause(false); this.start(Story.current); }
       if (p === 'chapters') this.openChapters();
       if (p === 'codex') openCodex();
+      if (p === 'log') this.openLog();
       if (p === 'settings') this.openSettings();
       if (p === 'menu') { this.pause(false); this.toMenu(); }
     });
@@ -99,9 +120,10 @@ const Game = {
     const J = V3(-32.0, 0, -41.0), hy = L.h(J.x, J.z);
     const n = new NPC({ look: LOOK.joseph(18), watch: false }); n.place(J.x, J.z, Math.PI * 0.97); n.model.setStance('sitSlope', true);
     const l = new NPC({ look: LOOK.lily(15), watch: false }); l.place(J.x + 0.95, J.z + 0.2, Math.PI * 0.93); l.model.setStance('hugKnees', true);
-    const cx = J.x - 2.2, cz = J.z + 4.6;
-    Cam.shot(V3(cx, hy + 1.7, cz), V3(J.x - 7, hy + 2.2, J.z - 40), 0);
-    G.onFrame = dt => { Cam.toPos.x = cx + Math.sin(G.t * 0.06) * 0.8; Cam.toPos.y = hy + 1.7 + Math.sin(G.t * 0.09) * 0.15; };
+    // önden, gün batımına karşı: çocuklar ekranın sağ yarısında, menü solda
+    const cx = J.x + 2.9, cz = J.z - 3.9, ly = hy + 1.25;
+    Cam.shot(V3(cx, hy + 1.05, cz), V3(J.x + 1.2, ly, J.z + 0.6), 0);
+    G.onFrame = dt => { Cam.toPos.x = cx + Math.sin(G.t * 0.07) * 0.25; Cam.toPos.y = hy + 1.05 + Math.sin(G.t * 0.11) * 0.06; };
     Audio.play('title'); Audio.ambience('wind');
   },
   newGame() { Save.data.last = null; this.start(Story.order[0]); },
@@ -116,6 +138,18 @@ const Game = {
     G.paused = on; $('#pause').hidden = !on; Input.reset();
     if (on) { const s = Story.scenes[Story.current]; $('#pz-where').textContent = s ? s.chapter + ' · ' + s.title : ''; if (Audio.ctx) Audio.ctx.suspend(); }
     else { if (Audio.ctx) Audio.ctx.resume(); }
+  },
+  openLog() {
+    $('#panel').hidden = false; $('#p-title').textContent = 'Konuşma geçmişi';
+    const body = $('#p-body'); body.innerHTML = '';
+    const L = G.dlgLog || [];
+    if (!L.length) { body.innerHTML = '<p class="cx-empty">Henüz bir konuşma yok.</p>'; return; }
+    for (const e of L) {
+      const d = document.createElement('div'); d.className = 'log-row' + (e.th ? ' th' : '') + (e.nr ? ' nr' : '');
+      const n = document.createElement('b'); n.textContent = e.nr ? '' : e.n; n.style.color = e.c || ''; const t = document.createElement('span'); t.textContent = e.t;
+      d.appendChild(n); d.appendChild(t); body.appendChild(d);
+    }
+    body.scrollTop = body.scrollHeight;
   },
   openChapters() {
     $('#panel').hidden = false; $('#p-title').textContent = 'Bölümler';
@@ -142,11 +176,20 @@ const Game = {
       + `<div class="set-row"><label>Shift lock</label><div class="seg" id="s-sl"><button type="button" data-v="1">Açık</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Ekran sarsıntısı</label><div class="seg" id="s-shk"><button type="button" data-v="1">Tam</button><button type="button" data-v="0.6">Az</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Grafik</label><div class="seg" id="s-q"><button type="button" data-v="low">Akıcı</button><button type="button" data-v="high">Kaliteli</button></div></div>`
+      + `<div class="set-row"><label>Karakterler</label><div class="seg" id="s-ch"><button type="button" data-v="anime">Anime</button><button type="button" data-v="simple">Basit</button></div></div>`
+      + `<div class="set-row"><label>Diyalog</label><div class="seg" id="s-auto"><button type="button" data-v="0">Dokunarak</button><button type="button" data-v="1">Otomatik</button></div></div>`
       + `<div class="set-row"><label>Dikey kamera</label><div class="seg" id="s-inv"><button type="button" data-v="0">Normal</button><button type="button" data-v="1">Ters</button></div></div>`;
     body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); UI.applyScale(); Save.store(); }));
     const seg = (id, get, set) => { const el = $(id); const upd = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === get())); el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.v); upd(); Save.store(); }); upd(); };
     seg('#s-q', () => S.quality, v => { S.quality = v; this.applyQuality(); });
+    seg('#s-ch', () => S.chars || 'anime', v => {
+      const was = S.chars || 'anime'; S.chars = v; if (v === was) return;
+      // anime seçildiyse ve modeller yüklenmediyse şimdi yükle; sonraki sahneden itibaren geçerli
+      if (v === 'anime' && !VRMKit.ready) { VRMKit.failed = false; UI.toast('Anime karakterler yükleniyor…', 2500); VRMKit.load().then(ok => UI.toast(ok ? 'Anime karakterler hazır. Bir sonraki sahnede görünecek.' : 'Modeller yüklenemedi.', 3500)); }
+      else UI.toast('Karakter görünümü bir sonraki sahnede değişecek.', 3000);
+    });
     seg('#s-inv', () => S.invertY ? '1' : '0', v => { S.invertY = v === '1'; });
+    seg('#s-auto', () => S.autoText ? '1' : '0', v => { S.autoText = v === '1'; });
     seg('#s-sl', () => S.shiftLock ? '1' : '0', v => { S.shiftLock = v === '1'; UI.syncLock(); });
     seg('#s-shk', () => String(S.shake === undefined ? 1 : S.shake), v => { S.shake = parseFloat(v); });
   },

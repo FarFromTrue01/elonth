@@ -11,7 +11,7 @@ async def main():
     time.sleep(0.7)
     try:
         async with async_playwright() as p:
-            b = await p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
+            b = await p.chromium.launch(executable_path=(os.environ.get('CHROME') or ('/opt/pw-browsers/chromium' if os.path.exists('/opt/pw-browsers/chromium') else None)), args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
             pg = await b.new_page(viewport={'width': 1024, 'height': 640})
             logs = []
             pg.on('console', lambda m: logs.append(f'[{m.type}] {m.text}') if m.type in ('error', 'warning', 'log') and 'TUNNEL' not in m.text and 'AudioContext' not in m.text else None)
@@ -26,7 +26,7 @@ async def main():
                 await pg.wait_for_timeout(every * 1000)
                 n += 1
                 cur = await pg.evaluate("__Story.current")
-                info = await pg.evaluate("(()=>{const d=document.querySelector('#dialog .dtext');return (document.querySelector('#dialog').hidden?'':d.textContent.slice(0,60))+' | obj:'+document.querySelector('#obj-text').textContent})()")
+                info = await pg.evaluate("(()=>{const d=document.querySelector('#dialog .dtext');const ri=__G.renderer.info.render;return (document.querySelector('#dialog').hidden?'':d.textContent.slice(0,60))+' | obj:'+document.querySelector('#obj-text').textContent+' | calls '+ri.calls+' tris '+ri.triangles+' actors '+__G.actors.length})()")
                 await pg.screenshot(path=f'{pref}{n}.png')
                 print(f'{n} t={time.time()-t0:.0f}s scene={cur} {info}')
                 if cur != scene: break

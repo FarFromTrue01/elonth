@@ -2,7 +2,7 @@
 class Actor {
   constructor(o = {}) {
     this.o = o; this.name = o.name || ''; this.id = o.id || this.name;
-    this.model = o.model || new Humanoid(o.look || {});
+    this.model = o.model || makeHumanoid(o.look || {});
     this.root = this.model.root; G.scene.add(this.root);
     this.pos = V3(); this.vel = V3(); this.kv = V3(); this.facing = 0; this.wantFacing = null;
     this.scale = this.model.o ? this.model.o.scale : 1; this.radius = o.radius || 0.32 * Math.max(0.7, this.scale);
@@ -123,7 +123,7 @@ class Player extends Actor {
     if (t) { this.faceNow(t); } else { this.facing = this.wantFacing = Math.atan2(dx, dz); }
     this.atk = { def, t: 0, hitDone: false, kind, target: t };
     this.model.play(def.anim, ACTIONS[def.anim].dur / def.dur);
-    this.state = kind; this.stateT = 0; Audio.sfx('whoosh', def.heavy ? 1.2 : 0.8);
+    this.state = kind; this.stateT = 0; Audio.sfx('whoosh', def.heavy ? 1.2 : 0.8); this.model.emote('fierce', def.dur + 0.3);
   }
   update(dt) {
     if (!this.alive) return;
@@ -224,8 +224,8 @@ class Player extends Actor {
       if (this.noDeath) { this.hp = 1; this.downs = (this.downs || 0) + 1; }
       else { this.hp = 0; this.alive = false; this.state = 'dead'; this.model.setStance('lie'); this.vel.set(0, 0, 0); if (this.onDeath) this.onDeath(); return 'hit'; }
     }
-    if (def.heavy || def.knockdown) { this.state = 'knock'; this.stateT = 0; this.model.play('knock'); this.iframes = 1.2; }
-    else { this.state = 'hitstun'; this.stateT = 0; this.model.play('hit'); this.iframes = 0.25; }
+    if (def.heavy || def.knockdown) { this.state = 'knock'; this.stateT = 0; this.model.play('knock'); this.iframes = 1.2; this.model.emote('pain', 1.5); }
+    else { this.state = 'hitstun'; this.stateT = 0; this.model.play('hit'); this.iframes = 0.25; this.model.emote('pain', 0.6); }
     if (this.onHurt) this.onHurt(def);
     return 'hit';
   }

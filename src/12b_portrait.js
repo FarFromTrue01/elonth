@@ -46,8 +46,8 @@ const Portrait = {
     this.scene.background = o.bgColor ? new T.Color(o.bgColor) : this.bg(o.color || '#888');
     // modeli geçici olarak portre sahnesine al
     const olv = m.outlines.map(q => q.visible); for (const q of m.outlines) q.visible = true;
-    const fs = m.faceState.split('|'), fm = m.faceMat.map;
-    m.faceMat.map = m.faceTexFor(m.expr, m.closedEyes ? 'closed' : (fs[1] || 'open'), o.mouth || fs[2] || 'closed');
+    const fs = m.faceState.split('|'), fm = m.faceMat ? m.faceMat.map : null;
+    if (m.faceMat) m.faceMat.map = m.faceTexFor(m.expr, m.closedEyes ? 'closed' : (fs[1] || 'open'), o.mouth || fs[2] || 'closed');
     this.scene.add(root); root.updateMatrixWorld(true);
     const hd = m.head, Hh = m.D.headH;
     const top = Hh + 0.07, bot = o.bot !== undefined ? o.bot * Hh : -0.29, cy = (top + bot) / 2, half = (top - bot) / 2 * 1.04;
@@ -66,7 +66,7 @@ const Portrait = {
     finally {
       r.setScissorTest(false); r.setViewport(0, 0, size.x, size.y);
       par.add(root); root.updateMatrixWorld(true);
-      m.faceMat.map = fm; m.outlines.forEach((q, i) => q.visible = olv[i]);
+      if (m.faceMat) m.faceMat.map = fm; m.outlines.forEach((q, i) => q.visible = olv[i]);
     }
     const cw = cv.width, ch = cv.height;
     cv.getContext('2d').drawImage(r.domElement, 0, r.domElement.height - ch, cw, ch, 0, 0, cw, ch);

@@ -18,10 +18,17 @@ const Game = {
     G.env.set('dusk'); this.last = performance.now();
     requestAnimationFrame(t => this.loop(t));
     document.addEventListener('visibilitychange', () => { if (document.hidden && G.player && !$('#menu').hidden === false && !G.paused && Story.current) this.pause(true); });
-    this.showMenu();
-    $('#fade').style.opacity = 0;
     const hp = location.hash.replace('#', '').split('&'); const qs = hp[0]; G.auto = hp.includes('auto');
-    if (qs && Story.scenes[qs]) { this.startAudio(); this.start(qs); }
+    // anime karakter modellerini yükle (ilk açılışta indirilir, sonra önbellekten gelir)
+    Loading.show({ chapter: 'Elonth', title: 'Karakterler hazırlanıyor' });
+    $('#ld-tip').textContent = 'Modeller yükleniyor… %0';
+    VRMKit.load(f => { $('#ld-tip').textContent = 'Modeller yükleniyor… %' + Math.round(f * 100); }).then(() => {
+      window.__vrmReady = VRMKit.ready;
+      Loading.hide();
+      this.showMenu();
+      $('#fade').style.opacity = 0;
+      if (qs && Story.scenes[qs]) { this.startAudio(); this.start(qs); }
+    });
   },
   applyQuality() {
     const hi = G.settings.quality === 'high';

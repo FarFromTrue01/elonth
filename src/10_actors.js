@@ -2,7 +2,7 @@
 class Actor {
   constructor(o = {}) {
     this.o = o; this.name = o.name || ''; this.id = o.id || this.name;
-    this.model = o.model || new Humanoid(o.look || {});
+    this.model = o.model || makeHumanoid(o.look || {});
     this.root = this.model.root; G.scene.add(this.root);
     this.pos = V3(); this.vel = V3(); this.kv = V3(); this.facing = 0; this.wantFacing = null;
     this.scale = this.model.o ? this.model.o.scale : 1; this.radius = o.radius || 0.32 * Math.max(0.7, this.scale);

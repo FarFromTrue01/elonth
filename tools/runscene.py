@@ -11,7 +11,7 @@ async def main():
     time.sleep(0.7)
     try:
         async with async_playwright() as p:
-            b = await p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
+            b = await p.chromium.launch(executable_path=(os.environ.get('CHROME') or ('/opt/pw-browsers/chromium' if os.path.exists('/opt/pw-browsers/chromium') else None)), args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
             pg = await b.new_page(viewport={'width': 1024, 'height': 640})
             logs = []
             pg.on('console', lambda m: logs.append(f'[{m.type}] {m.text}') if m.type in ('error', 'warning', 'log') and 'TUNNEL' not in m.text and 'AudioContext' not in m.text else None)

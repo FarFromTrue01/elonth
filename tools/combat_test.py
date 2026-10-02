@@ -8,7 +8,7 @@ async def main():
     time.sleep(0.7)
     try:
         async with async_playwright() as p:
-            b = await p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
+            b = await p.chromium.launch(executable_path=(os.environ.get('CHROME') or ('/opt/pw-browsers/chromium' if os.path.exists('/opt/pw-browsers/chromium') else None)), args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
             pg = await b.new_page(viewport={'width': 1024, 'height': 640})
             logs = []
             pg.on('pageerror', lambda e: logs.append(f'[pageerror] {e}'))

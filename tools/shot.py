@@ -9,12 +9,12 @@ async def main():
     time.sleep(0.8)
     try:
         async with async_playwright() as p:
-            b = await p.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
+            b = await p.chromium.launch(executable_path=(os.environ.get('CHROME') or ('/opt/pw-browsers/chromium' if os.path.exists('/opt/pw-browsers/chromium') else None)), args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
             pg = await b.new_page(viewport={'width': 1280, 'height': 800})
             logs = []
             pg.on('console', lambda m: logs.append(f'[{m.type}] {m.text}'))
             pg.on('pageerror', lambda e: logs.append(f'[pageerror] {e}'))
-            await pg.goto(f'http://localhost:{os.environ.get('PORT','8765')}/index.html#{h}')
+            await pg.goto(f'http://localhost:{os.environ.get("PORT","8765")}/index.html#{h}')
             t0 = 0
             for j in js:
                 if j.startswith('wait:'):

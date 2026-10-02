@@ -11,7 +11,8 @@ Story.def('lineup', { chapter: 'Debug', title: 'Lineup', debug: true }, async S 
 });
 Story.def('closeup', { chapter: 'Debug', title: 'Closeup', debug: true }, async S => {
   const L = await S.level(() => buildVillage({}), 'day');
-  const looks = (location.hash.includes('b') ? [LOOK.clara(18), LOOK.lily(12), LOOK.isolde(), LOOK.seraphine(), LOOK.marta(), LOOK.daniel()] : [LOOK.joseph(18), LOOK.nora(18), LOOK.clara(18), LOOK.leo(18)]);
+  const cm = location.hash.match(/c=([\w,]+)/);
+  const looks = cm ? cm[1].split(',').map(k => { const [n, ag] = k.split('_'); return ag ? LOOK[n](+ag) : LOOK[n](); }) : (location.hash.includes('b') ? [LOOK.clara(18), LOOK.lily(12), LOOK.isolde(), LOOK.seraphine(), LOOK.marta(), LOOK.daniel()] : [LOOK.joseph(18), LOOK.nora(18), LOOK.clara(18), LOOK.leo(18)]);
   const acts = looks.map((lk, i) => npc(lk, -0.5 * (looks.length - 1) * 0.8 + i * 0.8, 3, i % 2 ? 0.4 : -0.4, { watch: false }));
   window.__acts = acts;
   S.cine(true);

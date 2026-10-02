@@ -50,6 +50,7 @@ const STANCES = {
   carry: { full: false, p: { shLx: -0.85, shRx: -0.85, shLz: -0.15, shRz: 0.15, elL: -1.25, elR: -1.25 } },
   cry: { full: false, p: { shLx: -1.9, shRx: -1.9, shLz: -0.45, shRz: 0.45, elL: -2.4, elR: -2.4, hdX: 0.45, spX: 0.25 } },
   think: { full: false, p: { shRx: -1.1, shRz: 0.3, elR: -2.3, shLx: -0.5, shLz: -0.3, elL: -1.6, hdX: 0.1, hdZ: 0.12 } },
+  ride: { full: true, p: { lift: -0.48, lgLx: -0.5, knL: 0.9, lgRx: -0.5, knR: 0.9, lgLz: 0.45, lgRz: -0.45, shLx: -0.45, shRx: -0.45, elL: -0.6, elR: -0.6 } },
   sit: { full: true, p: { lift: -0.48, lgLx: -1.55, knL: 1.55, lgRx: -1.5, knR: 1.6, lgLz: 0.06, lgRz: -0.06, shLx: -0.45, shRx: -0.45, elL: -0.6, elR: -0.6 } },
   sitGround: { full: true, p: { lift: -0.86, lgLx: -1.45, knL: 0.3, lgRx: -1.45, knR: 0.35, shLx: 0.4, shRx: 0.4, elL: -0.2, elR: -0.2, spX: -0.1 } },
   sitSlope: { full: true, p: { lift: -0.8, lgLx: -1.12, knL: 0.55, lgRx: -1.18, knR: 0.48, shLx: 0.45, shRx: 0.45, elL: -0.2, elR: -0.2, spX: -0.12 } },
@@ -64,8 +65,108 @@ const STANCES = {
 };
 
 
-class Humanoid {
+// Poz bileşimi (yürüme, duruş, aksiyon, bakış): Humanoid ve VRMHumanoid ortak kullanır
+class PoseRig {
+  setStance(name, instant) { if (name === this.stanceName) return; this.prevStance = this.stance; this.prevW = this.stanceW; this.stance = name ? STANCES[name] : null; this.stanceName = name; this.stanceW = instant ? 1 : 0; if (instant) this.prevW = 0; }
+  setUpper(name) { this.upperSt = name; this.upperW = 0; }
+  play(name, speedMul = 1) { const a = ACTIONS[name]; if (!a) return 0; this.act = { a, t: 0, dur: a.dur / speedMul, name }; return this.act.dur; }
+  stop() { this.act = null; }
+  flash(color = '#ffffff', t = 0.12) { this.flashT = t; for (const m of this.allMats) { m.emissive.set(color); } }
+  // base: hareket + nefes; poz bileşimi
+  update(dt, speed) {
+    const p = this.base, o = this.o; for (const k of POSE_KEYS) p[k] = 0;
+    const t = G.t + this.idleSeed;
+    p.shLz = 0.09; p.shRz = -0.09; p.elL = -0.12; p.elR = -0.12;
+    p.spX = 0.015 * Math.sin(t * 1.7) * this.breathe; p.shLz += 0.015 * Math.sin(t * 1.7); p.shRz -= 0.015 * Math.sin(t * 1.7);
+    p.hdY = 0.08 * Math.sin(t * 0.37); p.hdX = 0.03 * Math.sin(t * 0.53);
+    const st = this.stance;
+    const full = st && st.full;
+    if (speed > 0.05 && !full) {
+      const walkS = 1.6, a = clamp(speed / walkS, 0, 1), r = clamp((speed - 2.2) / 2.3, 0, 1);
+      this.phase += dt * (speed * (r > 0 ? 2.3 : 3.6) + 1.2 * a) / Math.max(0.7, o.scale);
+      const ph = this.phase, s = Math.sin(ph), c = Math.cos(ph);
+      const amp = (0.42 + 0.35 * r) * a;
+      p.lgLx = -s * amp; p.lgRx = s * amp;
+      p.knL = (0.12 + Math.max(0, c) * (0.55 + 0.7 * r)) * a; p.knR = (0.12 + Math.max(0, -c) * (0.55 + 0.7 * r)) * a;
+      p.shLx = s * (0.4 + 0.45 * r) * a; p.shRx = -s * (0.4 + 0.45 * r) * a;
+      p.elL = -0.2 - 1.0 * r; p.elR = -0.2 - 1.0 * r;
+      p.bob = Math.abs(c) * (0.03 + 0.05 * r) * a - 0.02 * r;
+      p.spX += 0.06 * a + 0.16 * r; p.spY = s * 0.1 * a; p.hdY = -s * 0.06 * a;
+      this.stepPhase = ph;
+    } else if (!full) { this.phase = 0; }
+    // duruş
+    if (st) { this.stanceW = Math.min(1, this.stanceW + dt * 5); }
+    const P = this.pose;
+    for (const k of POSE_KEYS) P[k] = p[k];
+    const blendIn = (src, w, keepLegs) => { for (const k in src) { if (keepLegs && speed > 0.05 && (k[0] === 'l' || k[0] === 'k' || k === 'lift')) continue; P[k] = lerp(P[k], src[k] + (k === 'spX' || k === 'hdX' ? p[k] * 0.3 : 0), w); } };
+    if (this.prevStance && this.prevW > 0) { this.prevW = Math.max(0, this.prevW - dt * 4); blendIn(this.prevStance.p, smooth(this.prevW) * (1 - smooth(this.stanceW)), !this.prevStance.full); }
+    if (st) blendIn(st.p, smooth(this.stanceW), !st.full);
+    if (this.upperSt) { this.upperW = Math.min(1, (this.upperW || 0) + dt * 4); const up = STANCES[this.upperSt].p, w = smooth(this.upperW); for (const k in up) { if (k[0] === 'l' || k[0] === 'k' || k === 'roll' || k === 'rollZ') continue; P[k] = lerp(P[k], up[k] + (k === 'lift' ? P.lift : 0), w); } }
+    // aksiyon
+    if (this.act) {
+      const A = this.act; A.t += dt; const u = clamp(A.t / A.dur, 0, 1);
+      const keys = A.a.keys; const vals = {};
+      // anahtarlarda eksik alanları ileri taşı
+      let i = 0; while (i < keys.length - 1 && keys[i + 1].t <= u) i++;
+      const k0 = keys[i], k1 = keys[Math.min(i + 1, keys.length - 1)];
+      const f = k1 === k0 ? 1 : smooth(clamp((u - k0.t) / (k1.t - k0.t), 0, 1));
+      const val = (key, idx) => { for (let j = idx; j >= 0; j--) if (keys[j][key] !== undefined) return keys[j][key]; return P[key]; };
+      const fields = A.fields || (A.fields = [...new Set(keys.flatMap(k => Object.keys(k)).filter(k => k !== 't'))]);
+      const w = Math.min(1, u / 0.06, (1 - u) / 0.12 + 0.0001);
+      for (const key of fields) { const v = lerp(val(key, i), val(key, Math.min(i + 1, keys.length - 1)), f); P[key] = lerp(P[key], v, clamp(w, 0, 1)); }
+      if (A.t >= A.dur) this.act = A.hold ? A : null;
+    }
+    // bakış
+    if (this.lookTarget) {
+      const wp = this.root.position, lt = this.lookTarget.isVector3 ? this.lookTarget : this.lookTarget.position;
+      const ya = Math.atan2(lt.x - wp.x, lt.z - wp.z) - this.root.rotation.y;
+      const want = clamp(angDiff(0, ya), -1.1, 1.1);
+      this.lookYaw = damp(this.lookYaw, Math.abs(angDiff(0, ya)) > 2.2 ? 0 : want, 6, dt);
+      const dy = (lt.y + (this.lookTarget.isVector3 ? 0 : 1.4 * (this.lookTarget.scale ? this.lookTarget.scale.x : 1))) - (wp.y + this.D.height * this.o.scale * 0.92);
+      const dist = Math.max(0.5, Math.hypot(lt.x - wp.x, lt.z - wp.z));
+      this.lookPitch = damp(this.lookPitch, clamp(-Math.atan2(dy, dist), -0.5, 0.5), 6, dt);
+    } else { this.lookYaw = damp(this.lookYaw, 0, 4, dt); this.lookPitch = damp(this.lookPitch, 0, 4, dt); }
+    P.hdY += this.lookYaw * 0.75; P.spY += this.lookYaw * 0.25; P.hdX += this.lookPitch;
+    this.apply(P, dt, speed);
+    // göz kırpma, konuşma
+    this.updateFace(dt);
+    if (this.flashT > 0) { this.flashT -= dt; if (this.flashT <= 0) for (const m of this.allMats) m.emissive.set('#000000'); }
+  }
+  setWeapon(type) {
+    if (this.weapon) { this.handR.remove(this.weapon); this.weapon = null; }
+    if (!type) return;
+    const g = new T.Group(); g.position.set(0, -0.06, 0.02);
+    const add = (geo, c, m) => { const k = c; const mesh = new T.Mesh(geo, this.mat(k)); mesh.applyMatrix4(m); mesh.castShadow = true; g.add(mesh); const ol = new T.Mesh(geo, TOON.outline); ol.applyMatrix4(m); g.add(ol); return mesh; };
+    const B = () => new T.BoxGeometry(1, 1, 1), C = (n = 8) => new T.CylinderGeometry(0.5, 0.5, 1, n), Sp = () => sphGeo(10, 8);
+    if (type === 'stick') { add(C(6), '#7a5434', mtx(0, 0, 0.32, 0.05, 0.95, 0.05, Math.PI / 2)); }
+    if (type === 'sword') { add(B(), '#d8dde3', mtx(0, 0, 0.52, 0.025, 0.06, 0.82)); add(B(), '#c9a85a', mtx(0, 0, 0.1, 0.2, 0.04, 0.04)); add(C(), '#4a3020', mtx(0, 0, 0, 0.035, 0.16, 0.035, Math.PI / 2)); }
+    if (type === 'woodsword') { add(B(), '#a77b4e', mtx(0, 0, 0.42, 0.03, 0.06, 0.66)); add(B(), '#6a4a2e', mtx(0, 0, 0.08, 0.16, 0.04, 0.04)); }
+    if (type === 'staff') { add(C(6), '#4a3424', mtx(0, 0.55, 0, 0.045, 1.7, 0.045)); const gm = new T.Mesh(new T.OctahedronGeometry(0.5), new T.MeshBasicMaterial({ color: '#bff0ff' })); gm.scale.set(0.12, 0.18, 0.12); gm.position.set(0, 1.45, 0); g.add(gm); }
+    if (type === 'lantern') { add(B(), '#3a3026', mtx(0, -0.12, 0, 0.12, 0.16, 0.12)); const l = new T.Mesh(new T.BoxGeometry(0.09, 0.12, 0.09), new T.MeshBasicMaterial({ color: '#ffcf70' })); l.position.set(0, -0.12, 0); g.add(l); }
+    if (type === 'bucket') { add(C(10), '#6a5038', mtx(0, -0.2, 0, 0.22, 0.24, 0.22)); }
+    if (type === 'pitchfork') { add(C(5), '#7a5434', mtx(0, 0.3, 0, 0.04, 1.6, 0.04)); for (let i = -1; i <= 1; i++) add(C(4), '#8a8d90', mtx(i * 0.05, 1.15, 0, 0.015, 0.25, 0.015)); }
+    if (type === 'bowl') { add(C(10), '#8a6a48', mtx(0, -0.06, 0.06, 0.18, 0.07, 0.18)); }
+    if (type === 'book') { add(B(), '#6b2b2b', mtx(0, -0.05, 0.05, 0.16, 0.04, 0.22)); }
+    if (type === 'cup') { add(C(10), '#9a8a70', mtx(0, -0.05, 0.03, 0.08, 0.1, 0.08)); }
+    if (type === 'bread') { add(Sp(), '#c8955a', mtx(0, -0.05, 0.06, 0.14, 0.11, 0.3)); }
+    if (type === 'jar') { add(C(10), '#b8c8a8', mtx(0, -0.06, 0.04, 0.09, 0.11, 0.09)); add(C(10), '#6a5038', mtx(0, 0.0, 0.04, 0.1, 0.03, 0.1)); }
+    if (type === 'pouch') { add(Sp(), '#7a5a3a', mtx(0, -0.07, 0.05, 0.13, 0.12, 0.13)); }
+    if (type === 'apple') { add(Sp(), '#c83a2a', mtx(0, -0.05, 0.05, 0.08, 0.08, 0.08)); }
+    if (type === 'sheaf') { add(C(8), '#d8b45a', mtx(0, 0.0, 0.18, 0.22, 0.75, 0.22, 0.4)); add(C(8), '#8a6a30', mtx(0, 0.0, 0.18, 0.24, 0.06, 0.24, 0.4)); }
+    if (type === 'charm') { add(new T.TorusGeometry(0.5, 0.15, 5, 12), '#a07848', mtx(0, -0.06, 0.05, 0.07, 0.07, 0.07)); }
+    this.weapon = g; this.handR.add(g);
+  }
+  initRig() {
+    this.pose = blankPose(); this.base = blankPose(); this.act = null; this.stance = null; this.stanceW = 0; this.stanceName = null;
+    this.phase = 0; this.speed = 0; this.runSpeed = 4.5; this.blinkT = frand(1, 4); this.lookTarget = null; this.lookYaw = 0; this.lookPitch = 0;
+    this.talking = false; this.flashT = 0; this.capeSwing = 0; this.weapon = null; this.idleSeed = Math.random() * 10; this.talkT = 0;
+    this.breathe = 1;
+  }
+}
+
+class Humanoid extends PoseRig {
   constructor(o) {
+    super();
     this.o = o = Object.assign({ scale: 1, female: false, child: 0, skin: SKIN.light, hair: '#3a2a1c', hairStyle: 'short', eyes: '#4a3424', shirt: '#7a6a55', sleeves: 'short', pants: '#4b4033', shoes: '#3a2b20', extras: [] }, o);
     this.mats = {}; this.allMats = []; this.parts = []; this.meshes = []; this.outlines = [];
     const root = this.root = new T.Group();
@@ -143,10 +244,7 @@ class Humanoid {
     this.building = false;
     this.finalize();
     root.scale.setScalar(o.scale);
-    this.pose = blankPose(); this.base = blankPose(); this.act = null; this.stance = null; this.stanceW = 0; this.stanceName = null;
-    this.phase = 0; this.speed = 0; this.runSpeed = 4.5; this.blinkT = frand(1, 4); this.lookTarget = null; this.lookYaw = 0; this.lookPitch = 0;
-    this.talking = false; this.flashT = 0; this.capeSwing = 0; this.weapon = null; this.idleSeed = Math.random() * 10; this.talkT = 0;
-    this.breathe = 1;
+    this.initRig();
   }
   // malzeme anahtarı: renk, '|2' çift yüz (kontursuz)
   mat(key) {
@@ -331,30 +429,6 @@ class Humanoid {
     }
     if (!this.building && this.parts.length) this.finalize();
   }
-  setWeapon(type) {
-    if (this.weapon) { this.handR.remove(this.weapon); this.weapon = null; }
-    if (!type) return;
-    const g = new T.Group(); g.position.set(0, -0.06, 0.02);
-    const add = (geo, c, m) => { const k = c; const mesh = new T.Mesh(geo, this.mat(k)); mesh.applyMatrix4(m); mesh.castShadow = true; g.add(mesh); const ol = new T.Mesh(geo, TOON.outline); ol.applyMatrix4(m); g.add(ol); return mesh; };
-    const B = () => new T.BoxGeometry(1, 1, 1), C = (n = 8) => new T.CylinderGeometry(0.5, 0.5, 1, n), Sp = () => sphGeo(10, 8);
-    if (type === 'stick') { add(C(6), '#7a5434', mtx(0, 0, 0.32, 0.05, 0.95, 0.05, Math.PI / 2)); }
-    if (type === 'sword') { add(B(), '#d8dde3', mtx(0, 0, 0.52, 0.025, 0.06, 0.82)); add(B(), '#c9a85a', mtx(0, 0, 0.1, 0.2, 0.04, 0.04)); add(C(), '#4a3020', mtx(0, 0, 0, 0.035, 0.16, 0.035, Math.PI / 2)); }
-    if (type === 'woodsword') { add(B(), '#a77b4e', mtx(0, 0, 0.42, 0.03, 0.06, 0.66)); add(B(), '#6a4a2e', mtx(0, 0, 0.08, 0.16, 0.04, 0.04)); }
-    if (type === 'staff') { add(C(6), '#4a3424', mtx(0, 0.55, 0, 0.045, 1.7, 0.045)); const gm = new T.Mesh(new T.OctahedronGeometry(0.5), new T.MeshBasicMaterial({ color: '#bff0ff' })); gm.scale.set(0.12, 0.18, 0.12); gm.position.set(0, 1.45, 0); g.add(gm); }
-    if (type === 'lantern') { add(B(), '#3a3026', mtx(0, -0.12, 0, 0.12, 0.16, 0.12)); const l = new T.Mesh(new T.BoxGeometry(0.09, 0.12, 0.09), new T.MeshBasicMaterial({ color: '#ffcf70' })); l.position.set(0, -0.12, 0); g.add(l); }
-    if (type === 'bucket') { add(C(10), '#6a5038', mtx(0, -0.2, 0, 0.22, 0.24, 0.22)); }
-    if (type === 'pitchfork') { add(C(5), '#7a5434', mtx(0, 0.3, 0, 0.04, 1.6, 0.04)); for (let i = -1; i <= 1; i++) add(C(4), '#8a8d90', mtx(i * 0.05, 1.15, 0, 0.015, 0.25, 0.015)); }
-    if (type === 'bowl') { add(C(10), '#8a6a48', mtx(0, -0.06, 0.06, 0.18, 0.07, 0.18)); }
-    if (type === 'book') { add(B(), '#6b2b2b', mtx(0, -0.05, 0.05, 0.16, 0.04, 0.22)); }
-    if (type === 'cup') { add(C(10), '#9a8a70', mtx(0, -0.05, 0.03, 0.08, 0.1, 0.08)); }
-    if (type === 'bread') { add(Sp(), '#c8955a', mtx(0, -0.05, 0.06, 0.14, 0.11, 0.3)); }
-    if (type === 'jar') { add(C(10), '#b8c8a8', mtx(0, -0.06, 0.04, 0.09, 0.11, 0.09)); add(C(10), '#6a5038', mtx(0, 0.0, 0.04, 0.1, 0.03, 0.1)); }
-    if (type === 'pouch') { add(Sp(), '#7a5a3a', mtx(0, -0.07, 0.05, 0.13, 0.12, 0.13)); }
-    if (type === 'apple') { add(Sp(), '#c83a2a', mtx(0, -0.05, 0.05, 0.08, 0.08, 0.08)); }
-    if (type === 'sheaf') { add(C(8), '#d8b45a', mtx(0, 0.0, 0.18, 0.22, 0.75, 0.22, 0.4)); add(C(8), '#8a6a30', mtx(0, 0.0, 0.18, 0.24, 0.06, 0.24, 0.4)); }
-    if (type === 'charm') { add(new T.TorusGeometry(0.5, 0.15, 5, 12), '#a07848', mtx(0, -0.06, 0.05, 0.07, 0.07, 0.07)); }
-    this.weapon = g; this.handR.add(g);
-  }
   updateFace(dt) {
     this.blinkT -= dt;
     const blink = this.closedEyes || (this.blinkT < 0.12 && this.blinkT > 0);
@@ -366,71 +440,6 @@ class Humanoid {
     if (k !== this.faceState) { this.faceState = k; this.faceMat.map = this.faceTexFor(this.expr, eyes, mouth); }
     // uzakta kontur kapalı
     if (G.camera && (this._olT = (this._olT || 0) + dt) > 0.4) { this._olT = 0; const far = G.camera.position.distanceTo(this.root.getWorldPosition(_v3a)) > 34; for (const ol of this.outlines) ol.visible = !far; }
-  }
-  setStance(name, instant) { if (name === this.stanceName) return; this.prevStance = this.stance; this.prevW = this.stanceW; this.stance = name ? STANCES[name] : null; this.stanceName = name; this.stanceW = instant ? 1 : 0; if (instant) this.prevW = 0; }
-  setUpper(name) { this.upperSt = name; this.upperW = 0; }
-  play(name, speedMul = 1) { const a = ACTIONS[name]; if (!a) return 0; this.act = { a, t: 0, dur: a.dur / speedMul, name }; return this.act.dur; }
-  stop() { this.act = null; }
-  flash(color = '#ffffff', t = 0.12) { this.flashT = t; for (const m of this.allMats) { m.emissive.set(color); } }
-  // base: hareket + nefes; poz bileşimi
-  update(dt, speed) {
-    const p = this.base, o = this.o; for (const k of POSE_KEYS) p[k] = 0;
-    const t = G.t + this.idleSeed;
-    p.shLz = 0.09; p.shRz = -0.09; p.elL = -0.12; p.elR = -0.12;
-    p.spX = 0.015 * Math.sin(t * 1.7) * this.breathe; p.shLz += 0.015 * Math.sin(t * 1.7); p.shRz -= 0.015 * Math.sin(t * 1.7);
-    p.hdY = 0.08 * Math.sin(t * 0.37); p.hdX = 0.03 * Math.sin(t * 0.53);
-    const st = this.stance;
-    const full = st && st.full;
-    if (speed > 0.05 && !full) {
-      const walkS = 1.6, a = clamp(speed / walkS, 0, 1), r = clamp((speed - 2.2) / 2.3, 0, 1);
-      this.phase += dt * (speed * (r > 0 ? 2.3 : 3.6) + 1.2 * a) / Math.max(0.7, o.scale);
-      const ph = this.phase, s = Math.sin(ph), c = Math.cos(ph);
-      const amp = (0.42 + 0.35 * r) * a;
-      p.lgLx = -s * amp; p.lgRx = s * amp;
-      p.knL = (0.12 + Math.max(0, c) * (0.55 + 0.7 * r)) * a; p.knR = (0.12 + Math.max(0, -c) * (0.55 + 0.7 * r)) * a;
-      p.shLx = s * (0.4 + 0.45 * r) * a; p.shRx = -s * (0.4 + 0.45 * r) * a;
-      p.elL = -0.2 - 1.0 * r; p.elR = -0.2 - 1.0 * r;
-      p.bob = Math.abs(c) * (0.03 + 0.05 * r) * a - 0.02 * r;
-      p.spX += 0.06 * a + 0.16 * r; p.spY = s * 0.1 * a; p.hdY = -s * 0.06 * a;
-      this.stepPhase = ph;
-    } else if (!full) { this.phase = 0; }
-    // duruş
-    if (st) { this.stanceW = Math.min(1, this.stanceW + dt * 5); }
-    const P = this.pose;
-    for (const k of POSE_KEYS) P[k] = p[k];
-    const blendIn = (src, w, keepLegs) => { for (const k in src) { if (keepLegs && speed > 0.05 && (k[0] === 'l' || k[0] === 'k' || k === 'lift')) continue; P[k] = lerp(P[k], src[k] + (k === 'spX' || k === 'hdX' ? p[k] * 0.3 : 0), w); } };
-    if (this.prevStance && this.prevW > 0) { this.prevW = Math.max(0, this.prevW - dt * 4); blendIn(this.prevStance.p, smooth(this.prevW) * (1 - smooth(this.stanceW)), !this.prevStance.full); }
-    if (st) blendIn(st.p, smooth(this.stanceW), !st.full);
-    if (this.upperSt) { this.upperW = Math.min(1, (this.upperW || 0) + dt * 4); const up = STANCES[this.upperSt].p, w = smooth(this.upperW); for (const k in up) { if (k[0] === 'l' || k[0] === 'k' || k === 'roll' || k === 'rollZ') continue; P[k] = lerp(P[k], up[k] + (k === 'lift' ? P.lift : 0), w); } }
-    // aksiyon
-    if (this.act) {
-      const A = this.act; A.t += dt; const u = clamp(A.t / A.dur, 0, 1);
-      const keys = A.a.keys; const vals = {};
-      // anahtarlarda eksik alanları ileri taşı
-      let i = 0; while (i < keys.length - 1 && keys[i + 1].t <= u) i++;
-      const k0 = keys[i], k1 = keys[Math.min(i + 1, keys.length - 1)];
-      const f = k1 === k0 ? 1 : smooth(clamp((u - k0.t) / (k1.t - k0.t), 0, 1));
-      const val = (key, idx) => { for (let j = idx; j >= 0; j--) if (keys[j][key] !== undefined) return keys[j][key]; return P[key]; };
-      const fields = A.fields || (A.fields = [...new Set(keys.flatMap(k => Object.keys(k)).filter(k => k !== 't'))]);
-      const w = Math.min(1, u / 0.06, (1 - u) / 0.12 + 0.0001);
-      for (const key of fields) { const v = lerp(val(key, i), val(key, Math.min(i + 1, keys.length - 1)), f); P[key] = lerp(P[key], v, clamp(w, 0, 1)); }
-      if (A.t >= A.dur) this.act = A.hold ? A : null;
-    }
-    // bakış
-    if (this.lookTarget) {
-      const wp = this.root.position, lt = this.lookTarget.isVector3 ? this.lookTarget : this.lookTarget.position;
-      const ya = Math.atan2(lt.x - wp.x, lt.z - wp.z) - this.root.rotation.y;
-      const want = clamp(angDiff(0, ya), -1.1, 1.1);
-      this.lookYaw = damp(this.lookYaw, Math.abs(angDiff(0, ya)) > 2.2 ? 0 : want, 6, dt);
-      const dy = (lt.y + (this.lookTarget.isVector3 ? 0 : 1.4 * (this.lookTarget.scale ? this.lookTarget.scale.x : 1))) - (wp.y + this.D.height * this.o.scale * 0.92);
-      const dist = Math.max(0.5, Math.hypot(lt.x - wp.x, lt.z - wp.z));
-      this.lookPitch = damp(this.lookPitch, clamp(-Math.atan2(dy, dist), -0.5, 0.5), 6, dt);
-    } else { this.lookYaw = damp(this.lookYaw, 0, 4, dt); this.lookPitch = damp(this.lookPitch, 0, 4, dt); }
-    P.hdY += this.lookYaw * 0.75; P.spY += this.lookYaw * 0.25; P.hdX += this.lookPitch;
-    this.apply(P, dt, speed);
-    // göz kırpma, konuşma
-    this.updateFace(dt);
-    if (this.flashT > 0) { this.flashT -= dt; if (this.flashT <= 0) for (const m of this.allMats) m.emissive.set('#000000'); }
   }
   apply(P, dt, speed) {
     this.pivot.rotation.set(P.roll, 0, P.rollZ);

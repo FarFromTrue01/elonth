@@ -80,7 +80,7 @@ Story.def('p_crash', { chapter: 'Prolog', title: 'Yağmur', sub: 'Son gece', kin
 Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir beden', kind: 'Hikâye' }, async S => {
   const L = await S.level(() => buildHut('day'), 'interior', { sunDir: [0.25, 0.55, -0.8], noSky: true });
   S.amb('interior'); S.amb('fire');
-  const p = spawnJoseph(10, -2.5, -1.25, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.model.closedEyes = true; p.solid = false; p.collides = false;
+  const p = spawnJoseph(10, -2.5, -1.25, 0); p.model.setStance('lie', true); p.lockY = 0.455; p.model.closedEyes = true; p.solid = false; p.collides = false;
   const marta = S.cast('marta', npc(LOOK.marta(), -1.55, -1.45, -Math.PI / 2, { stance: 'kneel', watch: false }));
   marta.model.setUpper('cry'); marta.pinned = true;
   const lily = S.cast('lily', npc(LOOK.lily(10), -2.45, 0.05, Math.PI, { watch: false }));
@@ -134,7 +134,7 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   await S.say('daniel', 'Bak şuna, Marta. Bize bakıyor. Gerçekten bakıyor.');
   // doğrul
   await S.fadeOut(0.5);
-  p.place(-2.12, -1.3, Math.PI / 2); p.model.setStance('sit', true); p.lockY = 0.21;
+  p.place(-2.12, -1.3, Math.PI / 2); p.model.setStance('sit', true); p.lockY = 0.42;
   lily.place(-1.3, 0.2, -2.3); marta.place(-1.25, -1.9, -1.1); marta.model.setStance(null, true); marta.pinned = false;
   daniel.place(-0.9, -0.9, -1.6);
   for (const a of [lily, marta, daniel]) a.lookAt(p.root);

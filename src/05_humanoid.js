@@ -168,7 +168,7 @@ class PoseRig {
     if (type === 'bowl') { add(C(10), '#8a6a48', mtx(0, -0.06, 0.06, 0.18, 0.07, 0.18)); }
     if (type === 'book') { add(B(), '#6b2b2b', mtx(0, -0.05, 0.05, 0.16, 0.04, 0.22)); }
     if (type === 'cup') { add(C(10), '#9a8a70', mtx(0, -0.05, 0.03, 0.08, 0.1, 0.08)); }
-    if (type === 'bread') { add(Sp(), '#c8955a', mtx(0, -0.05, 0.06, 0.14, 0.11, 0.3)); }
+    if (type === 'bread') { add(Sp(), '#d6c9a6', mtx(0, -0.07, 0.05, 0.22, 0.19, 0.26)); add(Sp(), '#c8955a', mtx(0, -0.01, 0.13, 0.12, 0.1, 0.28)); add(Sp(), '#b4a47a', mtx(0, 0.04, -0.02, 0.07, 0.07, 0.07)); }
     if (type === 'jar') { add(C(10), '#b8c8a8', mtx(0, -0.06, 0.04, 0.09, 0.11, 0.09)); add(C(10), '#6a5038', mtx(0, 0.0, 0.04, 0.1, 0.03, 0.1)); }
     if (type === 'pouch') { add(Sp(), '#7a5a3a', mtx(0, -0.07, 0.05, 0.13, 0.12, 0.13)); }
     if (type === 'apple') { add(Sp(), '#c83a2a', mtx(0, -0.05, 0.05, 0.08, 0.08, 0.08)); }
@@ -502,6 +502,13 @@ function randomVillager(female, opts = {}) {
   if (female) o.extras.push({ t: 'dress', c: pick(['#7a6a55', '#6a5a70', '#7a5040', '#5a6a5a', '#8a7a60']) }), rng() < 0.5 && o.extras.push({ t: 'apron', c: '#cfc4ad' });
   else { if (rng() < 0.35) o.extras.push({ t: 'beard', c: o.hair }); if (rng() < 0.3) o.extras.push({ t: 'hat', c: '#c9a86a' }); if (rng() < 0.4) o.extras.push({ t: 'vest', c: pick(['#5a4a3a', '#4a4030']) }); }
   o.extras.push({ t: 'belt', c: '#3a2a1e', buckle: '#6a5a40' });
+  // yaş çeşitliliği: ~%20 yaşlı, ~%25 orta yaşlı
+  const ar = rng(); const age = opts.age !== undefined ? opts.age : ar < 0.2 ? rnd(0.65, 1) : ar < 0.45 ? rnd(0.25, 0.45) : 0;
+  if (age > 0) {
+    o.age = age; o.scale *= 1 - 0.05 * age;
+    if (age > 0.55) { o.hair = pick(['#d6d2ca', '#c4c0b8', '#e2dfd8']); o.sleeves = 'long'; if (!female && !o.extras.some(e => e.t === 'beard') && rng() < 0.6) o.extras.push({ t: 'beard', c: o.hair }); if (!female && o.hairStyle === 'bald') o.hairStyle = 'short'; o.extras = o.extras.filter(e => e.t !== 'hat' || rng() < 0.6); }
+    else if (!female && rng() < 0.4) o.extras.push({ t: 'beard', c: o.hair });
+  }
   return Object.assign(o, opts);
 }
 function randomNoble(female, opts = {}) {

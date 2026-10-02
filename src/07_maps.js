@@ -78,8 +78,9 @@ function hutDetails(L, W, D, H, variant) {
   b.box(COL.woodD, -2.5, 0, -2.5, 1.06, 0.9, 0.07); b.box(COL.wood, -2.5, 0.9, -2.5, 1.12, 0.06, 0.1); b.box(COL.woodD, -2.5, 0, -0.33, 1.06, 0.6, 0.07);
   for (const sx of [-1, 1]) { b.add('cylS8', COL.woodD, -2.5 + sx * 0.53, 0.5, -2.5, 0.08, 1.0, 0.08); b.add('sphS', COL.wood, -2.5 + sx * 0.53, 1.02, -2.5, 0.1, 0.1, 0.1); b.add('cylS8', COL.woodD, -2.5 + sx * 0.53, 0.33, -0.33, 0.08, 0.66, 0.08); }
   const patch = ['#8a5a4a', '#7a6a4a', '#9a6a52', '#6a5a62', '#8a7a58'];
-  for (let i = 0; i < 3; i++) for (let j = 0; j < 4; j++) b.box(patch[(i + j * 2) % 5], -2.5 + (i - 1) * 0.31, 0.6, -1.55 + j * 0.31, 0.3, 0.015, 0.3, 0, 0, 0);
-  b.add('sphS', '#efe4cc', -2.5, 0.68, -2.15, 0.62, 0.14, 0.32);
+  b.box('#c9bc9c', -2.5, 0.3, -1.42, 1.0, 0.16, 2.14);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 6; j++) b.box(patch[(i + j * 2) % 5], -2.5 + (i - 1) * 0.33, 0.46, -2.3 + j * 0.34, 0.32, 0.012, 0.33, 0, 0, 0);
+  b.add('sphS', '#efe4cc', -2.5, 0.51, -1.92, 0.56, 0.1, 0.3);
   // Lily'nin yatağı: başlık, yastık, bez bebek; yanında bacağı kırık tahta at
   b.box(COL.woodD, 2.6, 0, -2.88, 0.86, 0.72, 0.07); b.add('sphS', COL.wood, 2.6, 0.74, -2.88, 0.86, 0.08, 0.1);
   b.add('sphS', '#f0e6d0', 2.6, 0.52, -2.62, 0.5, 0.12, 0.26);

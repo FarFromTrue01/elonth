@@ -19,7 +19,7 @@ async def main():
             await pg.add_init_script("try{localStorage.setItem('elonth.save.v1', JSON.stringify({last:null,unlocked:[],settings:{sens:1,music:0.7,sfx:0.9,quality:'low',invertY:false,textSpeed:3}}))}catch(e){}")
             await pg.goto(f'http://localhost:{port}/index.html#{scene}&auto')
             await pg.wait_for_timeout(1500)
-            await pg.evaluate("__G.timeScale = 2")
+            await pg.evaluate(f"__G.timeScale = {os.environ.get('TS', '2')}")
             await pg.evaluate(AP)
             t0 = time.time(); n = 0; last = None
             while time.time() - t0 < maxs:

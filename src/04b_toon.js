@@ -8,6 +8,9 @@ const TOON = {
     const d2 = new Uint8Array([150, 150, 150, 255, 205, 205, 205, 255, 245, 245, 245, 255, 255, 255, 255, 255]);
     const t2 = new T.DataTexture(d2, 4, 1, T.RGBAFormat); t2.minFilter = T.NearestFilter; t2.magFilter = T.NearestFilter; t2.generateMipmaps = false; t2.needsUpdate = true;
     this.gradSoft = t2;
+    const d3 = new Uint8Array([178, 178, 178, 255, 222, 222, 222, 255, 246, 246, 246, 255, 255, 255, 255, 255]);
+    const t3 = new T.DataTexture(d3, 4, 1, T.RGBAFormat); t3.minFilter = T.NearestFilter; t3.magFilter = T.NearestFilter; t3.generateMipmaps = false; t3.needsUpdate = true;
+    this.gradFace = t3;
     this.outline = new T.ShaderMaterial({
       uniforms: { thick: { value: 0.0105 }, color: { value: new T.Color('#1d1512') }, fogC: { value: new T.Color('#888') }, fogN: { value: 30 }, fogF: { value: 200 } },
       vertexShader: `uniform float thick; varying float vD;

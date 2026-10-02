@@ -57,7 +57,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .bar em { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: rgba(255,240,210,.5); transition: width .6s .25s; }
 .bar.hp i { background: linear-gradient(180deg, #d8503a, #8c2418); z-index: 1; }
 .bar.st { height: 7px; } .bar.st i { background: linear-gradient(180deg, #e8cf6a, #a88a2a); }
-#bossbar { position: absolute; left: 50%; top: calc(18px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); width: min(56vw, 640px); text-align: center; }
+#bossbar { position: absolute; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px) + 70px * var(--ui)); transform: translateX(-50%); width: min(44vw, 560px); text-align: center; }
 #bossbar .bname { font-family: var(--f-display); font-size: 20px; letter-spacing: .14em; color: var(--parch); text-shadow: 0 2px 4px #000; margin-bottom: 4px; }
 .bbar { position: relative; height: 14px; background: rgba(10,8,6,.8); border: 1px solid var(--gold2); overflow: hidden; }
 .bbar i { position: absolute; inset: 0; background: linear-gradient(180deg, #c84432, #7a1a10); transform-origin: left; transition: transform .12s; z-index: 1; }
@@ -216,6 +216,36 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .ld-title { font-family: var(--f-display); font-size: clamp(34px, 5vw, 56px); color: var(--parch); letter-spacing: .05em; font-weight: 600; }
 .ld-row { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
 .ld-tip { margin-top: 18px; font-size: 17px; font-style: italic; color: var(--muted); line-height: 1.5; border-top: 1px solid rgba(202,166,94,.25); padding-top: 14px; }
+
+/* --- diyalog portresi --- */
+#dport { position: absolute; left: 16px; bottom: 14px; width: 150px; height: 150px; transform: scale(calc(0.75 + 0.2 * var(--ui))); transform-origin: left bottom; border: 1px solid var(--gold2); background: #120e0b; box-shadow: 0 6px 22px rgba(0,0,0,.55), inset 0 0 0 3px rgba(14,11,8,.9); clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px)); animation: portIn .28s ease-out; }
+#dport canvas { width: 100%; height: 100%; display: block; }
+#dport::after { content: ''; position: absolute; inset: 0; border: 1px solid color-mix(in srgb, var(--pc, #c9a85a) 70%, transparent); clip-path: inherit; pointer-events: none; }
+#dport.dim { filter: saturate(.55) brightness(.8) sepia(.2); }
+#dialog.hasport { padding-left: calc(28px + 150px * (0.75 + 0.2 * var(--ui)) + 10px); }
+#dialog.hasport .dname { left: calc(22px + 150px * (0.75 + 0.2 * var(--ui)) + 10px); }
+#dialog.narr #dport { display: none; }
+@keyframes portIn { from { opacity: 0; transform: translateY(8px) scale(calc(0.75 + 0.2 * var(--ui))); } to { opacity: 1; transform: translateY(0) scale(calc(0.75 + 0.2 * var(--ui))); } }
+
+/* --- vuruş serisi --- */
+#streak { position: absolute; right: calc(5vw + env(safe-area-inset-right, 0px)); top: 30vh; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none; transform: scale(var(--ui)); transform-origin: right center; transition: opacity .35s, transform .35s; }
+#streak b { font-family: var(--f-sys); font-weight: 700; font-style: italic; font-size: 54px; line-height: .9; color: #f4e2b4; text-shadow: 0 2px 0 #6a4a1a, 0 0 18px rgba(255,190,90,.45); animation: stkPop .22s ease-out; }
+#streak small { font-family: var(--f-sys); font-size: 13px; letter-spacing: .32em; text-transform: uppercase; color: var(--gold); margin-top: 2px; }
+#streak.hot b { color: #ffd27a; text-shadow: 0 2px 0 #7a3a10, 0 0 26px rgba(255,140,40,.75); }
+#streak.out { opacity: 0; transform: scale(var(--ui)) translateX(20px); }
+#streak.broke { opacity: 0; transform: scale(var(--ui)) translateY(14px); filter: grayscale(1); }
+@keyframes stkPop { 0% { transform: scale(1.6); opacity: .4; } 100% { transform: scale(1); opacity: 1; } }
+
+#skip.arm { color: #1a140e; background: var(--gold); border-color: var(--gold); }
+
+/* --- günlük --- */
+.cx-item { border-bottom: 1px solid rgba(202,166,94,.14); padding: 4px 6px; }
+.cx-item summary { cursor: pointer; padding: 10px 0; font-size: 18px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.cx-item summary::-webkit-details-marker { display: none; }
+.cx-item summary::after { content: '+'; color: var(--gold); font-family: var(--f-display); font-size: 20px; }
+.cx-item[open] summary::after { content: '–'; }
+.cx-item p { margin: 0 0 12px; color: var(--parch); opacity: .86; line-height: 1.55; font-size: 16px; }
+.cx-empty { color: var(--muted); font-size: 15px; margin: 18px 4px; }
 </style></head><body>
 <div id="app">
   <div id="view"></div>
@@ -234,6 +264,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
     <div id="bossbar" hidden><div class="bname"></div><div class="bbar"><em></em><i></i></div></div>
     <div id="marker" hidden><div class="arrow"></div><span id="marker-d"></span></div>
     <div id="hpbars"></div>
+    <div id="streak" hidden><b>2</b><small>Vuruş</small></div>
     <button id="lockbtn" type="button" aria-label="Shift lock"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke-width="2.2"/><circle cx="12" cy="15.5" r="1.6" class="dot"/></svg><span>Kilit</span></button>
     <button id="pausebtn" type="button" aria-label="Duraklat"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
     <div id="actions" hidden>
@@ -246,7 +277,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   <div id="cine-top"></div><div id="cine-bot"></div>
   <button id="skip" type="button" hidden>Atla ››</button>
   <div id="dlgcatch" hidden></div>
-  <div id="dialog" hidden><div class="dname"><span class="nm"></span><span class="badge" hidden></span></div><div class="dtext"></div><div class="dnext">▾</div></div>
+  <div id="dialog" hidden><div id="dport" hidden><canvas width="240" height="240"></canvas></div><div class="dname"><span class="nm"></span><span class="badge" hidden></span></div><div class="dtext"></div><div class="dnext">▾</div></div>
   <div id="choices" hidden></div>
   <div id="titlecard" hidden><div class="kicker"></div><h1></h1><div class="rule"></div><div class="sub"></div></div>
   <div id="toast" hidden></div>
@@ -261,6 +292,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
         <button type="button" data-m="continue" id="m-continue">Devam et <small id="m-cont-sub"></small></button>
         <button type="button" data-m="new">Yeni oyun</button>
         <button type="button" data-m="chapters">Bölümler</button>
+        <button type="button" data-m="codex">Günlük</button>
         <button type="button" data-m="settings">Ayarlar</button>
         <button type="button" data-m="fullscreen" id="m-fs">Tam ekran</button>
       </nav>
@@ -275,9 +307,10 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
       <button type="button" data-p="resume">Devam et</button>
       <button type="button" data-p="restart">Sahneyi yeniden başlat</button>
       <button type="button" data-p="chapters">Bölümler</button>
+      <button type="button" data-p="codex">Günlük</button>
       <button type="button" data-p="settings">Ayarlar</button>
       <button type="button" data-p="menu">Ana menü</button>
-      <div class="pz-help"><b>Kontroller</b> Sol taraf: hareket · Sağ taraf: kamerayı çevir · Diyalog: ekrana dokun</div>
+      <div class="pz-help"><b>Kontroller</b> Sol taraf: hareket · Sağ taraf: kamerayı çevir · Kilit: shift lock · Diyalog: ekrana dokun</div>
     </div>
   </div>
   <div id="loading" hidden><div class="ld-inner"><div class="ld-chap" id="ld-chap"></div><div class="ld-title" id="ld-title"></div><div class="ld-row"><div class="ld-mark"></div><div class="ld-text">Yükleniyor</div></div><div class="ld-tip" id="ld-tip"></div></div></div>
@@ -288,7 +321,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 <script src="vendor/three.r160.js"></script>
 <script>window.ELONTH_PWA=true;</script>
 <script>(function(){'use strict';
-const BUILD="0.1.0";
+const BUILD="0.2.0";
 
 // ==== 00_util.js ====
 // ---------- Temel yardımcılar ----------
@@ -336,7 +369,7 @@ const G = {
   t: 0, dt: 0, rawDt: 0, timeScale: 1, slowmo: 0, hitstop: 0, paused: false,
   renderer: null, scene: null, camera: null, level: null, player: null,
   actors: [], allies: [], enemies: [], npcs: [],
-  settings: { sens: 1, music: 0.7, sfx: 0.9, quality: 'high', invertY: false, textSpeed: 1, shiftLock: true, uiScale: 1.25 },
+  settings: { sens: 1, music: 0.7, sfx: 0.9, quality: 'high', invertY: false, textSpeed: 1, shiftLock: true, uiScale: 1.25, shake: 0.6 },
   inScript: false, controlEnabled: true, combat: false,
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -837,6 +870,9 @@ const TOON = {
     const d2 = new Uint8Array([150, 150, 150, 255, 205, 205, 205, 255, 245, 245, 245, 255, 255, 255, 255, 255]);
     const t2 = new T.DataTexture(d2, 4, 1, T.RGBAFormat); t2.minFilter = T.NearestFilter; t2.magFilter = T.NearestFilter; t2.generateMipmaps = false; t2.needsUpdate = true;
     this.gradSoft = t2;
+    const d3 = new Uint8Array([178, 178, 178, 255, 222, 222, 222, 255, 246, 246, 246, 255, 255, 255, 255, 255]);
+    const t3 = new T.DataTexture(d3, 4, 1, T.RGBAFormat); t3.minFilter = T.NearestFilter; t3.magFilter = T.NearestFilter; t3.generateMipmaps = false; t3.needsUpdate = true;
+    this.gradFace = t3;
     this.outline = new T.ShaderMaterial({
       uniforms: { thick: { value: 0.0105 }, color: { value: new T.Color('#1d1512') }, fogC: { value: new T.Color('#888') }, fogN: { value: 30 }, fogF: { value: 200 } },
       vertexShader: `uniform float thick; varying float vD;
@@ -1035,6 +1071,7 @@ const STANCES = {
   think: { full: false, p: { shRx: -1.1, shRz: 0.3, elR: -2.3, shLx: -0.5, shLz: -0.3, elL: -1.6, hdX: 0.1, hdZ: 0.12 } },
   sit: { full: true, p: { lift: -0.48, lgLx: -1.55, knL: 1.55, lgRx: -1.5, knR: 1.6, lgLz: 0.06, lgRz: -0.06, shLx: -0.45, shRx: -0.45, elL: -0.6, elR: -0.6 } },
   sitGround: { full: true, p: { lift: -0.86, lgLx: -1.45, knL: 0.3, lgRx: -1.45, knR: 0.35, shLx: 0.4, shRx: 0.4, elL: -0.2, elR: -0.2, spX: -0.1 } },
+  sitSlope: { full: true, p: { lift: -0.8, lgLx: -1.12, knL: 0.55, lgRx: -1.18, knR: 0.48, shLx: 0.45, shRx: 0.45, elL: -0.2, elR: -0.2, spX: -0.12 } },
   hugKnees: { full: true, p: { lift: -0.82, lgLx: -2.4, knL: 2.5, lgRx: -2.4, knR: 2.5, spX: 0.55, hdX: 0.5, shLx: -1.2, shRx: -1.2, shLz: -0.2, shRz: 0.2, elL: -0.4, elR: -0.4 } },
   kneel: { full: true, p: { lift: -0.45, lgLx: -1.45, knL: 1.5, lgRx: 0.15, knR: 1.75, spX: 0.1 } },
   kneel2: { full: true, p: { lift: -0.5, lgLx: 0.05, knL: 1.65, lgRx: 0.05, knR: 1.65, spX: 0.45, hdX: 0.4, shLx: -0.5, shRx: -0.5, elL: -0.2, elR: -0.2 } },
@@ -1085,7 +1122,7 @@ class Humanoid {
     const fg = new T.SphereGeometry(0.5 * 1.012, 20, 16, Math.PI / 2 - 0.873, 1.746, 0.96, 1.4); deformHead(fg, fem ? 0.4 : 0.34);
     this.faceF = { skin: o.skin, eyes: o.eyes, female: fem, child: ch, brow: shade(o.hair, 0.55), stern: o.stern, beard: o.faceBeard, mustache: o.faceMustache, blush: o.blush };
     this.faceTex = {}; this.expr = o.expr || 'neutral'; this.faceState = '';
-    this.faceMat = TOON.mat('#ffffff', { map: this.faceTexFor('neutral', 'open', 'closed'), gradientMap: TOON.gradSoft }); this.allMats.push(this.faceMat);
+    this.faceMat = TOON.mat('#ffffff', { map: this.faceTexFor('neutral', 'open', 'closed'), gradientMap: TOON.gradFace }); this.allMats.push(this.faceMat);
     const face = new T.Mesh(fg, this.faceMat); face.position.copy(this.hc); face.scale.set(W, H, Dd); face.castShadow = false; face.userData.noBake = true; head.add(face); this.face = face;
     this.buildHair(o.hairStyle, o.hair);
     // kollar
@@ -1135,7 +1172,7 @@ class Humanoid {
     if (!this.mats[key]) {
       const [hex, flag] = key.split('|');
       const soft = hex === this.o.skin;
-      const m = TOON.mat(hex, flag === '2' ? { side: T.DoubleSide } : (flag === 'm' || soft) ? { gradientMap: TOON.gradSoft } : {});
+      const m = TOON.mat(hex, flag === '2' ? { side: T.DoubleSide } : soft ? { gradientMap: TOON.gradFace } : flag === 'm' ? { gradientMap: TOON.gradSoft } : {});
       this.mats[key] = m; this.allMats.push(m);
     }
     return this.mats[key];
@@ -1548,6 +1585,9 @@ function windMaterial(opts = {}) {
       #else
       vec4 iw = vec4(0.0);
       #endif
+      #ifdef USE_INSTANCING
+      { float cd = length(iw.xyz - cameraPosition); transformed *= smoothstep(0.7, 2.4, cd); }
+      #endif
       float hh = max(transformed.y, 0.0);
       float sw = sin(time * 1.7 + iw.x * 0.45 + iw.z * 0.38) * 0.10 + sin(time * 3.3 + iw.x * 1.3 - iw.z) * 0.035;
       transformed.x += sw * hh * hh * 2.4; transformed.z += sw * hh * hh * 1.3;`);
@@ -1905,6 +1945,91 @@ function makeTruck() {
   return g;
 }
 
+// Pencereden zemine düşen yumuşak ışık huzmesi (köşe alfa geçişli, eklemeli)
+function lightShaft(L, top, dir, color = '#fff0d0', a = 0.1, floorY = 0.02) {
+  const c = new T.Color(color), P = [], C = [];
+  const bot = top.map(v => { const t = (v[1] - floorY) / -dir[1]; return [v[0] + dir[0] * t, floorY, v[2] + dir[2] * t]; });
+  for (let i = 0; i < 4; i++) {
+    const A = top[i], B = top[(i + 1) % 4], Cc = bot[(i + 1) % 4], D = bot[i];
+    P.push(...A, ...B, ...Cc, ...A, ...Cc, ...D);
+    for (const al of [a, a, 0, a, 0, 0]) C.push(c.r, c.g, c.b, al);
+  }
+  const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(P, 3)); g.setAttribute('color', new T.Float32BufferAttribute(C, 4));
+  const m = new T.Mesh(g, new T.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide, fog: false }));
+  m.renderOrder = 5; L.add(m); return m;
+}
+// Kulübe içi ayrıntılar: ahşap lambri, dikmeler, kurutulmuş otlar, yatak başlıkları, ocak taşları, ışık huzmesi
+function hutDetails(L, W, D, H, variant) {
+  const b = L.b, gb = L.gb, wainC = '#6e5238', railC = '#4e3622';
+  // lambri + üst kuşak
+  b.box(wainC, 0, 0, -D / 2 + 0.02, W, 0.5, 0.04); b.box(railC, 0, 0.5, -D / 2 + 0.03, W, 0.06, 0.06);
+  b.box(wainC, -2.85, 0, D / 2 - 0.02, 1.3, 0.5, 0.04); b.box(wainC, 1.2, 0, D / 2 - 0.02, 4.6, 0.5, 0.04); b.box(railC, 1.2, 0.5, D / 2 - 0.03, 4.6, 0.06, 0.06); b.box(railC, -2.85, 0.5, D / 2 - 0.03, 1.3, 0.06, 0.06);
+  for (const sx of [-1, 1]) { b.box(wainC, sx * (W / 2 - 0.02), 0, 0, 0.04, 0.5, D); b.box(railC, sx * (W / 2 - 0.03), 0.5, 0, 0.06, 0.06, D); }
+  // duvar dikmeleri ve çapraz payandalar (arka ve sol duvar)
+  for (const x of [-2.25, 2.25]) b.box(COL.beam, x, 0, -D / 2 + 0.03, 0.16, H, 0.07);
+  b.add('box', COL.beam, -2.9, 1.05, -D / 2 + 0.04, 0.12, 1.25, 0.06, 0, 0, 0.62); b.add('box', COL.beam, 2.9, 1.05, -D / 2 + 0.04, 0.12, 1.25, 0.06, 0, 0, -0.62);
+  for (const z of [-1.0, 1.0]) b.box(COL.beam, -W / 2 + 0.03, 0, z, 0.07, H, 0.16);
+  b.box(COL.beam, -W / 2 + 0.03, 1.55, 0, 0.07, 0.1, D);
+  // perde (pencere)
+  for (const s of [-1, 1]) { b.add('box', '#c8b28a', s * 0.82, 1.42, -D / 2 + 0.2, 0.26, 1.05, 0.03, 0, 0, s * 0.03); b.add('box', '#b09a72', s * 0.82, 1.42, -D / 2 + 0.215, 0.06, 1.0, 0.03); }
+  b.box(COL.beamL, 0, 1.96, -D / 2 + 0.2, 1.9, 0.04, 0.04);
+  // pencere önünde saksı
+  b.add('cyl8', '#a0603c', -0.35, 1.03, -D / 2 + 0.05, 0.16, 0.14, 0.16); b.add('blob2', '#5f8a3a', -0.35, 1.13, -D / 2 + 0.05, 0.22, 0.14, 0.2);
+  for (let i = 0; i < 4; i++) b.add('ico0', pick(['#e8c84a', '#f0f0f0', '#d86a6a']), -0.42 + i * 0.05, 1.2, -D / 2 + 0.03 + (i % 2) * 0.04, 0.05, 0.05, 0.05);
+  // kurutulmuş ot demetleri ve sarımsak
+  for (let i = 0; i < 6; i++) { const x = -1.6 + i * 0.55, c = pick(['#7a8a4a', '#8a7a3a', '#6a7a3a', '#9a8a5a']); b.add('box', '#c8b088', x, H - 0.3, -0.6, 0.01, 0.2, 0.01); b.add('cone6', c, x, H - 0.6, -0.6, 0.14, 0.3, 0.14, 0, rnd(0, 3), 0); b.add('blob1', shade(c, 1.1), x, H - 0.72, -0.6, 0.13, 0.08, 0.13); b.add('cyl6', '#8a6a3a', x, H - 0.43, -0.6, 0.06, 0.04, 0.06); }
+  for (let i = 0; i < 5; i++) b.add('sph8', '#ece2cc', 3.32, 1.95 - i * 0.1, -0.15 + (i % 2) * 0.04, 0.08, 0.09, 0.08);
+  // asılı fener
+  b.add('box', COL.iron, -0.4, H - 0.32, 0.2, 0.012, 0.3, 0.012); b.add('cyl6', COL.iron, -0.4, H - 0.52, 0.2, 0.2, 0.04, 0.2); b.add('cyl6', COL.iron, -0.4, H - 0.76, 0.2, 0.2, 0.03, 0.2);
+  for (const [dx, dz] of [[-0.08, -0.08], [0.08, -0.08], [-0.08, 0.08], [0.08, 0.08]]) b.add('box', COL.iron, -0.4 + dx, H - 0.64, 0.2 + dz, 0.015, 0.22, 0.015);
+  gb.add('cyl6', variant === 'day' ? '#e8c890' : '#ffd890', -0.4, H - 0.64, 0.2, 0.1, 0.18, 0.1);
+  // Joseph'in yatağı: başlık, ayak tahtası, direkler, yama yorgan, yastık
+  b.box(COL.woodD, -2.5, 0, -2.5, 1.06, 0.9, 0.07); b.box(COL.wood, -2.5, 0.9, -2.5, 1.12, 0.06, 0.1); b.box(COL.woodD, -2.5, 0, -0.33, 1.06, 0.6, 0.07);
+  for (const sx of [-1, 1]) { b.add('cylS8', COL.woodD, -2.5 + sx * 0.53, 0.5, -2.5, 0.08, 1.0, 0.08); b.add('sphS', COL.wood, -2.5 + sx * 0.53, 1.02, -2.5, 0.1, 0.1, 0.1); b.add('cylS8', COL.woodD, -2.5 + sx * 0.53, 0.33, -0.33, 0.08, 0.66, 0.08); }
+  const patch = ['#8a5a4a', '#7a6a4a', '#9a6a52', '#6a5a62', '#8a7a58'];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 4; j++) b.box(patch[(i + j * 2) % 5], -2.5 + (i - 1) * 0.31, 0.6, -1.55 + j * 0.31, 0.3, 0.015, 0.3, 0, 0, 0);
+  b.add('sphS', '#efe4cc', -2.5, 0.68, -2.15, 0.62, 0.14, 0.32);
+  // Lily'nin yatağı: başlık, yastık, bez bebek; yanında bacağı kırık tahta at
+  b.box(COL.woodD, 2.6, 0, -2.88, 0.86, 0.72, 0.07); b.add('sphS', COL.wood, 2.6, 0.74, -2.88, 0.86, 0.08, 0.1);
+  b.add('sphS', '#f0e6d0', 2.6, 0.52, -2.62, 0.5, 0.12, 0.26);
+  b.add('sphS', '#d8a088', 2.85, 0.55, -2.55, 0.1, 0.1, 0.1); b.add('sphS', '#b86a6a', 2.85, 0.47, -2.47, 0.13, 0.14, 0.1); b.add('box', '#3a2a20', 2.85, 0.6, -2.56, 0.1, 0.03, 0.06);
+  b.begin(2.0, 0, -1.05, 0.7);
+  b.add('box', '#a07a4e', 0, 0.2, 0, 0.09, 0.09, 0.26); b.add('box', '#a07a4e', 0, 0.3, 0.13, 0.07, 0.15, 0.07, -0.4, 0, 0); b.add('box', '#a07a4e', 0, 0.35, 0.2, 0.07, 0.07, 0.12); b.add('box', '#5a3a22', 0, 0.36, 0.08, 0.02, 0.1, 0.06);
+  for (const [lx, lz, h, rz] of [[-0.035, 0.1, 0.15, 0], [0.035, 0.1, 0.15, 0], [-0.035, -0.1, 0.15, 0], [0.04, -0.12, 0.09, 0.5]]) b.add('box', '#8a6440', lx, h / 2, lz, 0.025, h, 0.025, 0, 0, rz);
+  b.add('box', '#c8b088', 0, 0.2, -0.15, 0.02, 0.06, 0.06);
+  b.end();
+  // ocak: düzensiz taşlar, rafa kavanozlar, asılı kazan, odun yığını, köz
+  for (let i = 0; i < 14; i++) { const t = i / 13, a = t * Math.PI; b.add(pick(['dode', 'box']), pick([COL.stone, COL.stoneD, '#8a8274']), 2.8, 0.05 + Math.sin(a) * 0.95, 0.9 + Math.cos(a) * 0.55, 0.2, 0.17, 0.2, rnd(-0.3, 0.3), rnd(-0.3, 0.3), rnd(-0.3, 0.3)); }
+  b.box(COL.woodD, 3.0, 1.12, 0.9, 0.85, 0.08, 1.9);
+  for (let i = 0; i < 4; i++) b.add(pick(['cyl8', 'sph8']), pick(['#9a6a48', '#7a5a40', '#b89a6a', '#5a6a5a']), 2.85, 1.3, 0.25 + i * 0.4, 0.16, 0.22, 0.16);
+  b.add('box', COL.iron, 2.95, 0.95, 0.9, 0.012, 0.3, 0.012); b.add('sph8', '#2a2420', 2.95, 0.62, 0.9, 0.34, 0.26, 0.34);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3 - i; j++) b.add('cylS8', pick(['#7a5434', '#6a4a2e', '#8a6440']), 3.1, 0.09 + i * 0.16, -0.65 + j * 0.17 + i * 0.085, 0.16, 0.62, 0.16, Math.PI / 2, 0, 0);
+  L.addBox(3.1, -0.45, 0.35, 0.3);
+  gb.add('ico0', '#ff7a2a', 2.95, 0.12, 0.85, 0.32, 0.08, 0.3); gb.add('ico0', '#ffb04a', 3.0, 0.14, 1.0, 0.2, 0.06, 0.2);
+  // masa: mum, kaseler, ekmek
+  b.add('cyl8', '#efe6d0', 0.8, 0.84, 0.72, 0.05, 0.16, 0.05); gb.add('cone6', '#ffd27a', 0.8, 0.96, 0.72, 0.035, 0.07, 0.035);
+  b.add('sphS', '#c8955a', -0.1, 0.81, 1.05, 0.26, 0.11, 0.16, 0, 0.4, 0); b.add('cyl8', '#7a6a58', 0.35, 0.79, 1.15, 0.2, 0.05, 0.2);
+  // kapı: tahta çizgileri, menteşeler, mandal
+  for (let i = 0; i < 4; i++) b.box('#3e2a1c', -1.6 - 0.375 + i * 0.25, 0, D / 2 - 0.07, 0.025, 1.95, 0.02);
+  for (const y of [0.35, 1.5]) b.box(COL.iron, -1.85, y, D / 2 - 0.075, 0.5, 0.06, 0.02);
+  b.box(COL.iron, -1.2, 0.95, D / 2 - 0.08, 0.08, 0.14, 0.03);
+  // askılık: Daniel'in ceketi ve şapkası
+  for (let i = 0; i < 3; i++) b.add('cyl6', COL.woodD, -0.55 + i * 0.32, 1.62, D / 2 - 0.1, 0.035, 0.14, 0.035, Math.PI / 2, 0, 0);
+  b.box(COL.wood, -0.23, 1.68, D / 2 - 0.035, 0.9, 0.1, 0.03);
+  b.add('box', '#5a4a3a', -0.55, 1.3, D / 2 - 0.12, 0.34, 0.62, 0.06, 0.06, 0, 0.04); b.add('box', '#4a3a2c', -0.55, 1.55, D / 2 - 0.13, 0.22, 0.1, 0.07);
+  b.add('cyl8', '#6a5a40', -0.23, 1.6, D / 2 - 0.16, 0.26, 0.05, 0.26, 1.2, 0, 0); b.add('cyl8', '#6a5a40', -0.23, 1.6, D / 2 - 0.2, 0.15, 0.12, 0.15, 1.2, 0, 0);
+  // sepet ve elmalar
+  b.add('cyl8', '#a8844e', -1.05, 0.14, 2.35, 0.42, 0.28, 0.42); b.add('torus', '#8a6a3a', -1.05, 0.28, 2.35, 0.84, 0.84, 1.2, Math.PI / 2, 0, 0);
+  for (let i = 0; i < 6; i++) b.add('sph8', pick(['#c83a2a', '#b8402e', '#d8a03a']), -1.05 + rnd(-0.1, 0.1), 0.3, 2.35 + rnd(-0.1, 0.1), 0.09, 0.09, 0.09);
+  L.addCircle(-1.05, 2.35, 0.25);
+  // ışık huzmesi (gündüz)
+  if (variant === 'day') {
+    lightShaft(L, [[-0.55, 1.9, -D / 2], [0.55, 1.9, -D / 2], [0.55, 1.0, -D / 2], [-0.55, 1.0, -D / 2]], [-0.2, -0.8, 1], '#ffeecc', 0.1);
+    const fl = new T.Mesh(new T.PlaneGeometry(1.25, 1.15), new T.MeshBasicMaterial({ color: '#5a4630', transparent: true, blending: T.AdditiveBlending, depthWrite: false, opacity: 0.55 }));
+    fl.rotation.x = -Math.PI / 2; fl.position.set(-0.2, 0.005, -D / 2 + 1.81); L.add(fl);
+  }
+}
+
 // ===== Kulübe içi =====
 function buildHut(variant = 'day') {
   const L = new Level('hut'); const b = L.b; seed(11);
@@ -1953,7 +2078,6 @@ function buildHut(variant = 'day') {
   // raflar, çömlekler, otlar
   b.box(COL.wood, -3.3, 1.4, 1.2, 0.3, 0.05, 1.6); b.box(COL.wood, -3.3, 1.8, 1.2, 0.3, 0.05, 1.6);
   for (let i = 0; i < 5; i++) b.add(pick(['cyl8', 'sph8']), pick(['#9a6a48', '#7a5a40', '#a88a5a', '#6a7a6a']), -3.3, 1.55, 0.6 + i * 0.28, 0.2, 0.25, 0.2);
-  for (let i = 0; i < 4; i++) b.add('box', pick(['#7a8a4a', '#8a7a3a', '#5a6a3a']), -1 + i * 0.6, H - 0.55, -0.6, 0.12, 0.4, 0.12);
   // ebeveyn köşesi: perde
   b.box('#8a7a5a', 2.0, 0, 2.0, 0.05, 2.1, 1.8); b.box(COL.woodD, 2.9, 0, 2.2, 1.0, 0.4, 1.4); b.box('#c8b88a', 2.9, 0.4, 2.2, 0.95, 0.15, 1.35);
   L.addBox(2.9, 2.2, 0.55, 0.8); L.addBox(2.0, 2.0, 0.05, 0.9);
@@ -1965,7 +2089,8 @@ function buildHut(variant = 'day') {
   b.box(COL.woodD, 1.25, 0, -2.55, 0.5, 0.5, 0.5); b.add('cyl8', '#8a6a48', 1.25, 0.6, -2.55, 0.6, 0.2, 0.6); b.add('cyl8', '#5a7a88', 1.25, 0.69, -2.55, 0.5, 0.02, 0.5, 0, 0, 0, 0);
   L.addBox(1.25, -2.55, 0.3, 0.3); L.pts.basin = V3(1.25, 0, -2.0);
   // halı
-  b.box('#8a4a3a', -0.4, -0.04, 0.2, 2.2, 0.02, 1.6, 0, 0, 0); b.box('#a86a4a', -0.4, -0.03, 0.2, 1.8, 0.02, 1.2, 0, 0, 0);
+  b.box('#8a4a3a', -0.4, 0, 0.2, 2.2, 0.012, 1.6, 0, 0, 0); b.box('#a86a4a', -0.4, 0.004, 0.2, 1.8, 0.012, 1.2, 0, 0, 0); b.box('#c8a060', -0.4, 0.008, 0.2, 1.2, 0.012, 0.65, 0, 0, 0);
+  hutDetails(L, W, D, H, variant);
   L.pts = Object.assign(L.pts, { bedJoseph: V3(-2.5, 0, -1.4), bedLily: V3(2.6, 0, -2.1), door: V3(-1.6, 0, 2.4), window: V3(0, 0, -2.4), table: V3(0.3, 0, 0.9), hearth: V3(2.4, 0, 0.9) });
   L.finalize();
   return L;
@@ -2058,7 +2183,7 @@ function buildVillage(o = {}) {
   L.harvested = o.harvested || null;
   if (!W) { const wp = []; for (let z = 41.6; z < 57.6; z += 0.75) for (let x = -31; x < 5; x += 0.42) { const xx = x + rnd(-0.12, 0.12), zz = z + rnd(-0.15, 0.15); if (L.harvested && L.harvested(xx, zz)) continue; wp.push([xx, zz, mixHex('#fff4d0', '#e8c890', rng()), rnd(0.9, 1.15)]); } vegetation(L, 'wheat', wp); }
   for (let z = 41.2; z < 58; z += 0.75) b.add('box', '#6a5030', -13, L.h(-13, z) - 0.02, z, 37, 0.06, 0.22, 0, 0, 0, 0.04);
-  fence(L, -33, 39.5, -33, 59, { collide: false }); fence(L, -33, 59, 7, 59, { collide: false }); fence(L, 7, 39.5, 7, 59, { collide: false });
+  fence(L, -33, 39.5, -33, 59, { collide: false }); fence(L, -33, 59, 7, 59, { collide: false }); fence(L, 7, 39.5, 7, 48.6, { collide: false }); fence(L, 7, 51.9, 7, 59, { collide: false });
   // korkuluk
   { const x = -14, z = 49, y = L.h(x, z); b.add('cylS8', COL.woodD, x, y + 1.2, z, 0.1, 2.4, 0.1); b.add('cylS8', COL.woodD, x, y + 1.8, z, 0.1, 1.5, 0.1, 0, 0, Math.PI / 2); b.add('sphS', '#7a5a3a', x, y + 1.55, z, 0.5, 0.7, 0.35); b.add('sphS', '#d8b878', x, y + 2.15, z, 0.36, 0.36, 0.32); b.add('coneS', '#c8a050', x, y + 2.42, z, 0.8, 0.3, 0.8); for (const s2 of [-1, 1]) b.add('sphS', '#d8b870', x + s2 * 0.75, y + 1.8, z, 0.18, 0.18, 0.18); }
   haystack(L, 10, 45, 1); haystack(L, 11, 49, 0.9); cart(L, 10.5, 53, 0.2);
@@ -2068,7 +2193,7 @@ function buildVillage(o = {}) {
   for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + 0.4; b.add('cylS', COL.trunk, 46 + Math.cos(a) * 6.5, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5, 0.5, 2.2, 0.5, Math.PI / 2, a, 0); b.add('cylS', '#c8a878', 46 + Math.cos(a) * 6.5 + Math.cos(a + 1.57) * 1.11, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5 + Math.sin(a + 1.57) * 1.11, 0.46, 0.02, 0.46, Math.PI / 2, a, 0, 0); }
   rock(L, 52, -7, 1.3); rock(L, 41, -18, 1.1);
   // tepe ve büyük ağaç
-  tree(L, -33, -39, 'oak', 1.6); L.pts.hillTop = V3(-31, 0, -35); rock(L, -36, -34, 0.9); flowers(L, -29, -37, 10);
+  tree(L, -33, -39, 'oak', 1.6); L.pts.hillTop = V3(-31.4, 0, -41.2); rock(L, -36, -34, 0.9); flowers(L, -29, -37, 10);
   // kuzey: şehir duvarı ve kapı
   const gz = -74;
   wallSeg(L, -70, gz, -7, gz, 7); wallSeg(L, 3, gz, 75, gz, 7);
@@ -2108,6 +2233,66 @@ function buildVillage(o = {}) {
 }
 
 // ===== Eros çarşısı (şehir meydanı) =====
+// Maceracılar Loncası binası (yerel koordinat: ön cephe z = +4.5)
+function guildHall(L, b) {
+  const gb = L.gb, st = COL.stoneL, stD = '#a49a88', stG = '#8e8574', plaster = '#e4d8bc', beam = '#4e3422', F = 4.5;
+  // kaide ve zemin kat taş duvar
+  b.box(stG, 0, 0, 0, 16.4, 0.6, 9.4); b.box(st, 0, 0.6, 0, 16, 4.4, 9);
+  for (let y = 1.2; y < 5; y += 0.62) { b.box(stD, 0, y, F + 0.005, 16, 0.05, 0.03); for (const sx of [-1, 1]) b.box(stD, sx * 8.005, y, 0, 0.03, 0.05, 9); }
+  for (let i = 0; i < 7; i++) for (const sx of [-1, 1]) b.box(i % 2 ? st : '#c4bba8', sx * (7.75 - (i % 2) * 0.15), 0.6 + i * 0.62, F - 0.25 + (i % 2) * 0.1, 0.6 + (i % 2) * 0.3, 0.6, 0.6);
+  // pilastrlar
+  for (const px of [-5.4, -2.3, 2.3, 5.4]) { b.box(st, px, 0.6, F + 0.12, 0.7, 4.4, 0.3); b.box(stD, px, 0.6, F + 0.2, 0.86, 0.35, 0.36); b.box(stD, px, 4.65, F + 0.2, 0.86, 0.35, 0.36); }
+  // kemerli kapı
+  b.box('#3a2618', 0, 0.6, F + 0.02, 2.4, 2.9, 0.12); b.add('cyl16', '#3a2618', 0, 3.5, F + 0.02, 2.4, 0.12, 2.4, Math.PI / 2, 0, 0);
+  for (let i = 0; i < 6; i++) b.box('#2a1a10', -1.0 + i * 0.4, 0.6, F + 0.09, 0.03, 3.3, 0.03);
+  for (let i = 0; i < 9; i++) { const a = -Math.PI / 2 + (i / 8) * Math.PI; b.add('box', i === 4 ? COL.gold : '#c4bba8', Math.sin(a) * 1.42, 3.5 + Math.cos(a) * 1.42, F + 0.14, 0.42, 0.34, 0.3, 0, 0, -a); }
+  for (const sx of [-1, 1]) b.box('#c4bba8', sx * 1.42, 0.6, F + 0.14, 0.34, 2.9, 0.3);
+  for (const sx of [-1, 1]) for (const y of [1.3, 2.9]) b.add('sph8', COL.iron, sx * 0.6, y, F + 0.11, 0.08, 0.08, 0.05);
+  b.add('torus', COL.iron, 0.42, 2.0, F + 0.12, 0.3, 0.3, 0.6);
+  // basamaklar
+  b.box(stD, 0, -0.1, F + 1.0, 5, 0.45, 2.0); b.box(stG, 0, -0.25, F + 2.1, 6, 0.3, 1.4);
+  // zemin kat pencereleri (kemerli, çerçeveli)
+  for (const sx of [-1, 1]) for (const wx of [3.85, 6.7]) {
+    const cx = sx * wx; b.box(beam, cx, 1.55, F + 0.03, 1.2, 2.1, 0.1); gb.box('#ffd890', cx, 1.65, F + 0.08, 0.95, 1.9, 0.03); gb.add('cyl12', '#ffd890', cx, 3.55, F + 0.08, 0.95, 0.03, 0.95, Math.PI / 2, 0, 0);
+    b.add('cyl12', beam, cx, 3.6, F + 0.03, 1.2, 0.1, 1.2, Math.PI / 2, 0, 0); b.box(beam, cx, 1.65, F + 0.11, 0.07, 2.35, 0.04); b.box(beam, cx, 2.55, F + 0.11, 0.95, 0.07, 0.04);
+    b.box(stD, cx, 1.42, F + 0.12, 1.45, 0.14, 0.32); b.box('#6a4a32', cx, 1.15, F + 0.22, 1.2, 0.25, 0.25); b.add('blob2', '#5a9a3a', cx, 1.42, F + 0.25, 1.1, 0.28, 0.3);
+    for (let i = 0; i < 3; i++) b.add('sphS', pick(['#e85a5a', '#f0d040', '#ffffff', '#c86ac8']), cx - 0.35 + i * 0.35, 1.56, F + 0.33, 0.13, 0.12, 0.13);
+  }
+  // kat silmesi ve dişli korniş
+  b.box(stD, 0, 5.0, 0.2, 16.6, 0.35, 9.6); for (let i = 0; i < 33; i++) b.box(st, -8.0 + i * 0.5, 4.86, F + 0.32, 0.22, 0.16, 0.14);
+  // çıkma üst kat (yarı ahşap)
+  b.box(plaster, 0, 5.35, 0.2, 16.4, 3.9, 9.4);
+  for (let i = 0; i <= 8; i++) b.box(beam, -8.1 + i * 2.025, 5.35, F + 0.42, 0.2, 3.9, 0.08);
+  b.box(beam, 0, 5.35, F + 0.42, 16.4, 0.2, 0.08); b.box(beam, 0, 9.05, F + 0.42, 16.4, 0.2, 0.08); b.box(beam, 0, 7.15, F + 0.43, 16.4, 0.14, 0.08);
+  for (let i = 0; i < 8; i++) { const cx = -7.1 + i * 2.025; if (i % 2 === 0) { b.add('box', beam, cx, 6.25, F + 0.43, 0.14, 2.1, 0.06, 0, 0, 0.75); } else { b.add('box', beam, cx, 6.25, F + 0.43, 0.14, 2.1, 0.06, 0, 0, -0.75); } }
+  for (const sx of [-1, 1]) for (const wx of [1.0, 3.05, 5.05, 7.05]) {
+    const cx = sx * wx; if (wx === 1.0) continue;
+    b.box(beam, cx, 7.45, F + 0.44, 1.0, 1.35, 0.08); gb.box('#ffe2a0', cx, 7.55, F + 0.48, 0.78, 1.15, 0.03); b.box(beam, cx, 7.55, F + 0.5, 0.05, 1.15, 0.03); b.box(beam, cx, 8.1, F + 0.5, 0.78, 0.05, 0.03);
+    for (const s2 of [-1, 1]) b.add('box', '#2a4a7a', cx + s2 * 0.68, 8.12, F + 0.5, 0.36, 1.3, 0.05, 0, s2 * 0.25, 0);
+    b.box('#6a4a32', cx, 7.25, F + 0.58, 1.0, 0.2, 0.25); b.add('blob1', '#5a9a3a', cx, 7.48, F + 0.6, 0.95, 0.22, 0.26);
+  }
+  // çıkma altı kiriş başları
+  for (let i = 0; i < 17; i++) b.box(beam, -8.0 + i * 1.0, 5.2, F + 0.3, 0.16, 0.16, 0.3);
+  // arma (kapı üstü kalkan) ve tabela
+  b.add('box', '#1f3a6a', 0, 6.9, F + 0.52, 1.1, 1.0, 0.1); b.add('cone4', '#1f3a6a', 0, 6.15, F + 0.52, 1.1, 0.5, 0.1, Math.PI, 0, 0); b.add('box', COL.gold, 0, 6.75, F + 0.59, 0.08, 1.2, 0.04); b.add('box', COL.gold, 0, 7.05, F + 0.59, 0.6, 0.08, 0.04);
+  b.box(beam, 0, 9.3, F + 0.6, 5.4, 0.9, 0.14); b.box(COL.gold, 0, 9.42, F + 0.68, 5.0, 0.06, 0.04); b.box(COL.gold, 0, 10.04, F + 0.68, 5.0, 0.06, 0.04);
+  for (let i = 0; i < 9; i++) b.box('#f0e2b0', -2.0 + i * 0.5, 9.58, F + 0.68, 0.32, 0.36, 0.02);
+  for (const sx of [-1, 1]) { b.add('box', '#d8dde3', sx * 2.9, 9.75, F + 0.66, 0.07, 1.0, 0.03, 0, 0, sx * 0.7); b.add('box', '#d8dde3', sx * 2.9, 9.75, F + 0.66, 0.07, 1.0, 0.03, 0, 0, -sx * 0.7); }
+  // çatı: arduvaz, mahya, çatı pencereleri, bacalar, kule
+  b.add('roof', COL.slate, 0, 9.25, 0, 11.6, 4.6, 18, 0, Math.PI / 2, 0);
+  b.add('box', '#3e4658', 0, 13.85, 0, 0.3, 0.2, 17.6, 0, Math.PI / 2, 0);
+  b.add('roof', plaster, 0, 9.25, F + 0.4, 4.0, 3.0, 0.2, 0, 0, 0); b.add('roof', COL.slate, 0, 9.3, 3.4, 4.8, 3.3, 3.4, 0, 0, 0);
+  gb.add('cyl12', '#ffe2a0', 0, 10.6, F + 0.52, 1.0, 0.04, 1.0, Math.PI / 2, 0, 0); b.add('torus', beam, 0, 10.6, F + 0.53, 1.0, 1.0, 0.8);
+  for (const sx of [-1, 1]) { const dx = sx * 5; b.box(plaster, dx, 10.3, 3.4, 1.4, 1.3, 1.4); b.add('roof', COL.slate, dx, 11.55, 3.4, 1.7, 0.9, 1.6, 0, 0, 0); gb.box('#ffe2a0', dx, 10.75, 4.11, 0.7, 0.6, 0.03); b.box(beam, dx, 10.75, 4.13, 0.05, 0.6, 0.03); }
+  for (const sx of [-1, 1]) { b.box(COL.stoneD, sx * 6.3, 11.0, -1.8, 0.9, 3.6, 0.9); b.box(stG, sx * 6.3, 14.5, -1.8, 1.05, 0.25, 1.05); L.smoke.push(V3(sx * 6.3, 14.9, -22.8)); }
+  b.box(plaster, 0, 13.4, -0.4, 1.8, 2.0, 1.8); for (const [ox, oz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.box(beam, ox * 0.86, 13.4, -0.4 + oz * 0.86, 0.16, 2.0, 0.16);
+  for (const [ox, oz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { b.box('#2a2018', ox * 0.88, 14.0, -0.4 + oz * 0.88, ox ? 0.06 : 0.9, 1.0, oz ? 0.06 : 0.9); b.add('cyl12', '#2a2018', ox * 0.88, 15.0, -0.4 + oz * 0.88, 0.9, 0.06, 0.9, oz ? Math.PI / 2 : 0, 0, ox ? Math.PI / 2 : 0); }
+  b.add('cone8', COL.gold, 0, 14.6, -0.4, 0.55, 0.6, 0.55); b.add('sph8', COL.gold, 0, 14.28, -0.4, 0.3, 0.2, 0.3);
+  b.add('cone4', COL.slate, 0, 16.1, -0.4, 2.6, 1.8, 2.6); b.add('cyl6', COL.gold, 0, 17.3, -0.4, 0.06, 0.8, 0.06); b.add('box', COL.gold, 0, 17.6, -0.4, 0.04, 0.1, 0.6);
+  // kapı fenerleri
+  for (const sx of [-1, 1]) { b.box(COL.iron, sx * 1.95, 3.5, F + 0.2, 0.06, 0.06, 0.45); b.add('cyl6', COL.iron, sx * 1.95, 3.42, F + 0.42, 0.3, 0.06, 0.3); gb.add('cyl6', '#ffd890', sx * 1.95, 3.22, F + 0.42, 0.22, 0.32, 0.22); b.add('cone6', COL.iron, sx * 1.95, 3.55, F + 0.42, 0.34, 0.2, 0.34); }
+}
+
 function buildEros(o = {}) {
   const L = new Level('eros'); seed(77);
   L.hf = (x, z) => 0; L.th = (x, z) => { const d = Math.max(Math.abs(x) - 26, Math.abs(z) - 30); return d > 0 ? d * 0.12 + fbm(x * 0.05, z * 0.05) * 2 : 0; };
@@ -2123,16 +2308,7 @@ function buildEros(o = {}) {
   });
   const b = L.b;
   // lonca binası (kuzey)
-  { const x = 0, z = -21; b.begin(x, 0, z, 0);
-    b.box(COL.stoneL, 0, 0, 0, 16, 7, 9); b.box('#d8ccae', 0, 7, 0, 16.6, 4, 9.6);
-    for (let i = -4; i <= 4; i++) b.box(COL.beam, i * 2, 7, 4.85, 0.18, 4, 0.08);
-    b.add('roof', COL.slate, 0, 11, 0, 11.4, 4.5, 18, 0, Math.PI / 2, 0);
-    b.add('roof', '#d8ccae', 0, 10.9, 4.8, 3.5, 2.6, 0.2, 0, 0, 0); b.add('roof', COL.slate, 0, 11, 3.6, 4.2, 3, 3, 0, 0, 0);
-    b.box('#3a2618', 0, 0, 4.55, 2.6, 3.6, 0.1); b.add('cyl12', '#3a2618', 0, 3.55, 4.55, 2.6, 0.1, 2.6, Math.PI / 2, 0, 0);
-    b.box(COL.stoneD, 0, -0.1, 5.5, 5, 0.25, 2.2); b.box(COL.stoneD, 0, -0.25, 6.6, 6, 0.25, 1.4);
-    for (const sx of [-1, 1]) { for (let i = 1; i <= 3; i++) L.gb.box('#ffd890', sx * (1.6 + i * 1.6), 1.6, 4.56, 0.8, 1.6, 0.04); for (let i = 0; i < 4; i++) L.gb.box('#ffd890', sx * (1 + i * 2), 8.1, 4.86, 0.7, 1.2, 0.04); }
-    // tabela
-    b.box(COL.woodD, 0, 4.2, 4.9, 4.4, 1.0, 0.15); b.box(COL.gold, 0, 4.35, 5.0, 0.7, 0.7, 0.05); b.add('box', '#d8dde3', 0, 4.65, 5.05, 0.08, 0.9, 0.04, 0, 0, 0.7); b.add('box', '#d8dde3', 0, 4.65, 5.05, 0.08, 0.9, 0.04, 0, 0, -0.7);
+  { const x = 0, z = -21; b.begin(x, 0, z, 0); guildHall(L, b);
     b.end(); L.addBox(x, z, 8.3, 4.8);
     banner(L, -4.2, z + 5.3, 0, '#1f3a6a', 6, COL.gold); banner(L, 4.2, z + 5.3, 0, '#1f3a6a', 6, COL.gold);
     noticeBoard(L, 6.5, z + 8, -0.3); L.pts.board = V3(6.0, 0, z + 9.2); L.pts.guildDoor = V3(0, 0, z + 6.5);
@@ -2182,6 +2358,29 @@ function buildHall() {
   for (let k = -3; k <= 3; k++) for (const sx of [-1, 1]) { const x = sx * 6, z = k * 6 + 2; b.add('cyl8', '#c8beac', x, H / 2, z, 1.1, H, 1.1); b.add('box', '#b0a694', x, 0.2, z, 1.5, 0.4, 1.5); b.add('box', '#b0a694', x, H - 1.3, z, 1.5, 0.5, 1.5); L.addCircle(x, z, 0.7);
     // sancak
     b.add('box', COL.elonth, x - sx * 0.6, 7, z, 0.04, 4.5, 1.2, 0, 0, 0); b.add('box', COL.gold, x - sx * 0.63, 8, z, 0.04, 0.6, 0.6, 0, 0, 0); b.add('wedge', COL.elonth, x - sx * 0.6, 4.75, z, 0.04, 0.6, 1.2, Math.PI, 0, 0); }
+  // duvar ayrıntıları: lambri, plastırlar, pencere çerçeveleri, korniş
+  for (const sx of [-1, 1]) {
+    const wx = sx * (W / 2 - 0.04);
+    b.box('#5a3e2a', wx, 0, 0, 0.08, 2.4, Ln); b.box('#7a5a3a', wx - sx * 0.03, 2.4, 0, 0.14, 0.12, Ln);
+    for (let z = -Ln / 2 + 0.6; z < Ln / 2; z += 1.2) b.box('#4a3222', wx - sx * 0.04, 0.1, z, 0.04, 2.2, 0.08);
+    for (let k = -5; k <= 4; k++) { const z = k * 5 + 2.5; b.box('#b8ae9a', wx - sx * 0.12, 0, z, 0.3, H - 0.6, 0.9); b.box('#c8bea8', wx - sx * 0.18, H - 1.9, z, 0.4, 0.5, 1.1); b.box('#c8bea8', wx - sx * 0.18, 0, z, 0.4, 0.5, 1.1); }
+    for (let k = -4; k <= 4; k++) { const z = k * 5; b.box('#c8bea8', wx - sx * 0.06, 6.1, z, 0.18, 0.3, 2.2); for (const sz of [-1, 1]) b.box('#c8bea8', wx - sx * 0.06, 6.3, z + sz * 0.9, 0.16, 4.6, 0.2); b.box('#5a4a3a', wx - sx * 0.07, 6.3, z, 0.08, 4.6, 0.05); b.box('#5a4a3a', wx - sx * 0.07, 8.6, z, 0.08, 0.05, 1.6); }
+    b.box('#b0a694', wx - sx * 0.2, H - 1.6, 0, 0.5, 0.4, Ln);
+  }
+  // avizeler
+  for (const z of [-11, 1, 13]) {
+    b.add('box', COL.iron, 0, H - 2.3, z, 0.05, 2.6, 0.05); b.add('torus', COL.iron, 0, H - 3.6, z, 5.2, 5.2, 4, Math.PI / 2, 0, 0); b.add('torus', COL.iron, 0, H - 3.3, z, 3.0, 3.0, 3, Math.PI / 2, 0, 0);
+    for (let i = 0; i < 4; i++) { const a = i / 4 * TAU; b.add('box', COL.iron, Math.cos(a) * 1.3, H - 3.0, z + Math.sin(a) * 1.3, 0.04, 1.3, 0.04, 0, -a, 0.5 * (i % 2 ? 1 : -1)); }
+    for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; b.add('cyl6', '#efe6d0', Math.cos(a) * 2.6, H - 3.45, z + Math.sin(a) * 2.6, 0.08, 0.3, 0.08); L.gb.add('cone6', '#ffd27a', Math.cos(a) * 2.6, H - 3.2, z + Math.sin(a) * 2.6, 0.08, 0.18, 0.08); }
+  }
+  // arka duvar: büyük goblen ve gül pencere; ön duvar: büyük kapı
+  b.box(COL.elonth, 0, 4.0, -Ln / 2 + 0.06, 6, 5.4, 0.08); b.box(COL.gold, 0, 4.0, -Ln / 2 + 0.1, 6.2, 0.18, 0.06); b.box(COL.gold, 0, 9.25, -Ln / 2 + 0.1, 6.2, 0.18, 0.06);
+  b.add('cone4', COL.elonth, 0, 3.7, -Ln / 2 + 0.06, 6, 0.6, 0.08, Math.PI, 0, 0);
+  b.add('box', COL.gold, 0, 6.6, -Ln / 2 + 0.12, 0.25, 3.0, 0.04); b.add('box', COL.gold, 0, 7.4, -Ln / 2 + 0.12, 2.0, 0.25, 0.04); b.add('sphS', COL.gold, 0, 8.55, -Ln / 2 + 0.12, 0.55, 0.55, 0.06);
+  L.gb.add('cyl16', '#cfe4ff', 0, 11.0, -Ln / 2 + 0.05, 2.4, 0.04, 2.4, Math.PI / 2, 0, 0); b.add('torus', '#b0a694', 0, 11.0, -Ln / 2 + 0.08, 2.6, 2.6, 2, 0, 0, 0);
+  for (let i = 0; i < 8; i++) b.add('box', '#7a7060', 0, 11.0, -Ln / 2 + 0.09, 0.06, 2.35, 0.04, 0, 0, i / 8 * Math.PI);
+  b.box('#3a2618', 0, 0, Ln / 2 - 0.08, 4.4, 5.5, 0.12); b.add('cyl16', '#3a2618', 0, 5.5, Ln / 2 - 0.08, 4.4, 0.12, 4.4, Math.PI / 2, 0, 0); b.box(COL.gold, 0, 0, Ln / 2 - 0.16, 0.08, 7.6, 0.04);
+  for (const sx of [-1, 1]) for (const y of [1.5, 4.0]) b.box(COL.gold, sx * 1.1, y, Ln / 2 - 0.16, 1.6, 0.1, 0.04);
   // kürsü ve taş
   const dz = -Ln / 2 + 5;
   b.box('#8a8274', 0, 0, dz, 12, 0.5, 7); b.box('#9a9284', 0, 0.5, dz - 0.6, 9, 0.4, 5); b.box('#7a1e22', 0, 0.5, dz + 2.6, 3.2, 0.02, 1.2);
@@ -2198,6 +2397,8 @@ function buildHall() {
   const sl = new T.PointLight('#a8d8ff', 8, 16, 1.4); sl.position.copy(stone.position); L.light(sl);
   const halo = new T.Mesh(prim('sph12'), new T.MeshBasicMaterial({ color: '#a8d8ff', transparent: true, opacity: 0.12, depthWrite: false, blending: T.AdditiveBlending, fog: false })); halo.scale.set(3, 4.6, 3); stone.add(halo);
   const pillar = new T.Mesh(new T.CylinderGeometry(1.3, 1.6, 14, 16, 1, true), new T.MeshBasicMaterial({ color: '#a8d8ff', transparent: true, opacity: 0.0, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide, fog: false })); pillar.position.set(0, 7, dz - 0.6); L.add(pillar);
+  const shards = []; for (let i = 0; i < 5; i++) { const m = new T.Mesh(prim('octa'), sm); m.scale.set(0.22, 0.5, 0.22); L.add(m); shards.push({ m, a: i / 5 * TAU, r: 1.9 + (i % 2) * 0.35, y: (i % 3) * 0.5 - 0.4 }); }
+  L.anims.push(dt => { for (const sh of shards) { sh.a += dt * (0.35 + L.stone.glow * 1.5); sh.m.position.set(Math.cos(sh.a) * sh.r, stone.position.y + sh.y + Math.sin(G.t * 1.5 + sh.a) * 0.15, stone.position.z + Math.sin(sh.a) * sh.r); sh.m.rotation.y += dt; } });
   L.stone = { group: stone, mat: sm, light: sl, glow: 0, color: new T.Color('#7aa8d8') };
   L.anims.push(dt => { stone.rotation.y += dt * 0.25; stone.position.y = 3.1 + Math.sin(G.t * 1.2) * 0.12; const g = L.stone.glow; sm.emissive.copy(L.stone.color); sm.emissiveIntensity = 0.5 + g * 2.6 + Math.sin(G.t * 2) * 0.1; sl.color.copy(L.stone.color); sl.intensity = 7 + g * 30; halo.material.color.copy(L.stone.color); halo.material.opacity = 0.1 + g * 0.3 + Math.sin(G.t * 3) * 0.02; halo.scale.set(3 + g, 4.6 + g * 1.5, 3 + g); pillar.material.color.copy(L.stone.color); pillar.material.opacity = g * 0.16; });
   // tahtlar
@@ -2207,8 +2408,7 @@ function buildHall() {
   const tl1 = new T.PointLight('#ffc27a', 6, 18, 1.4); tl1.position.set(0, 4, 8); L.light(tl1);
   const tl2 = new T.PointLight('#ffc27a', 5, 18, 1.4); tl2.position.set(0, 4, -6); L.light(tl2);
   // ışık huzmeleri
-  const shaftM = new T.MeshBasicMaterial({ color: '#fff2d0', transparent: true, opacity: 0.07, depthWrite: false, blending: T.AdditiveBlending, fog: false });
-  for (let k = -4; k <= 4; k += 2) { const s = new T.Mesh(prim('box'), shaftM); s.scale.set(1.6, 14, 1.4); s.position.set(-3.5, 5.5, k * 5); s.rotation.z = -0.75; L.add(s); }
+  for (let k = -4; k <= 4; k += 2) lightShaft(L, [[-W / 2 + 0.05, 10.6, k * 5 - 0.75], [-W / 2 + 0.05, 10.6, k * 5 + 0.75], [-W / 2 + 0.05, 6.6, k * 5 + 0.75], [-W / 2 + 0.05, 6.6, k * 5 - 0.75]], [0.72, -1, 0.08], '#fff2d0', 0.09);
   // kalabalık (statik)
   seed(17);
   for (let row = 0; row < 3; row++) for (let i = 0; i < 6; i++) for (const sx of [-1, 1]) { const x = sx * (2.6 + i * 0.95 + rnd(-0.1, 0.1)), z = -8 + row * 1.3; bakeHumanoid(b, randomNoble(rng() < 0.5), pick(['behind', null, 'crossArms']), x, 0, z, Math.PI + sx * 0.25); }
@@ -2233,7 +2433,14 @@ const FX = {
     this.discGeo = new T.CircleGeometry(1, 32); this.discGeo.rotateX(-Math.PI / 2);
     this.layer = document.getElementById('fxlayer');
   },
-  clear() { for (const p of this.parts) this.scene.remove(p.m); this.parts = []; for (const r of this.rings) this.scene.remove(r.m); this.rings = []; for (const t of this.texts) t.el.remove(); this.texts = []; },
+  // yumuşak hedef göstergesi (hedef yardımı kimi vuracaksa onun ayağında)
+  target(e) {
+    if (!this.tgt) { const m = new T.Mesh(new T.RingGeometry(0.42, 0.52, 40, 1), new T.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.55, depthWrite: false, fog: false, blending: T.AdditiveBlending })); m.geometry.rotateX(-Math.PI / 2); m.renderOrder = 4; this.tgt = m; this.scene.add(m); }
+    const m = this.tgt; if (!e) { m.visible = false; return; }
+    if (m.parent !== this.scene) this.scene.add(m);
+    m.visible = true; m.position.set(e.pos.x, e.pos.y + 0.04, e.pos.z); const k = (e.radius || 0.35) / 0.35 * (1 + Math.sin(G.t * 6) * 0.04); m.scale.setScalar(k); m.rotation.y += 0.02;
+  },
+  clear() { if (this.tgt) this.tgt.visible = false; for (const p of this.parts) this.scene.remove(p.m); this.parts = []; for (const r of this.rings) this.scene.remove(r.m); this.rings = []; for (const t of this.texts) t.el.remove(); this.texts = []; },
   burst(pos, o = {}) {
     const n = o.n || 8;
     for (let i = 0; i < n; i++) {
@@ -2296,7 +2503,7 @@ const Screen = {
   shake: 0,
   set(o, instant) { Object.assign(this.target, o); if (instant) Object.assign(this.fx, o); },
   reset() { this.set({ blur: 0, gray: 0, sat: 1, bright: 1, vig: 0, red: 0, wobble: 0 }, true); this.shake = 0; },
-  addShake(v) { this.shake = Math.min(1.2, this.shake + v); },
+  addShake(v) { const k = G.settings.shake === undefined ? 1 : G.settings.shake; this.shake = Math.min(1.2, this.shake + v * k); },
   update(dt) {
     const f = this.fx, t = this.target;
     for (const k in f) f[k] = damp(f[k], t[k], 3.5, dt);
@@ -2494,7 +2701,7 @@ class Actor {
     this.poise = o.poise || 0; this.poiseMax = this.poise; this.lockY = null; this.visible = true;
     G.actors.push(this);
   }
-  place(x, z, facing = 0, y) { this.pos.set(x, y !== undefined ? y : (G.level ? G.level.h(x, z) : 0), z); this.facing = facing; this.root.position.copy(this.pos); this.root.rotation.y = facing; this.path = null; this.vel.set(0, 0, 0); this.kv.set(0, 0, 0); return this; }
+  place(x, z, facing = 0, y) { this.pos.set(x, y !== undefined ? y : (G.level ? G.level.h(x, z) : 0), z); this.facing = facing; this.wantFacing = facing; this.root.position.copy(this.pos); this.root.rotation.y = facing; this.path = null; this.vel.set(0, 0, 0); this.kv.set(0, 0, 0); return this; }
   placeAt(v, facing) { return this.place(v.x, v.z, facing === undefined ? this.facing : facing); }
   get position() { return this.pos; }
   faceTo(t) { const p = t.isVector3 ? t : t.pos; this.wantFacing = Math.atan2(p.x - this.pos.x, p.z - this.pos.z); }
@@ -2654,6 +2861,13 @@ class Player extends Actor {
     if (this.state === 'hitstun' || this.state === 'knock') { this.vel.x = damp(this.vel.x, 0, 8, dt); this.vel.z = damp(this.vel.z, 0, 8, dt); }
     if (G.settings.shiftLock && ctl && !G.inCine && (this.state === 'move' || this.state === 'hitstun') && !this.noShiftFace) { this.wantFacing = Cam.yaw + Math.PI; }
     if (this.weakWalk) { this.wobT = (this.wobT || 0) + dt; const w = Math.sin(this.wobT * 1.7) * 0.5 + Math.sin(this.wobT * 0.6) * 0.5; if (this.moving) { this.vel.x += Math.cos(this.facing) * w * 0.5; this.vel.z -= Math.sin(this.facing) * w * 0.5; } }
+    if (this.streak) { this.streakT += dt; if (this.streakT > 2.6) { this.streak = 0; UI.streak(0); } }
+    if (G.combat && this.canFight && !G.inCine) {
+      let tdx, tdz; const id = this.inputDir();
+      if (this.atk && this.atk.target && this.atk.target.alive) this._tg = this.atk.target;
+      else { if (G.settings.shiftLock && id.mag <= 0.5) { tdx = -Math.sin(Cam.yaw); tdz = -Math.cos(Cam.yaw); } else if (id.mag) { tdx = id.x; tdz = id.z; } else { tdx = Math.sin(this.facing); tdz = Math.cos(this.facing); } this._tg = this.findTarget(tdx, tdz); }
+      FX.target(this._tg && this._tg.alive ? this._tg : null);
+    } else if (this._tg !== undefined) { this._tg = undefined; FX.target(null); }
     this.integrate(dt);
     if (this.model.stanceName === 'fight' && !G.combat) this.model.setStance(null);
   }
@@ -2677,7 +2891,7 @@ class Player extends Actor {
       any = true;
     }
     if (!any && this.dummy) { const dm = this.dummy; if (distXZ(this.pos, dm.group.position) < d.range + 0.4) { const a = Math.abs(angDiff(this.facing, Math.atan2(dm.group.position.x - this.pos.x, dm.group.position.z - this.pos.z))); if (a < d.arc / 2 + 0.4) { dm.hit(d); any = true; } } }
-    if (any) { G.hitstop = d.heavy ? 0.09 : 0.05; Screen.addShake(d.heavy ? 0.35 : 0.15); }
+    if (any) { G.hitstop = d.heavy ? 0.09 : 0.05; Screen.addShake(d.heavy ? 0.35 : 0.15); this.streak = (this.streak || 0) + 1; this.streakT = 0; if (this.streak >= 2) UI.streak(this.streak); }
   }
   // düşman saldırısı oyuncuya
   receive(att, def) {
@@ -2694,7 +2908,7 @@ class Player extends Actor {
     this.model.flash('#ff3020', 0.12); Screen.redFlash(0.35 + (def.heavy ? 0.25 : 0)); Screen.addShake(def.heavy ? 0.6 : 0.3); Audio.sfx(def.heavy ? 'hitHeavy' : 'hurt');
     FX.impact(V3(this.pos.x, this.pos.y + 1.1 * this.scale, this.pos.z), dir.clone().negate(), def.heavy);
     G.hitstop = def.heavy ? 0.1 : 0.06;
-    this.atk = null; this.queued = false; this.combo = 0;
+    this.atk = null; this.queued = false; this.combo = 0; if (this.streak) { this.streak = 0; UI.streak(0, true); }
     if (this.hp <= 0) {
       if (this.noDeath) { this.hp = 1; this.downs = (this.downs || 0) + 1; }
       else { this.hp = 0; this.alive = false; this.state = 'dead'; this.model.setStance('lie'); this.vel.set(0, 0, 0); if (this.onDeath) this.onDeath(); return 'hit'; }
@@ -2995,7 +3209,12 @@ const UI = {
     this.catch.addEventListener('pointerdown', e => { e.preventDefault(); this.advance(); });
     addEventListener('keydown', e => { if ((e.code === 'Space' || e.code === 'Enter') && !this.dlg.hidden) { e.preventDefault(); this.advance(); } if ((e.code === 'Space' || e.code === 'Enter') && !$('#system').hidden) this.sysAdvance && this.sysAdvance(); });
     $('#system').addEventListener('pointerdown', e => { e.preventDefault(); this.sysAdvance && this.sysAdvance(); });
-    $('#skip').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Story.skip(); });
+    $('#skip').addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); const b = $('#skip');
+      if (b.classList.contains('arm')) { b.classList.remove('arm'); b.textContent = 'Atla ››'; clearTimeout(this.skT); Story.skip(); return; }
+      b.classList.add('arm'); b.textContent = 'Atlamak için tekrar dokun'; Audio.sfx('ui', 0.4);
+      clearTimeout(this.skT); this.skT = setTimeout(() => { b.classList.remove('arm'); b.textContent = 'Atla ››'; }, 2600);
+    });
     $('#pausebtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Game.pause(true); });
     $('#lockbtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); G.settings.shiftLock = !G.settings.shiftLock; this.syncLock(); Save.store(); Audio.sfx('ui'); UI.toast(G.settings.shiftLock ? 'Shift lock açık: karakter kameranın baktığı yöne döner' : 'Shift lock kapalı', 1800); });
     this.syncLock(); this.applyScale();
@@ -3011,7 +3230,7 @@ const UI = {
   say(spk, text, o = {}) {
     return new Promise(res => {
       const d = this.dlg; d.hidden = false; this.catch.hidden = false;
-      d.className = o.thought ? 'thought' : o.narr ? 'narr' : '';
+      d.className = (o.thought ? 'thought' : o.narr ? 'narr' : '') + (Portrait.on ? ' hasport' : '');
       this.dname.textContent = spk ? spk.name : ''; this.dname.style.color = spk ? spk.color : '';
       if (spk && spk.rank) { this.dbadge.hidden = false; this.dbadge.textContent = spk.rank; this.dbadge.style.color = RANK_COLORS[spk.rank] || '#ccc'; } else this.dbadge.hidden = true;
       this.full = text; this.shown = 0; this.typing = true; this.res = res; this.dtext.textContent = '';
@@ -3033,12 +3252,12 @@ const UI = {
   },
   bark(spk, text, dur = 3600) {
     if (!this.catch.hidden || (this.res && !this.dlg.hidden)) return;
-    const d = this.dlg; d.hidden = false; d.className = spk === CAST.thought ? 'thought done' : 'done';
+    const d = this.dlg; d.hidden = false; Portrait.hide(); d.className = spk === CAST.thought ? 'thought done' : 'done';
     this.dname.textContent = spk ? spk.name : ''; this.dname.style.color = spk ? spk.color : ''; this.dbadge.hidden = true; this.dtext.textContent = text;
     const a = spk && spk.actor; if (a) a.say(true);
     clearTimeout(this.bt); this.bt = setTimeout(() => { if (!this.res) d.hidden = true; if (a) a.say(false); }, dur);
   },
-  hideDialog() { this.dlg.hidden = true; this.catch.hidden = true; clearInterval(this.ti); },
+  hideDialog() { this.dlg.hidden = true; this.catch.hidden = true; clearInterval(this.ti); Portrait.hide(); },
   choice(opts) {
     return new Promise(res => {
       const box = $('#choices'); box.innerHTML = ''; box.hidden = false; this.catch.hidden = false; this.dlg.hidden = false; this.dlg.classList.add('done');
@@ -3058,6 +3277,13 @@ const UI = {
     const o = $('#objective'); if (!text) { o.hidden = true; return; }
     const changed = $('#obj-text').textContent !== text; $('#obj-text').textContent = text; o.hidden = false;
     if (changed) { o.classList.remove('pulse'); void o.offsetWidth; o.classList.add('pulse'); Audio.sfx('objective', 0.7); }
+  },
+  streak(n, broken) {
+    const el = $('#streak'); if (!el) return;
+    if (!n) { if (!el.hidden) { el.classList.add(broken ? 'broke' : 'out'); clearTimeout(this.skt); this.skt = setTimeout(() => { el.hidden = true; el.classList.remove('out', 'broke'); }, 380); } return; }
+    clearTimeout(this.skt); el.hidden = false; el.classList.remove('out', 'broke');
+    el.querySelector('b').textContent = n; el.querySelector('small').textContent = n >= 8 ? 'Durdurulamaz' : n >= 5 ? 'Harika' : 'Vuruş';
+    el.classList.toggle('hot', n >= 5); const b = el.querySelector('b'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';
   },
   counter(text) { const c = $('#counter'); if (text === null || text === undefined) c.hidden = true; else { c.hidden = false; c.textContent = text; } },
   interact(label, solo) { const b = $('#interact'); if (!label) { b.hidden = true; return; } $('#interact-l').textContent = label; b.hidden = false; b.classList.toggle('solo', !!solo); },
@@ -3129,6 +3355,83 @@ const UI = {
 const RANK_COLORS = { G: '#9a9a9a', F: '#a8b0a0', E: '#7ec87a', D: '#6ab0e8', C: '#c88ae8', B: '#e8b04a', A: '#ff7a5a', S: '#ffd84a', SS: '#ff4ad8' };
 
 
+// ==== 12b_portrait.js ====
+// ---------- Diyalog portreleri (konuşan karakterin canlı büstü) ----------
+// Ana tuvalin bir köşesine ayrı bir sahneyle çizilir, 2D tuvale kopyalanır; ardından ana kare her şeyin üstüne çizilir.
+const Portrait = {
+  PW: 150, PH: 150, actor: null, color: '#ccc', on: false, every: 2, n: 0, jobs: [],
+  init() {
+    const s = this.scene = new T.Scene();
+    this.hemi = new T.HemisphereLight('#fff6ea', '#6a5a52', 1.5); s.add(this.hemi);
+    const key = this.key = new T.DirectionalLight('#fff0dc', 2.4); key.position.set(-1.4, 1.8, 2.2); s.add(key); s.add(key.target);
+    const rim = this.rim = new T.DirectionalLight('#cfe0ff', 1.6); rim.position.set(1.8, 1.2, -2.2); s.add(rim); s.add(rim.target);
+    this.cam = new T.PerspectiveCamera(30, 1, 0.05, 12);
+    this.wrap = document.getElementById('dport'); this.cv = this.wrap.querySelector('canvas'); this.ctx = this.cv.getContext('2d');
+    this.bgs = {};
+  },
+  bg(color) {
+    if (this.bgs[color]) return this.bgs[color];
+    const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+    const g = x.createRadialGradient(64, 46, 4, 64, 64, 96); g.addColorStop(0, mixHex(color, '#ffffff', 0.15)); g.addColorStop(0.45, mixHex(color, '#2a2018', 0.45)); g.addColorStop(1, '#120e0b');
+    x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 26; i++) { x.fillStyle = `rgba(255,255,255,${0.03 + Math.random() * 0.05})`; const r = 2 + Math.random() * 7; x.beginPath(); x.arc(Math.random() * 128, Math.random() * 128, r, 0, TAU); x.fill(); }
+    const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return this.bgs[color] = t;
+  },
+  // c: CAST girdisi; a: aktör (yoksa gizle)
+  show(a, c, dim) {
+    if (!a || !a.model || !a.model.head || a.removed || !c) { this.hide(); return; }
+    this.actor = a; this.color = c.color || '#ccc'; this.on = true; this.n = 0; this.fresh = true;
+    this.wrap.hidden = false; this.wrap.classList.toggle('dim', !!dim); this.wrap.style.setProperty('--pc', this.color);
+    document.getElementById('dialog').classList.add('hasport');
+  },
+  hide() { this.on = false; this.actor = null; if (this.wrap) this.wrap.hidden = true; const d = document.getElementById('dialog'); if (d) d.classList.remove('hasport'); },
+  // tek seferlik çekim (ör. su yansıması): bir sonraki karede çizilir
+  snap(a, o = {}) { return new Promise(res => this.jobs.push({ a, o, res })); },
+  // ana döngüde, ana render'dan hemen önce
+  process() {
+    if (this.jobs.length) for (const j of this.jobs.splice(0)) { const cv = document.createElement('canvas'); try { this.draw(j.a, j.o, cv); } catch (e) { console.error(e); } j.res(cv); }
+    if (!this.on) return;
+    const a = this.actor; if (!a || a.removed || $('#dialog').hidden) { this.hide(); return; }
+    if (!this.fresh && (this.n++ % this.every)) return; this.fresh = false;
+    this.draw(a, { color: this.color }, this.cv);
+  },
+  draw(a, o, cv) {
+    const r = G.renderer, m = a.model, root = m.root, par = root.parent; if (!par || !m.head) return;
+    const pr = r.getPixelRatio(), W = o.w || this.PW, H = o.h || this.PH;
+    if (cv.width !== Math.round(W * pr)) { cv.width = Math.round(W * pr); cv.height = Math.round(H * pr); }
+    // ışık rengi sahneye hafifçe uyar
+    const env = G.env; if (env) { this.key.color.set('#fff0dc').lerp(env.sun.color, 0.3); this.hemi.groundColor.set('#6a5a52').lerp(env.hemi.groundColor, 0.3); }
+    this.scene.background = o.bgColor ? new T.Color(o.bgColor) : this.bg(o.color || '#888');
+    // modeli geçici olarak portre sahnesine al
+    const olv = m.outlines.map(q => q.visible); for (const q of m.outlines) q.visible = true;
+    const fs = m.faceState.split('|'), fm = m.faceMat.map;
+    m.faceMat.map = m.faceTexFor(m.expr, m.closedEyes ? 'closed' : (fs[1] || 'open'), o.mouth || fs[2] || 'closed');
+    this.scene.add(root); root.updateMatrixWorld(true);
+    const hd = m.head, Hh = m.D.headH;
+    const top = Hh + 0.07, bot = o.bot !== undefined ? o.bot * Hh : -0.29, cy = (top + bot) / 2, half = (top - bot) / 2 * 1.04;
+    const dist = half / Math.tan(this.cam.fov * Math.PI / 360), ang = o.ang !== undefined ? o.ang : 0.32;
+    const cp = hd.localToWorld(V3(Math.sin(ang) * dist, cy + 0.04, Math.cos(ang) * dist)), tg = hd.localToWorld(V3(0, cy, 0));
+    const up = V3(0, 1, 0).applyQuaternion(hd.getWorldQuaternion(new T.Quaternion()));
+    this.cam.position.copy(cp); this.cam.up.copy(up); this.cam.lookAt(tg); this.cam.aspect = W / H; this.cam.updateProjectionMatrix();
+    // ışıklar kameraya göre: önden-yukarıdan yumuşak ana ışık, arkadan kenar ışığı
+    const fw = tg.clone().sub(cp).normalize(), rt = new T.Vector3().crossVectors(fw, up).normalize();
+    this.key.target.position.copy(tg); this.key.position.copy(tg).addScaledVector(fw, -3).addScaledVector(rt, -1.1).addScaledVector(up, 1.6);
+    this.rim.target.position.copy(tg); this.rim.position.copy(tg).addScaledVector(fw, 3).addScaledVector(rt, 1.6).addScaledVector(up, 1.0);
+    this.key.target.updateMatrixWorld(); this.rim.target.updateMatrixWorld();
+    const size = r.getSize(new T.Vector2());
+    r.setViewport(0, 0, W, H); r.setScissor(0, 0, W, H); r.setScissorTest(true);
+    try { r.render(this.scene, this.cam); }
+    finally {
+      r.setScissorTest(false); r.setViewport(0, 0, size.x, size.y);
+      par.add(root); root.updateMatrixWorld(true);
+      m.faceMat.map = fm; m.outlines.forEach((q, i) => q.visible = olv[i]);
+    }
+    const cw = cv.width, ch = cv.height;
+    cv.getContext('2d').drawImage(r.domElement, 0, r.domElement.height - ch, cw, ch, 0, 0, cw, ch);
+  },
+};
+
+
 // ==== 13_story.js ====
 // ---------- Hikâye motoru ----------
 const ABORT = { abort: true };
@@ -3136,7 +3439,7 @@ const Story = {
   scenes: {}, order: [], runId: 0, current: null, skipping: false, canSkip: true, markerTarget: null, waiters: [], inter: [],
   def(id, meta, fn) { this.scenes[id] = Object.assign({ id, fn }, meta); if (!meta.debug) this.order.push(id); },
   skip() { if (!G.inCine || !this.canSkip) return; this.skipping = true; UI.advance(); if (UI.sysAdvance) { UI.sysAdvance(); UI.sysAdvance && UI.sysAdvance(); } for (const w of this.waiters) if (w.skippable) w.t = 1e9; },
-  abort() { this.runId++; this.waiters = []; this.inter = []; this.skipping = false; UI.hideDialog(); $('#choices').hidden = true; $('#system').hidden = true; UI.interact(null); UI.objective(null); UI.counter(null); UI.boss(null); this.markerTarget = null; },
+  abort() { this.runId++; this.waiters = []; this.inter = []; this.skipping = false; UI.hideDialog(); $('#choices').hidden = true; $('#system').hidden = true; UI.interact(null); UI.objective(null); UI.counter(null); UI.boss(null); this.markerTarget = null; $('#streak').hidden = true; Portrait.hide(); },
   async run(id) {
     const sc = this.scenes[id]; if (!sc) { Game.toMenu(); return; }
     this.abort(); const my = this.runId; this.current = id; Save.reach(id); this.canSkip = sc.noSkip ? false : true;
@@ -3144,8 +3447,8 @@ const Story = {
     try {
       await sc.fn(S);
       if (my !== this.runId) return;
-      Loading.show(); const i = this.order.indexOf(id); const nx = sc.next || this.order[i + 1];
-      if (nx) { Save.reach(nx); this.run(nx); } else Game.finale();
+      const i = this.order.indexOf(id); const nx = sc.next || this.order[i + 1];
+      if (nx) { Loading.show(this.scenes[nx]); Save.reach(nx); this.run(nx); } else Game.finale();
     } catch (e) {
       if (e === ABORT) return;
       console.error(e); Game.showError(e);
@@ -3166,6 +3469,21 @@ const Story = {
   },
 };
 
+// Sinematik kamera bina içine düşmesin: bakış noktasından kameraya doğru tara, ilk engelde dur
+function safeShotPos(pos, look) {
+  const L = G.level; if (!L || L.interior || typeof pos === 'function' || typeof look === 'function' || !L.boxes) return pos;
+  if (pos.distanceTo(look) < 3.2) return pos; // yakın çekimler elle yerleştirildi
+  const inBld = (x, z) => { for (const b of L.boxes) { if (Math.min(b.hw, b.hd) < 1.3) continue; const dx = x - b.x, dz = z - b.z; const lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c; if (Math.abs(lx) < b.hw + 0.3 && Math.abs(lz) < b.hd + 0.3) return true; } return false; };
+  const steps = 24; let seenFree = false, k = 1;
+  for (let i = 1; i <= steps; i++) {
+    const u = i / steps, x = lerp(look.x, pos.x, u), z = lerp(look.z, pos.z, u), y = lerp(look.y, pos.y, u);
+    const bl = y < L.h(x, z) + 4.2 && inBld(x, z);
+    if (!bl) seenFree = true; else if (seenFree) { k = (i - 1) / steps; break; }
+  }
+  if (k >= 1) return pos;
+  if (G.auto) console.warn('shot adjusted', Story.current, pos.x.toFixed(1), pos.y.toFixed(1), pos.z.toFixed(1), 'k=' + k.toFixed(2));
+  const out = look.clone().lerp(pos, Math.max(0.3, k - 0.02)); out.y = Math.max(out.y, pos.y * 0.6 + look.y * 0.4); return out;
+}
 function makeS(my) {
   const chk = () => { if (my !== Story.runId) throw ABORT; };
   const S = {
@@ -3185,6 +3503,7 @@ function makeS(my) {
       const c = typeof who === 'string' ? CAST[who] : who; const a = c && c.actor && !c.actor.removed ? c.actor : null;
       if (a) a.say(true);
       if (o.look && a) { a.faceTo(o.look); }
+      if (o.narr || !c || o.noPort) Portrait.hide(); else { const pa = a || (c === CAST.thought && CAST.joseph.actor && !CAST.joseph.actor.removed ? CAST.joseph.actor : null); Portrait.show(pa, c === CAST.thought ? CAST.joseph : c, c === CAST.thought); }
       await UI.say(c, text, Object.assign({ thought: c === CAST.thought }, o)); if (a) a.say(false); chk();
     },
     think(text) { return S.say('thought', text, { thought: true }); },
@@ -3194,7 +3513,7 @@ function makeS(my) {
       G.inCine = on; G.controlEnabled = !on; UI.cine(on); UI.hud(!on); if (!on) { Story.skipping = false; Cam.follow(G.player); Loading.hide(); if ($('#fade').style.opacity !== '0') UI.fade(0, 0.5); } Input.reset();
       if (on && G.player) { G.player.vel.set(0, 0, 0); if (G.player.state !== 'dead') G.player.state = 'move'; }
     },
-    async shot(pos, look, dur = 0, ease) { const p = Cam.shot(pos, look, Story.skipping ? 0 : dur, ease); if (dur > 0 && !Story.skipping) { await new Promise(res => Story.waiters.push({ fn: () => Cam.shotT >= Cam.shotDur || Story.skipping, res })); } chk(); },
+    async shot(pos, look, dur = 0, ease) { pos = safeShotPos(pos, look); const p = Cam.shot(pos, look, Story.skipping ? 0 : dur, ease); if (dur > 0 && !Story.skipping) { await new Promise(res => Story.waiters.push({ fn: () => Cam.shotT >= Cam.shotDur || Story.skipping, res })); } chk(); },
     follow(snap) { Cam.follow(G.player, snap); },
     async fadeOut(d = 0.8) { await UI.fade(1, d); chk(); },
     async fadeIn(d = 0.8) { Loading.hide(); await UI.fade(0, d); chk(); },
@@ -3241,11 +3560,19 @@ const LOAD_TIPS = [
   'Elonth\'ta loncaya girmek on gümüş. Bir köylü için iki yıllık birikim.',
   'Enkron yüz kişiden yaklaşık on kişiye verilir. Ne yaptığını yalnızca sahibi bilir.',
   'Lonca rütbeleri G\'den SS\'e uzanır. Dünyada yalnızca üç SS vardır.',
-  'Sinematikleri sağ üstteki Atla düğmesiyle geçebilirsin.',
+  'Sinematikleri sağ üstteki Atla düğmesine iki kez dokunarak geçebilirsin.',
+  'Dövüşte birbiri ardına isabet ettirdiğin vuruşlar seri sayacını büyütür. Darbe alırsan seri sıfırlanır.',
+  'Ayarlar > Ekran sarsıntısı ile dövüşteki kamera titremesini azaltabilir ya da kapatabilirsin.',
 ];
 const Loading = {
-  show() { const el = $('#loading'); if (!el.hidden) return; el.hidden = false; const s = Story.scenes[Story.current]; $('#ld-chap').textContent = s ? s.chapter : ''; $('#ld-title').textContent = s ? s.title : ''; $('#ld-tip').textContent = pick(LOAD_TIPS); el.classList.remove('out'); },
-  hide() { const el = $('#loading'); if (el.hidden) return; el.classList.add('out'); setTimeout(() => { el.hidden = true; el.classList.remove('out'); }, 450); },
+  tok: 0,
+  show(sc) {
+    const el = $('#loading'); this.tok++; const s = sc || Story.scenes[Story.current];
+    $('#ld-chap').textContent = s ? s.chapter : ''; $('#ld-title').textContent = s ? s.title : '';
+    if (!el.hidden && !el.classList.contains('out')) return;
+    el.hidden = false; el.classList.remove('out'); $('#ld-tip').textContent = pick(LOAD_TIPS);
+  },
+  hide() { const el = $('#loading'); if (el.hidden) return; el.classList.add('out'); const t = ++this.tok; setTimeout(() => { if (t !== this.tok) return; el.hidden = true; el.classList.remove('out'); }, 450); },
 };
 
 
@@ -3306,26 +3633,74 @@ const LOOK = {
 // At + süvari
 class HorseModel {
   constructor(color = '#5a3a26') {
-    const root = this.root = new T.Group(); this.o = { scale: 1 }; this.allMats = [];
-    const M = c => { const m = new T.MeshLambertMaterial({ color: c }); this.allMats.push(m); return m; };
-    const coat = M(color), dark = M('#1e1612'), saddle = M('#3a2418'), cloth = M('#2f5a3a'), gold = M('#c9a85a');
-    const P = (par, t, m, x, y, z, sx, sy, sz, rx = 0) => { const k = new T.Mesh(prim(t), m); k.position.set(x, y, z); k.scale.set(sx, sy, sz); k.rotation.x = rx; k.castShadow = true; par.add(k); return k; };
-    const body = this.body = new T.Group(); body.position.y = 1.35; root.add(body);
-    P(body, 'box', coat, 0, 0, 0, 0.75, 0.75, 1.9); P(body, 'box', cloth, 0, 0.05, -0.1, 0.8, 0.6, 1.1); P(body, 'box', saddle, 0, 0.42, -0.1, 0.55, 0.12, 0.7);
-    const neck = new T.Group(); neck.position.set(0, 0.25, 0.85); body.add(neck); P(neck, 'box', coat, 0, 0.4, 0.15, 0.35, 0.9, 0.45, -0.55); P(neck, 'box', dark, 0, 0.5, -0.02, 0.1, 0.9, 0.2, -0.55);
-    const head = this.head = new T.Group(); head.position.set(0, 0.85, 0.45); neck.add(head); P(head, 'box', coat, 0, 0, 0.25, 0.3, 0.32, 0.65, 0.35); P(head, 'box', gold, 0, 0.05, 0.25, 0.32, 0.05, 0.4, 0.35);
-    P(body, 'box', dark, 0, 0.1, -1.05, 0.14, 0.7, 0.14, 0.45);
-    this.legs = []; for (const [x, z] of [[0.24, 0.75], [-0.24, 0.75], [0.24, -0.75], [-0.24, -0.75]]) { const g = new T.Group(); g.position.set(x, -0.3, z); body.add(g); P(g, 'box', coat, 0, -0.45, 0, 0.17, 0.9, 0.2); P(g, 'box', dark, 0, -0.95, 0.02, 0.18, 0.12, 0.22); this.legs.push(g); }
-    this.phase = 0; this.talking = false;
+    const root = this.root = new T.Group(); this.o = { scale: 1 }; this.allMats = []; this.outlines = [];
+    const mats = {}; const parts = new Map();
+    const mat = c => { const k = c; if (mats[k]) return mats[k]; const dbl = c.endsWith('|2'); const m = TOON.mat(c.replace('|2', ''), dbl ? { side: T.DoubleSide } : {}); this.allMats.push(m); return mats[k] = m; };
+    const add = (grp, geo, col, m) => { let g = parts.get(grp); if (!g) parts.set(grp, g = {}); (g[col] = g[col] || []).push({ geo, m }); };
+    const coat = color, dark = '#1e1612', hoofC = '#2a2420', cloth = '#2f5a3a|2', gold = '#c9a85a', leather = '#3a2418', nose = shade(color, 0.72);
+    const S = sphGeo(18, 12), S2 = sphGeo(10, 8);
+    const body = this.body = new T.Group(); body.position.y = 1.3; root.add(body);
+    add(body, S, coat, mtx(0, 0, 0, 0.68, 0.84, 1.55)); add(body, S, coat, mtx(0, 0.04, 0.6, 0.64, 0.82, 0.68)); add(body, S, coat, mtx(0, 0.08, -0.6, 0.72, 0.82, 0.76)); add(body, S, coat, mtx(0, 0.34, 0.42, 0.4, 0.34, 0.52));
+    // eyer örtüsü, eyer, üzengiler
+    const cg = new T.CylinderGeometry(0.4, 0.4, 0.74, 18, 1, true, -Math.PI / 2, Math.PI); cg.computeVertexNormals();
+    add(body, cg, cloth, mtx(0, 0.02, -0.05, 1, 1, 1, Math.PI / 2, 0, 0));
+    for (const sx of [-1, 1]) add(body, S2, gold, mtx(sx * 0.395, 0.02, -0.05, 0.035, 0.06, 0.74));
+    add(body, S, leather, mtx(0, 0.41, -0.05, 0.48, 0.16, 0.6)); add(body, S2, leather, mtx(0, 0.5, 0.2, 0.14, 0.14, 0.1)); add(body, S2, leather, mtx(0, 0.49, -0.3, 0.32, 0.14, 0.08));
+    for (const sx of [-1, 1]) { add(body, S2, leather, mtx(sx * 0.37, 0.12, 0.0, 0.025, 0.5, 0.04)); add(body, S2, '#8a8d90', mtx(sx * 0.38, -0.15, 0.0, 0.09, 0.04, 0.09)); }
+    // boyun, yele
+    const neck = this.neck = new T.Group(); neck.position.set(0, 0.28, 0.8); neck.rotation.x = 0.55; body.add(neck);
+    add(neck, capsGeo(0.17, 0.3, 0.78, 14), coat, mtx(0, 0.78, 0, 0.74, 1, 1));
+    for (let i = 0; i < 7; i++) add(neck, S2, dark, mtx(0, 0.12 + i * 0.11, -0.17 + i * 0.025 - (i > 4 ? (i - 4) * 0.02 : 0), 0.07, 0.18, 0.14, -0.2));
+    // baş
+    const head = this.head = new T.Group(); head.position.set(0, 0.8, 0.02); head.rotation.x = 0.15; neck.add(head);
+    add(head, S, coat, mtx(0, 0.04, 0, 0.28, 0.32, 0.38)); add(head, capsGeo(0.135, 0.115, 0.44, 12), coat, mtx(0, -0.02, 0.06, 0.88, 1, 1, -Math.PI / 2, 0, 0));
+    add(head, S, nose, mtx(0, -0.035, 0.5, 0.23, 0.19, 0.16));
+    for (const sx of [-1, 1]) {
+      add(head, S2, '#120c0a', mtx(sx * 0.06, -0.02, 0.575, 0.035, 0.045, 0.02));
+      add(head, S2, '#0a0806', mtx(sx * 0.13, 0.085, 0.1, 0.05, 0.065, 0.06)); add(head, S2, '#ffffff', mtx(sx * 0.152, 0.1, 0.115, 0.012, 0.016, 0.012));
+      add(head, new T.ConeGeometry(0.5, 1, 8), coat, mtx(sx * 0.085, 0.24, -0.07, 0.07, 0.17, 0.05, -0.15, 0, -sx * 0.25));
+      add(head, S2, leather, mtx(sx * 0.14, 0.0, 0.14, 0.02, 0.24, 0.03));
+    }
+    add(head, S2, dark, mtx(0, 0.2, 0.04, 0.12, 0.07, 0.16, 0.4)); add(head, S2, gold, mtx(0, 0.15, 0.13, 0.3, 0.025, 0.03));
+    add(head, S2, leather, mtx(0, -0.02, 0.36, 0.25, 0.03, 0.03, 0, 0, 0)); add(head, new T.TorusGeometry(0.13, 0.014, 6, 14), leather, mtx(0, -0.03, 0.36, 1, 0.85, 1, Math.PI / 2 - 0.1, 0, 0));
+    // bacaklar (diz ekleminde iki parça)
+    this.legs = []; this.knees = [];
+    for (const [x, z, back] of [[0.19, 0.62, 0], [-0.19, 0.62, 0], [0.2, -0.64, 1], [-0.2, -0.64, 1]]) {
+      const g = new T.Group(); g.position.set(x, -0.14, z); body.add(g);
+      add(g, capsGeo(back ? 0.17 : 0.13, 0.085, 0.58, 12), coat, mtx(0, 0.02, back ? -0.03 : 0));
+      const k = new T.Group(); k.position.y = -0.56; g.add(k);
+      add(k, capsGeo(0.08, 0.065, 0.48, 10), coat, mtx(0, 0, 0)); add(k, S2, coat, mtx(0, -0.46, 0.01, 0.13, 0.12, 0.14));
+      add(k, new T.CylinderGeometry(0.078, 0.098, 0.11, 12), hoofC, mtx(0, -0.555, 0.015)); add(k, S2, '#e8e0d0', mtx(0, -0.49, 0.01, 0.15, 0.06, 0.16));
+      this.legs.push(g); this.knees.push({ k, back });
+    }
+    // kuyruk
+    const tail = this.tail = new T.Group(); tail.position.set(0, 0.28, -0.98); tail.rotation.x = 0.35; body.add(tail);
+    add(tail, capsGeo(0.06, 0.1, 0.62, 10), dark, mtx(0, 0, 0)); add(tail, S2, dark, mtx(0, -0.66, -0.02, 0.17, 0.3, 0.15));
+    // birleştir + kontur
+    for (const [grp, cols] of parts) for (const col in cols) {
+      const geo = mergeParts(cols[col]); const mesh = new T.Mesh(geo, mat(col)); mesh.castShadow = true; mesh.receiveShadow = true; grp.add(mesh);
+      if (!col.endsWith('|2')) { const ol = new T.Mesh(geo, TOON.outline); ol.userData.outline = true; grp.add(ol); this.outlines.push(ol); }
+    }
+    this.phase = 0; this.talking = false; this.t = Math.random() * 10;
   }
-  play() { return 0; } setStance() { } setWeapon() { } flash() { }
-  update(dt, speed) { this.phase += dt * (3 + speed * 1.1); const a = Math.min(1, speed / 3) * 0.6; this.legs.forEach((l, i) => l.rotation.x = Math.sin(this.phase + [0, 1.2, 2.6, 3.8][i]) * a); this.body.position.y = 1.35 + Math.abs(Math.sin(this.phase)) * 0.1 * a; this.head.rotation.x = Math.sin(this.phase) * 0.1 * a; }
+  play() { return 0; } setStance() { } setWeapon() { } setExpression() { }
+  flash(color = '#ffffff', t = 0.12) { }
+  update(dt, speed) {
+    this.t += dt; this.phase += dt * (3 + speed * 1.1); const a = Math.min(1, speed / 3) * 0.55, ph = this.phase;
+    const off = [0, Math.PI, Math.PI * 0.5, Math.PI * 1.5];
+    this.legs.forEach((l, i) => { l.rotation.x = Math.sin(ph + off[i]) * a; const kb = this.knees[i]; const bend = Math.max(0, Math.sin(ph + off[i] + 1.3)) * a * 1.4; kb.k.rotation.x = kb.back ? -bend * 0.8 : bend; });
+    this.body.position.y = 1.3 + Math.abs(Math.sin(ph)) * 0.07 * a;
+    this.neck.rotation.x = 0.55 + Math.sin(ph * 2) * 0.05 * a + Math.sin(this.t * 0.5) * 0.03;
+    this.head.rotation.x = 0.15 + Math.sin(this.t * 0.8) * 0.04 * (1 - a);
+    this.tail.rotation.z = Math.sin(this.t * 1.4) * 0.12; this.tail.rotation.x = 0.35 + a * 0.4 + Math.sin(this.t * 0.9) * 0.05;
+    if (G.camera && (this._olT = (this._olT || 0) + dt) > 0.4) { this._olT = 0; const far = G.camera.position.distanceTo(this.root.position) > 34; for (const ol of this.outlines) ol.visible = !far; }
+  }
   dispose() { for (const m of this.allMats) m.dispose(); }
 }
 function spawnRider(look) {
   const horse = new Actor({ model: new HorseModel(), radius: 0.8, name: 'At', solid: false });
   const rider = new Humanoid(look); rider.setStance('sit', true);
-  rider.root.position.set(0, 0.06, -0.1); horse.model.body.add(rider.root);
+  rider.root.position.set(0, 0.11, -0.1); horse.model.body.add(rider.root);
   rider.pose.lgLz = 0.5; horse.rider = rider;
   const upd = horse.model.update.bind(horse.model);
   horse.model.update = (dt, sp) => { upd(dt, sp); rider.update(dt, 0); rider.lgL.rotation.z = 0.45; rider.lgR.rotation.z = -0.45; rider.knL.rotation.x = 0.9; rider.knR.rotation.x = 0.9; rider.lgL.rotation.x = -0.5; rider.lgR.rotation.x = -0.5; };
@@ -3500,6 +3875,18 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   await S.interact(L.pts.basin, 'Suya bak', 1.2);
   S.clearObjective(); lily.follow = null;
   S.cine(true); p.faceNow(V3(1.25, 0, -2.6));
+  // su yüzeyinde yansıma
+  {
+    const rc = await Portrait.snap(p, { w: 150, h: 150, ang: 0, bot: -0.2, bgColor: '#2c4a54' });
+    const tc = document.createElement('canvas'); tc.width = rc.width; tc.height = rc.height; const rx = tc.getContext('2d');
+    rx.translate(tc.width, 0); rx.scale(-1, 1); rx.drawImage(rc, 0, 0); rx.setTransform(1, 0, 0, 1, 0, 0);
+    rx.globalCompositeOperation = 'multiply'; rx.fillStyle = '#86b4c2'; rx.fillRect(0, 0, tc.width, tc.height); rx.globalCompositeOperation = 'source-over';
+    for (let i = 0; i < 7; i++) { rx.strokeStyle = `rgba(255,255,255,${0.05 + (i % 2) * 0.05})`; rx.lineWidth = 2; rx.beginPath(); rx.ellipse(tc.width / 2, tc.height / 2, tc.width * (0.12 + i * 0.06), tc.height * (0.12 + i * 0.06), 0, 0, TAU); rx.stroke(); }
+    const rt = new T.CanvasTexture(tc); rt.colorSpace = T.SRGBColorSpace;
+    const disc = new T.Mesh(new T.CircleGeometry(0.232, 32), new T.MeshBasicMaterial({ map: rt, transparent: true, opacity: 0.94, fog: false }));
+    disc.rotation.x = -Math.PI / 2; disc.position.set(1.25, 0.704, -2.55); L.add(disc);
+    L.anims.push(() => { disc.scale.setScalar(1 + Math.sin(G.t * 2.3) * 0.012); disc.rotation.z = Math.sin(G.t * 0.7) * 0.05; });
+  }
   p.model.play('pickup'); await S.wait(0.5); p.model.act.hold = true;
   await S.shot(V3(1.15, 0.9, -2.3), V3(1.25, 0.6, -2.55), 1.0);
   await S.wait(0.5);
@@ -3626,30 +4013,33 @@ Story.def('p_village', { chapter: 'Prolog', title: 'Yeni Dünya', sub: 'Eros, k�
   await S.say('lily', 'Üstün çamur oldu... Boş ver, annem yıkar. Hadi! Sana en sevdiğim yeri göstereceğim!');
   S.cine(false);
   S.objective('Lily\'yi takip et', lily);
-  await lilyLead(S, lily, [V3(-8, 0, 4), V3(-15, 0, -6), V3(-22, 0, -19), V3(-27, 0, -29), V3(-30.3, 0, -34.2)]);
+  await lilyLead(S, lily, [V3(-8, 0, 4), V3(-15, 0, -6), V3(-22, 0, -19), V3(-27, 0, -29), V3(-29.6, 0, -36), V3(-30.9, 0, -41.0)]);
   await S.reach(L.pts.hillTop, 3.2);
   S.clearObjective();
-  // tepe
+  // tepe: ağacın önünde, saraya bakan yamaç
   S.cine(true); S.music('title');
-  lily.place(-30.3, -34.2, 2.85); lily.model.setStance('sitGround'); p.walkTo([V3(-31.3, 0, -34.6)], 1.2);
-  const hy = L.h(-31, -35);
-  await S.shot(V3(-32.5, hy + 2.4, -30.5), V3(-26, hy + 5, -70), 0);
-  await S.shot(V3(-31.0, hy + 5.2, -36.5), V3(-12, hy + 8, -120), 5, easeInOut);
-  p.model.setStance('sitGround'); p.faceNow(V3(-25, 0, -70));
-  await S.shot(V3(-33.4, hy + 2.1, -29.4), V3(-24, hy + 3.2, -72), 0);
+  const J = V3(-32.0, 0, -41.0), LP = V3(-31.1, 0, -40.8), hy = L.h(J.x, J.z);
+  lily.place(LP.x, LP.z, Math.PI * 0.95); lily.model.setStance('sitSlope'); p.walkTo([J], 1.2);
+  const at = (dx, dy, dz) => V3(J.x + dx, hy + dy, J.z + dz);
+  await S.shot(at(0.9, 1.5, 3.9), at(4, 1.4, -40), 0);
+  await S.wait(0.4);
+  await S.shot(at(0.6, 2.8, -3.5), at(4, 4, -90), 5, easeInOut);
+  p.stopWalk && p.stopWalk(); p.place(J.x, J.z, Math.PI * 0.97); p.model.setStance('sitSlope'); p.faceNow(V3(-25, 0, -90));
+  await S.shot(at(0.9, 1.5, 3.9), at(4, 1.4, -40), 0);
   await S.say('lily', 'Şurası Eros Sarayı. Lordlar orada yaşıyor. Hepsinin kendine ait bir yatağı varmış!');
   await S.say('lily', 'Bir gün ben de orada beyaz ekmek yiyeceğim.');
   await S.say('joseph', 'Beyaz ekmek mi?');
   await S.say('lily', 'Hiç yemedik ki! Ama bir kere fırının önünden geçerken kokusunu duymuştum.');
   await S.think('Önceki hayatımda beyaz ekmeği çöpe atardım.');
   await S.wait(0.6);
+  await S.shot(at(3.4, 0.9, -0.9), at(0.4, 0.55, -0.1), 0);
   lily.lookAt(p.root);
   await S.say('lily', 'Abi... bir daha uyumayacaksın, değil mi? O kadar uzun?');
   const c2 = await S.choice(['"Söz veriyorum."', '"Artık hiçbir yere gitmiyorum."']);
   await S.say('joseph', c2 === 0 ? 'Söz veriyorum.' : 'Artık hiçbir yere gitmiyorum.');
   lily.model.setStance('hugKnees');
   await S.say('lily', 'İyi. Çünkü sen uyurken annem her gece ağladı. Babam da ağladı ama gizli gizli.');
-  await S.shot(V3(-30.4, hy + 1.7, -37.4), V3(-30.8, hy + 0.7, -34.4), 3);
+  await S.shot(at(2.6, 1.25, -2.2), at(0.45, 0.6, 0.0), 3);
   await S.think('Bu insanları tanımıyorum. Bir hafta önce yoktular.');
   await S.think('Ama onları ağlatan her şeyle savaşırım.');
   await S.wait(0.8);
@@ -3725,7 +4115,7 @@ Story.def('c1_alley', { chapter: 'Bölüm 1 · Taban', title: 'Arka Sokak', sub:
   victor.model.setStance('crossArms');
   for (let i = 0; i < 3; i++) { const w = new Wanderer({ look: randomVillager(i === 1) }); w.place(-4 + i * 3, -2 + i, 0); w.home = V3(-2 + i * 2, 0, -2); w.homeR = 4; }
   S.cine(true);
-  await S.shot(V3(8.5, 2.4, 9.5), V3(12, 1.0, 15), 0);
+  await S.shot(V3(10.6, 1.9, 12.6), V3(12.4, 1.0, 15.2), 0);
   await S.fadeIn(1);
   UI.title('Birkaç hafta sonra', 'Arka Sokak', '');
   S.walk(p, [V3(10.4, 0, 15.6), V3(14.6, 0, 15.6)], 1.6);
@@ -3739,7 +4129,7 @@ Story.def('c1_alley', { chapter: 'Bölüm 1 · Taban', title: 'Arka Sokak', sub:
   await S.say('victor', 'İblis mi? Bu sefil sokakta iblis bile yaşamaz.');
   S.walk(victor, [V3(15.6, 0, 15.9)], 1.6); await S.wait(0.9);
   victor.model.play('push'); await S.wait(0.25); p.model.setWeapon(null); p.model.play('hit'); S.sfx('hit', 0.6);
-  const bread = new T.Mesh(prim('box'), lam('#c8955a')); bread.scale.set(0.13, 0.11, 0.3); bread.position.set(15.0, L.h(15, 15.2) + 0.06, 15.2); bread.rotation.y = 0.7; L.add(bread);
+  const bread = new T.Mesh(prim('sphS'), TOON.mat('#c8955a', { gradientMap: TOON.gradSoft })); bread.scale.set(0.16, 0.11, 0.32); bread.castShadow = true; bread.position.set(15.0, L.h(15, 15.2) + 0.06, 15.2); bread.rotation.y = 0.7; L.add(bread);
   await S.say('victor', 'Torbada ne var? Ekmek mi? Benim köpeklerim bile bunu yemez.');
   await S.shot(V3(13.6, 1.0, 14.6), V3(15.4, 0.9, 15.9), 0.6);
   await S.say('joseph', 'O ekmek annemin üç günlük emeği. Yerden kaldır.');
@@ -3788,41 +4178,62 @@ Story.def('c1_alley', { chapter: 'Bölüm 1 · Taban', title: 'Arka Sokak', sub:
   });
   UI.hideDialog();
   // ---- kaçış
-  for (const e of [bram, osric, victor]) { e.active = false; e.removeRing && e.removeRing(); }
-  combatOff(p); if (nora) nora.active = false; if (leo) leo.active = false;
+  for (const e of [bram, osric, victor]) { e.active = false; e.removeRing && e.removeRing(); e.vel.set(0, 0, 0); }
+  combatOff(p); if (nora) { nora.active = false; nora.vel.set(0, 0, 0); } if (leo) { leo.active = false; leo.vel.set(0, 0, 0); }
   S.cine(true); S.music('village');
   victor.alive = true; victor.untargetable = true; victor.model.setStance(null);
-  await S.shot(V3(p.pos.x + 3, 1.6, p.pos.z - 1), V3(victor.pos.x, 1.0, victor.pos.z), 0.6);
-  victor.faceTo(p);
+  // sahneyi sabit, açık bir düzene yeniden diz
+  await S.fadeOut(0.35);
+  p.place(14.6, 15.0, Math.PI / 2); p.model.setStance(null);
+  nora.place(15.5, 14.2, -0.6); victor.place(19.0, 16.4, -1.6); bram.place(19.6, 15.2, -1.7); osric.place(18.8, 17.6, -1.5);
+  for (const e of [bram, osric]) { e.alive = true; e.untargetable = true; e.model.setStance(null); e.model.act = null; }
+  if (leo) { leo.place(13.4, 16.6, 2.0); leo.model.setStance(null); leo.model.act = null; }
+  victor.faceTo(p); bram.faceTo(p); osric.faceTo(p); nora.faceTo(victor); p.faceTo(victor);
+  await S.shot(V3(12.4, 1.55, 13.4), V3(18.6, 1.1, 16.2), 0);
+  await S.fadeIn(0.35);
   await S.say('victor', 'Bu... bu daha bitmedi! Babam duyunca hepinizi köyden sürdürecek!');
   for (const e of [bram, osric, victor]) { e.alive = false; e.corpse = true; e.model.setStance(null); e.fleeTo = true; e.walkTo([V3(22.6, 0, 18.4), V3(27, 0, 21), V3(33, 0, 30)], 4.5); }
+  nora.model.play('laugh');
   await S.wait(1.5);
-  for (const e of [bram, osric, victor]) e.setVisible(false);
+  for (const e of [bram, osric, victor]) { e.stopWalk && e.stopWalk(); e.setVisible(false); }
   L.arena = null;
-  // ---- sonrası
-  p.model.setStance('sitGround'); p.faceTo(nora);
-  nora.faceNow(p); nora.walkTo([V3(p.pos.x + 0.9, 0, p.pos.z + 0.3)], 1.5);
-  if (!leo) { leo = S.cast('leo', npc(LOOK.leo(10), 10, 16.5, 1.4)); leo.walkTo([V3(p.pos.x - 0.9, 0, p.pos.z + 0.6)], 3); }
-  else { leo.model.setStance(null); leo.walkTo([V3(p.pos.x - 0.9, 0, p.pos.z + 0.6)], 2); }
-  await S.shot(V3(p.pos.x + 2.4, 1.3, p.pos.z + 2.6), V3(p.pos.x, 0.6, p.pos.z), 1.2);
+  // ---- sonrası: Joseph ekmeğin yanında oturuyor; herkes kendi yerinde
+  await S.fadeOut(0.3);
+  p.place(14.7, 15.2, -Math.PI / 2); p.model.setStance('sitGround', true);
+  nora.place(15.2, 14.1, -0.5); nora.model.setStance(null);
+  if (!leo) leo = S.cast('leo', npc(LOOK.leo(10), 10.0, 16.5, 1.4));
+  leo.place(15.3, 16.4, -2.6); leo.model.setStance('hips'); leo.model.act = null;
+  for (const a2 of [nora, leo]) { a2.pinned = true; a2.solid = false; }
+  bread.position.set(15.15, L.h(15.15, 15.55) + 0.06, 15.55);
+  nora.faceTo(p); leo.faceTo(p);
+  await S.shot(V3(12.3, 1.35, 15.0), V3(14.9, 0.75, 15.25), 0);
+  await S.fadeIn(0.4);
+  await S.shot(V3(12.9, 1.15, 15.4), V3(14.9, 0.7, 15.2), 2.0);
   nora.lookAt(p.root); nora.model.play('reach');
   await S.say('nora', 'Kalk bakalım. Sen Joseph\'sin, değil mi? Komadan dönen çocuk.');
-  p.model.setStance(null);
   await S.say('joseph', 'Teşekkür ederim. Sen olmasan...');
   await S.say('nora', 'Sen olmasan da o ekmek yerde kalırdı. Ben Nora. Bu da Leo.');
-  leo.lookAt(p.root);
+  leo.lookAt(p.root); leo.model.setStance(null);
   await S.say('nora', 'Koşarken bile düşer ama kalbi temizdir.');
+  leo.model.play('point');
   await S.say('leo', 'Düşmedim! Taktik yaptım! Düşmanın dikkatini dağıttım!');
-  const clara = S.cast('clara', npc(LOOK.clara(10), 10.4, 16.8, 1.4));
+  const clara = S.cast('clara', npc(LOOK.clara(10), 10.2, 16.6, 1.4, { watch: false }));
   await S.say('clara', 'Kanıyorsun! Dur, kıpırdama.');
-  await S.walk(clara, [V3(p.pos.x + 0.2, 0, p.pos.z - 0.8)], 3.2);
-  clara.faceNow(p); clara.lookAt(p.root); clara.model.play('reach');
-  await S.wait(0.6); p.model.addExtra({ t: 'bandage', c: '#e8dfcc' });
+  await S.shot(V3(12.2, 1.4, 14.2), V3(14.2, 0.8, 15.4), 0.8);
+  await S.walk(clara, [V3(13.9, 0, 15.5)], 3.0);
+  clara.pinned = true; clara.solid = false;
+  clara.faceNow(p); clara.lookAt(p.root); clara.model.setStance('kneel'); await S.wait(0.4); clara.model.play('reach');
+  await S.wait(0.6); p.model.addExtra({ t: 'bandage', c: '#e8dfcc' }); S.sfx('cloth', 0.5);
+  await S.shot(V3(13.0, 1.05, 14.3), V3(14.4, 0.75, 15.35), 0.8);
   await S.say('nora', 'Clara? Senin burada ne işin var? Annen seni bizimle görse...');
   await S.say('clara', 'Annem görmüyor.');
   clara.model.play('nod');
   await S.say('clara', 'Ben Clara. Babam köprünün öbür tarafında kumaş satıyor. Ama ben bu tarafı daha çok seviyorum. Burada insanlar gülüyor.');
-  p.walkTo([V3(15.0, 0, 15.7)], 1.4); await S.wait(1.2); p.model.play('pickup'); await S.wait(0.6); bread.visible = false; p.model.setWeapon('bread');
+  clara.model.setStance(null); clara.pinned = false; clara.walkTo([V3(14.0, 0, 16.6)], 1.2);
+  // ayağa kalk, ekmeği al
+  p.model.setStance(null); p.faceNow(V3(15.15, 0, 15.55)); await S.wait(0.4); p.model.play('pickup'); await S.wait(0.6); bread.visible = false; p.model.setWeapon('bread');
+  await S.shot(V3(12.4, 1.5, 15.6), V3(14.7, 1.0, 15.2), 1.0);
+  p.faceTo(nora);
   await S.think('Önceki hayatımda bir sürü meslektaşım vardı. Hiç arkadaşım olmadı.');
   await S.say('joseph', 'Size bir borcum var.');
   nora.model.play('shrug');
@@ -3885,8 +4296,9 @@ Story.def('c1_selen', { chapter: 'Bölüm 1 · Taban', title: 'Merhem', sub: 'Le
   await S.think('Gece oldu. Annem merak eder.');
   S.cine(false); Cam.yaw = p2.facing + Math.PI;
   S.objective('Eve dön', L.pts.homeDoor);
-  await S.until(() => p2.dist(V3(ld.x, 0, ld.z)) > 9);
+  await S.until(() => p2.dist(V3(ld.x, 0, ld.z)) > 8);
   S.cine(true); S.clearObjective();
+  { const dx = p2.pos.x - ld.x, dz = p2.pos.z - ld.z, d = Math.hypot(dx, dz) || 1; if (d > 9) p2.place(ld.x + dx / d * 8.5, ld.z + dz / d * 8.5, p2.facing); }
   const selen2 = S.cast('selen', npc(LOOK.selen(), ld.x - 2.5, ld.z + 0.1, 0, { watch: false, weapon: 'jar' }));
   await S.think('...?');
   p2.faceTo(selen2);
@@ -4106,9 +4518,10 @@ Story.def('c1_harvest', { chapter: 'Bölüm 1 · Taban', title: 'Hasat', sub: '1
   await S.say('joseph', 'Teşekkür ederim, baba.');
   p.model.setExpression('smile');
   await S.wait(0.5);
-  const lily = S.cast('lily', npc(LOOK.lily(17), -8, 40, 2.5));
-  S.walk(lily, [V3(cartP.x - 2.6, 0, cartP.z + 3.2)], 3.4);
-  await S.shot(V3(cartP.x - 4.5, 1.6, cartP.z + 5.5), V3(cartP.x - 1.5, 0.9, cartP.z + 2.4), 1.2);
+  const lily = S.cast('lily', npc(LOOK.lily(17), 13, 37, Math.PI));
+  S.walk(lily, [V3(8.2, 0, 44), V3(8.5, 0, 52.4)], 3.4);
+  await S.shot(V3(cartP.x - 1.0, 1.55, cartP.z + 4.6), V3(cartP.x - 2.0, 1.0, cartP.z - 3), 0);
+  Cam.shot(V3(cartP.x - 1.1, 1.5, cartP.z + 4.0), V3(cartP.x - 2.0, 1.0, cartP.z - 3), 3.0);
   await S.say('lily', 'Abi! Baba! Annem "yahni soğudu" diyor! Üçüncü kez!');
   await S.until(() => !lily.path);
   lily.lookAt(p.root); lily.model.setStance('hips'); lily.model.setExpression('angry');
@@ -4116,6 +4529,7 @@ Story.def('c1_harvest', { chapter: 'Bölüm 1 · Taban', title: 'Hasat', sub: '1
   daniel.model.play('laugh'); p.model.setExpression('smile');
   await S.say('daniel', 'Teşekkürler, büyük avcı Lily.');
   lily.model.setExpression('smile');
+  await S.shot(V3(cartP.x + 3.2, 2.3, cartP.z + 5.2), V3(cartP.x - 1.2, 0.8, cartP.z + 1.2), 3.5);
   await S.think('Bir yıl sonra her şey değişecek. Ama bu akşamı unutmayacağım.');
   await S.fadeOut(1.5);
 });
@@ -4171,6 +4585,7 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   await S.walk(g2, [V3(p.pos.x + 0.9, 0, p.pos.z - 0.7)], 3.2);
   g2.faceTo(p); g2.model.play('push'); await S.wait(0.3);
   p.model.play('knock'); S.sfx('hitHeavy', 0.6); Screen.addShake(0.4);
+  setTimeout(() => { if (!p.removed) { p.model.stop(); p.model.setStance('sitGround'); } }, 700);
   await S.say('guard', 'Leydi Isolde\'den uzak dur, sefil!');
   S.sfx('laugh'); S.sfx('crowd');
   await S.shot(V3(p.pos.x - 1.5, 0.7, p.pos.z + 1.2), V3(p.pos.x, 0.5, p.pos.z), 0.6);
@@ -4186,6 +4601,7 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   await S.shot(V3(p.pos.x + 0.8, 2.6, p.pos.z + 1.8), V3(p.pos.x, 0.3, p.pos.z), 2);
   await S.think('Yere düştüğümde kimse elini uzatmadı.');
   await S.think('Bunu da öğrendim.');
+  p.model.setStance(null);
   await S.fadeOut(1.2);
   // ---- gece: birikim
   L = await S.level(() => buildHut('night'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true });
@@ -4198,9 +4614,9 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   S.cine(false);
   S.objective('Sandığın altındaki gevşek tahtayı kaldır', V3(-1.4, 0, -2.0));
   await S.interact(V3(-1.4, 0, -2.0), 'Tahtayı kaldır', 1.3);
-  S.clearObjective(); S.cine(true); p2.faceNow(V3(-1.4, 0, -2.6));
+  S.clearObjective(); S.cine(true); p2.place(-1.4, -1.85, Math.PI); p2.faceNow(V3(-1.4, 0, -2.6));
   p2.model.setStance('kneel'); await S.wait(0.6); p2.model.setWeapon('pouch'); S.sfx('coin');
-  await S.shot(V3(-0.6, 1.2, -1.5), V3(-1.4, 0.6, -2.2), 1);
+  await S.shot(V3(-0.45, 1.0, -2.5), V3(-1.4, 0.55, -2.15), 1);
   await S.say('sys', 'Kese · 5 gümüş, 12 bronz', { narr: true });
   await S.think('Beş yıl. Beş gümüş.');
   await S.think('Loncaya girmek on gümüş.');
@@ -4449,7 +4865,7 @@ const Game = {
     G.scene = new T.Scene();
     G.camera = new T.PerspectiveCamera(55, 1, 0.1, 900);
     G.env = new Env(G.scene);
-    Cam.init(G.camera); FX.init(G.scene); Ambient.init(G.scene); Input.init(); UI.init();
+    Cam.init(G.camera); FX.init(G.scene); Ambient.init(G.scene); Input.init(); UI.init(); Portrait.init();
     this.applyQuality(); this.resize(); addEventListener('resize', () => this.resize());
     this.bindMenus();
     G.env.set('dusk'); this.last = performance.now();
@@ -4497,6 +4913,7 @@ const Game = {
     FX.update(dt, G.camera); Screen.update(raw); UI.frame(raw);
     if (G.onFrame) G.onFrame(dt);
     Input.endFrame();
+    Portrait.process();
     G.renderer.render(G.scene, G.camera);
   },
   startAudio() { Audio.init(); Audio.resume(); },
@@ -4507,6 +4924,7 @@ const Game = {
       if (m === 'new') this.newGame();
       if (m === 'continue') { const id = Save.data.last; if (id) this.start(id); }
       if (m === 'chapters') this.openChapters();
+      if (m === 'codex') openCodex();
       if (m === 'settings') this.openSettings();
       if (m === 'fullscreen') { const d = document.documentElement; try { if (!document.fullscreenElement) (d.requestFullscreen || d.webkitRequestFullscreen).call(d).catch(() => { }); else document.exitFullscreen(); } catch (_) { } }
     });
@@ -4515,6 +4933,7 @@ const Game = {
       if (p === 'resume') this.pause(false);
       if (p === 'restart') { this.pause(false); this.start(Story.current); }
       if (p === 'chapters') this.openChapters();
+      if (p === 'codex') openCodex();
       if (p === 'settings') this.openSettings();
       if (p === 'menu') { this.pause(false); this.toMenu(); }
     });
@@ -4530,11 +4949,12 @@ const Game = {
   menuScene() {
     Story.abort(); Story.current = null; this.clearWorld(); UI.hud(false); UI.cine(false); G.inCine = false;
     const L = buildVillage({ night: false }); G.level = L; G.scene.add(L.group); G.env.set('dusk'); Ambient.setup(L, 'dusk');
-    const n = new NPC({ look: LOOK.joseph(18), watch: false }); n.place(-31, -35, 2.9); n.model.setStance('sitGround', true);
-    const l = new NPC({ look: LOOK.lily(15), watch: false }); l.place(-30.1, -34.8, 2.8); l.model.setStance('hugKnees', true);
-    const hy = L.h(-31, -35);
-    Cam.shot(V3(-33.2, hy + 2.0, -29.0), V3(-24, hy + 3.2, -72), 0);
-    G.onFrame = dt => { Cam.toPos.x = -33.2 + Math.sin(G.t * 0.06) * 1.0; Cam.toPos.y = hy + 2.0 + Math.sin(G.t * 0.09) * 0.2; };
+    const J = V3(-32.0, 0, -41.0), hy = L.h(J.x, J.z);
+    const n = new NPC({ look: LOOK.joseph(18), watch: false }); n.place(J.x, J.z, Math.PI * 0.97); n.model.setStance('sitSlope', true);
+    const l = new NPC({ look: LOOK.lily(15), watch: false }); l.place(J.x + 0.95, J.z + 0.2, Math.PI * 0.93); l.model.setStance('hugKnees', true);
+    const cx = J.x - 2.2, cz = J.z + 4.6;
+    Cam.shot(V3(cx, hy + 1.7, cz), V3(J.x - 7, hy + 2.2, J.z - 40), 0);
+    G.onFrame = dt => { Cam.toPos.x = cx + Math.sin(G.t * 0.06) * 0.8; Cam.toPos.y = hy + 1.7 + Math.sin(G.t * 0.09) * 0.15; };
     Audio.play('title'); Audio.ambience('wind');
   },
   newGame() { Save.data.last = null; this.start(Story.order[0]); },
@@ -4543,7 +4963,7 @@ const Game = {
     $('#fade').style.transition = 'none'; $('#fade').style.opacity = 1;
     Story.run(id);
   },
-  toMenu() { G.onFrame = null; Story.abort(); this.showMenu(); $('#fade').style.transition = 'opacity .6s'; $('#fade').style.opacity = 0; },
+  toMenu() { G.onFrame = null; Story.abort(); Loading.hide(); UI.hideDialog(); $("#choices").hidden = true; $("#system").hidden = true; $("#titlecard").hidden = true; this.showMenu(); $('#fade').style.transition = 'opacity .6s'; $('#fade').style.opacity = 0; },
   pause(on) {
     if (!Story.current || !$('#menu').hidden) return;
     G.paused = on; $('#pause').hidden = !on; Input.reset();
@@ -4573,6 +4993,7 @@ const Game = {
     const range = (id, label, key, min, max, step) => `<div class="set-row"><label for="${id}">${label}</label><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${S[key]}" data-k="${key}"></div>`;
     body.innerHTML = range('s-ui', 'Arayüz boyutu', 'uiScale', 0.8, 1.8, 0.05) + range('s-sens', 'Kamera hassasiyeti', 'sens', 0.3, 2.5, 0.1) + range('s-mus', 'Müzik', 'music', 0, 1, 0.05) + range('s-sfx', 'Efektler', 'sfx', 0, 1, 0.05) + range('s-txt', 'Metin hızı', 'textSpeed', 0.5, 3, 0.1)
       + `<div class="set-row"><label>Shift lock</label><div class="seg" id="s-sl"><button type="button" data-v="1">Açık</button><button type="button" data-v="0">Kapalı</button></div></div>`
+      + `<div class="set-row"><label>Ekran sarsıntısı</label><div class="seg" id="s-shk"><button type="button" data-v="1">Tam</button><button type="button" data-v="0.6">Az</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Grafik</label><div class="seg" id="s-q"><button type="button" data-v="low">Akıcı</button><button type="button" data-v="high">Kaliteli</button></div></div>`
       + `<div class="set-row"><label>Dikey kamera</label><div class="seg" id="s-inv"><button type="button" data-v="0">Normal</button><button type="button" data-v="1">Ters</button></div></div>`;
     body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); UI.applyScale(); Save.store(); }));
@@ -4580,6 +5001,7 @@ const Game = {
     seg('#s-q', () => S.quality, v => { S.quality = v; this.applyQuality(); });
     seg('#s-inv', () => S.invertY ? '1' : '0', v => { S.invertY = v === '1'; });
     seg('#s-sl', () => S.shiftLock ? '1' : '0', v => { S.shiftLock = v === '1'; UI.syncLock(); });
+    seg('#s-shk', () => String(S.shake === undefined ? 1 : S.shake), v => { S.shake = parseFloat(v); });
   },
   async finale() {
     UI.hud(false); await UI.fade(1, 1.5);
@@ -4591,6 +5013,39 @@ const Game = {
 };
 window.addEventListener('load', () => { try { Game.init(); } catch (e) { Game.showError(e); } });
 window.__G = G; window.__Story = Story; window.__Game = Game; window.__Cam = Cam; window.__Input = () => Input; window.__UI = UI;
+
+
+// ==== 16b_codex.js ====
+// ---------- Günlük: hikâye ilerledikçe açılan dünya bilgisi ----------
+const CODEX = [
+  { id: 'joseph', cat: 'Kişiler', t: 'Joseph', at: 'p_wake', x: 'Eros\'un yoksul köy tarafında, on yaşında bir çocuk. İçinde, otuz altı yaşında bir trafik kazasında ölen bir avukatın anıları yaşıyor. Önceki hayatında hiç dava kaybetmedi; ama kapısını açtığında adını söyleyen kimse yoktu.' },
+  { id: 'family', cat: 'Kişiler', t: 'Marta, Daniel ve Lily', at: 'p_wake', x: 'Joseph\'in yeni ailesi. Marta iki hafta boyunca ateşler içindeki oğlunun başında bekledi. Daniel tarlada çalışır; sevgisini şakayla saklar. Lily, abisinden birkaç yaş küçük, inatçı ve hiç susmayan bir kardeş.' },
+  { id: 'eros', cat: 'Dünya', t: 'Eros', at: 'p_village', x: 'Elonth Krallığı\'nın başkenti. Köprünün bir yanında saray ve soyluların taş evleri, öbür yanında saman çatılı köy evleri. İki taraf aynı nehirden su içer ama aynı ekmeği yemez.' },
+  { id: 'stone', cat: 'Dünya', t: 'Tanrı\'nın İradesi', at: 'p_village', x: 'Sarayın tören salonundaki taş. Her yılın ilk günü, o yıl on sekizine basan herkes, soylu ya da köylü, ona dokunur ve büyü kazanır.' },
+  { id: 'enkron', cat: 'Dünya', t: 'Enkron', at: 'p_village', x: 'Taşın yüz kişiden yaklaşık onuna verdiği özel yetenek. Ne yaptığını yalnızca sahibi bilir. Kiminin ateşi, kiminin şifası olur. Tobias Dede\'ye göre Enkron doğduğu gibi ölür; zayıflayabilir ama asla büyümez.' },
+  { id: 'ranks', cat: 'Dünya', t: 'Lonca rütbeleri', at: 'p_village', x: 'G, F, E, D, C, B, A, S ve SS. G sıradan halktır. Köyde D rütbeli birine herkes eğilir. A rütbeliler kralın sağ koludur. Dünyada yalnızca üç SS vardır ve hiçbiri Elonth\'ta değildir.' },
+  { id: 'guild', cat: 'Dünya', t: 'Maceracılar Loncası', at: 'p_village', x: 'Enkron\'u olsun olmasın kimseye kapısını kapatmaz. Ama giriş on gümüştür: bir köylü için iki yıllık birikim. Ödüller rütbeyle büyür; ölüm ihtimali de.' },
+  { id: 'friends', cat: 'Kişiler', t: 'Dörtlü İyi Çete', at: 'c1_alley', x: 'Nora: köyün en hızlı yumruğu, kardeşleri aç yatmasın diye loncaya girmek istiyor. Leo: düşmeyi "taktik" sayan, kalbi temiz bir çocuk. Clara: köprünün öbür yanından, kumaşçının kızı; bu tarafı seviyor çünkü burada insanlar gülüyor.' },
+  { id: 'victor', cat: 'Kişiler', t: 'Victor', at: 'c1_alley', x: 'Zengin bir tüccarın oğlu. Babasının parasıyla sokakları kendi bahçesi sanıyor. Bram ve Osric peşinden ayrılmaz.' },
+  { id: 'selen', cat: 'Kişiler', t: 'Selen', at: 'c1_selen', x: 'Leo\'nun ablası, E rütbe maceracı. Kardeşiyle durmadan alay eder; ama geceleri kapısına merhem bırakan da odur.' },
+  { id: 'silver', cat: 'Kişiler', t: 'Gümüş Kılıçlar', at: 'c1_guild', x: 'B rütbe Isolde\'nin ekibi. Yanında C rütbe iki büyücü: hiç konuşmayan Seraphine ve dilini hiç tutmayan Rowena. Köylülere toprağa bakan insanlar gözüyle bakarlar.' },
+  { id: 'charm', cat: 'Eşyalar', t: 'Kayın tılsımı', at: 'c1_harvest', x: 'Daniel\'in kayın dalından oyduğu küçük halka. "Tören günü cebinde dursun" dedi. "O taş ne derse desin, sen benim oğlumsun."' },
+  { id: 'system', cat: 'Dünya', t: 'Sistem', at: 'c1_system', x: 'Joseph\'in Enkron\'u. Gözlerini kapattığında bile orada duran mavi bir pencere. Tören sırasında bir şey ters gitti ve pencere zayıfladı. Ama yazılarından biri "sınır yok" diyor.' },
+];
+function openCodex() {
+  $('#panel').hidden = false; $('#p-title').textContent = 'Günlük';
+  const body = $('#p-body'); body.innerHTML = '';
+  const seen = Save.data.unlocked || [];
+  const open = CODEX.filter(e => seen.includes(e.at) || Story.order.indexOf(e.at) < Math.max(-1, ...seen.map(s => Story.order.indexOf(s))));
+  if (!open.length) { body.innerHTML = '<p class="cx-empty">Henüz bir şey yazılmadı. Hikâye ilerledikçe günlük dolacak.</p>'; return; }
+  const cats = {}; for (const e of open) (cats[e.cat] = cats[e.cat] || []).push(e);
+  for (const c in cats) {
+    const g = document.createElement('div'); g.className = 'ch-group'; g.innerHTML = `<h3>${c}</h3>`;
+    for (const e of cats[c]) { const d = document.createElement('details'); d.className = 'cx-item'; d.innerHTML = `<summary>${e.t}</summary><p></p>`; d.querySelector('p').textContent = e.x; g.appendChild(d); }
+    body.appendChild(g);
+  }
+  const locked = CODEX.length - open.length; if (locked) { const p = document.createElement('p'); p.className = 'cx-empty'; p.textContent = `${locked} kayıt hikâye ilerledikçe açılacak.`; body.appendChild(p); }
+}
 
 
 // ==== 17_debug.js ====
@@ -4613,6 +5068,45 @@ Story.def('closeup', { chapter: 'Debug', title: 'Closeup', debug: true }, async 
   S.cine(true);
   await S.shot(V3(0, 1.62, 5.0), V3(0, 1.5, 3), 0);
   await S.fadeIn(0.2);
+  await S.wait(9999);
+});
+Story.def('horsetest', { chapter: 'Debug', title: 'Horse', debug: true }, async S => {
+  const L = await S.level(() => buildVillage({}), 'day');
+  const h = spawnRider(LOOK.knight()); h.place(-3, 6, 0.9); window.__h = h;
+  const h2 = new Actor({ model: new HorseModel('#8a5a3a'), radius: 0.8, solid: false }); h2.place(0.5, 4, -0.6); h2.collides = false;
+  S.cine(true);
+  await S.shot(V3(1.5, 2.0, 10.5), V3(-1.2, 1.2, 5), 0);
+  await S.fadeIn(0.2);
+  await S.wait(9999);
+});
+Story.def('hilltest', { chapter: 'Debug', title: 'Hill', debug: true }, async S => {
+  const L = await S.level(() => buildVillage({}), 'morning');
+  const J = V3(-32.0, 0, -41.0), LP = V3(-31.1, 0, -40.8);
+  const p = spawnJoseph(10, J.x, J.z, 0);
+  const lily = S.cast('lily', npc(LOOK.lily(10), LP.x, LP.z, Math.PI * 0.95, { watch: false }));
+  lily.model.setStance('sitSlope'); p.model.setStance('sitSlope'); p.faceNow(V3(-25, 0, -90));
+  window.__hy = L.h(J.x, J.z); window.__J = J;
+  S.cine(true); await S.fadeIn(0.1);
+  await S.wait(9999);
+});
+Story.def('porttest', { chapter: 'Debug', title: 'Portrait', debug: true }, async S => {
+  const L = await S.level(() => buildVillage({}), 'day');
+  const p = spawnJoseph(15, 0, 3, 0);
+  const nora = S.cast('nora', npc(LOOK.nora(15), 1.2, 4.2, Math.PI, { watch: false }));
+  const clara = S.cast('clara', npc(LOOK.clara(15), -1.2, 4.4, Math.PI, { watch: false }));
+  S.cine(true);
+  await S.shot(V3(0, 1.6, 8), V3(0, 1.1, 3.5), 0);
+  await S.fadeIn(0.2);
+  const who = (location.hash.match(/who=(\w+)/) || [])[1] || 'nora';
+  if (who === 'think') await S.think('Bu bir düşünce satırıdır, portre soluk görünmeli.');
+  else await S.say(who, 'Portre testi: bu satırı okurken solda konuşanın canlı büstü görünmeli.');
+  await S.wait(9999);
+});
+Story.def('maptest', { chapter: 'Debug', title: 'Map', debug: true }, async S => {
+  const m = location.hash.match(/map=(\w+)/); const which = m ? m[1] : 'village';
+  const L = await S.level(() => which === 'eros' ? buildEros({}) : which === 'harvest' ? buildVillage({ harvested: (x, z) => x > -15 }) : which === 'hall' ? buildHall() : which === 'hut' ? buildHut('day') : buildVillage({}), which === 'hall' ? 'hall' : which === 'hut' ? 'interior' : 'day', which === 'hall' ? { noSky: true, sunDir: [0.6, 0.7, 0.2] } : which === 'hut' ? { noSky: true, sunDir: [0.25, 0.55, -0.8] } : {});
+  window.__L = L;
+  S.cine(true); await S.fadeIn(0.1);
   await S.wait(9999);
 });
 

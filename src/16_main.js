@@ -12,7 +12,7 @@ const Game = {
     G.scene = new T.Scene();
     G.camera = new T.PerspectiveCamera(55, 1, 0.1, 900);
     G.env = new Env(G.scene);
-    Cam.init(G.camera); FX.init(G.scene); Ambient.init(G.scene); Input.init(); UI.init();
+    Cam.init(G.camera); FX.init(G.scene); Ambient.init(G.scene); Input.init(); UI.init(); Portrait.init();
     this.applyQuality(); this.resize(); addEventListener('resize', () => this.resize());
     this.bindMenus();
     G.env.set('dusk'); this.last = performance.now();
@@ -60,6 +60,7 @@ const Game = {
     FX.update(dt, G.camera); Screen.update(raw); UI.frame(raw);
     if (G.onFrame) G.onFrame(dt);
     Input.endFrame();
+    Portrait.process();
     G.renderer.render(G.scene, G.camera);
   },
   startAudio() { Audio.init(); Audio.resume(); },
@@ -70,6 +71,7 @@ const Game = {
       if (m === 'new') this.newGame();
       if (m === 'continue') { const id = Save.data.last; if (id) this.start(id); }
       if (m === 'chapters') this.openChapters();
+      if (m === 'codex') openCodex();
       if (m === 'settings') this.openSettings();
       if (m === 'fullscreen') { const d = document.documentElement; try { if (!document.fullscreenElement) (d.requestFullscreen || d.webkitRequestFullscreen).call(d).catch(() => { }); else document.exitFullscreen(); } catch (_) { } }
     });
@@ -78,6 +80,7 @@ const Game = {
       if (p === 'resume') this.pause(false);
       if (p === 'restart') { this.pause(false); this.start(Story.current); }
       if (p === 'chapters') this.openChapters();
+      if (p === 'codex') openCodex();
       if (p === 'settings') this.openSettings();
       if (p === 'menu') { this.pause(false); this.toMenu(); }
     });
@@ -93,11 +96,12 @@ const Game = {
   menuScene() {
     Story.abort(); Story.current = null; this.clearWorld(); UI.hud(false); UI.cine(false); G.inCine = false;
     const L = buildVillage({ night: false }); G.level = L; G.scene.add(L.group); G.env.set('dusk'); Ambient.setup(L, 'dusk');
-    const n = new NPC({ look: LOOK.joseph(18), watch: false }); n.place(-31, -35, 2.9); n.model.setStance('sitGround', true);
-    const l = new NPC({ look: LOOK.lily(15), watch: false }); l.place(-30.1, -34.8, 2.8); l.model.setStance('hugKnees', true);
-    const hy = L.h(-31, -35);
-    Cam.shot(V3(-33.2, hy + 2.0, -29.0), V3(-24, hy + 3.2, -72), 0);
-    G.onFrame = dt => { Cam.toPos.x = -33.2 + Math.sin(G.t * 0.06) * 1.0; Cam.toPos.y = hy + 2.0 + Math.sin(G.t * 0.09) * 0.2; };
+    const J = V3(-32.0, 0, -41.0), hy = L.h(J.x, J.z);
+    const n = new NPC({ look: LOOK.joseph(18), watch: false }); n.place(J.x, J.z, Math.PI * 0.97); n.model.setStance('sitSlope', true);
+    const l = new NPC({ look: LOOK.lily(15), watch: false }); l.place(J.x + 0.95, J.z + 0.2, Math.PI * 0.93); l.model.setStance('hugKnees', true);
+    const cx = J.x - 2.2, cz = J.z + 4.6;
+    Cam.shot(V3(cx, hy + 1.7, cz), V3(J.x - 7, hy + 2.2, J.z - 40), 0);
+    G.onFrame = dt => { Cam.toPos.x = cx + Math.sin(G.t * 0.06) * 0.8; Cam.toPos.y = hy + 1.7 + Math.sin(G.t * 0.09) * 0.15; };
     Audio.play('title'); Audio.ambience('wind');
   },
   newGame() { Save.data.last = null; this.start(Story.order[0]); },
@@ -106,7 +110,7 @@ const Game = {
     $('#fade').style.transition = 'none'; $('#fade').style.opacity = 1;
     Story.run(id);
   },
-  toMenu() { G.onFrame = null; Story.abort(); this.showMenu(); $('#fade').style.transition = 'opacity .6s'; $('#fade').style.opacity = 0; },
+  toMenu() { G.onFrame = null; Story.abort(); Loading.hide(); UI.hideDialog(); $("#choices").hidden = true; $("#system").hidden = true; $("#titlecard").hidden = true; this.showMenu(); $('#fade').style.transition = 'opacity .6s'; $('#fade').style.opacity = 0; },
   pause(on) {
     if (!Story.current || !$('#menu').hidden) return;
     G.paused = on; $('#pause').hidden = !on; Input.reset();
@@ -136,6 +140,7 @@ const Game = {
     const range = (id, label, key, min, max, step) => `<div class="set-row"><label for="${id}">${label}</label><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${S[key]}" data-k="${key}"></div>`;
     body.innerHTML = range('s-ui', 'Arayüz boyutu', 'uiScale', 0.8, 1.8, 0.05) + range('s-sens', 'Kamera hassasiyeti', 'sens', 0.3, 2.5, 0.1) + range('s-mus', 'Müzik', 'music', 0, 1, 0.05) + range('s-sfx', 'Efektler', 'sfx', 0, 1, 0.05) + range('s-txt', 'Metin hızı', 'textSpeed', 0.5, 3, 0.1)
       + `<div class="set-row"><label>Shift lock</label><div class="seg" id="s-sl"><button type="button" data-v="1">Açık</button><button type="button" data-v="0">Kapalı</button></div></div>`
+      + `<div class="set-row"><label>Ekran sarsıntısı</label><div class="seg" id="s-shk"><button type="button" data-v="1">Tam</button><button type="button" data-v="0.6">Az</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Grafik</label><div class="seg" id="s-q"><button type="button" data-v="low">Akıcı</button><button type="button" data-v="high">Kaliteli</button></div></div>`
       + `<div class="set-row"><label>Dikey kamera</label><div class="seg" id="s-inv"><button type="button" data-v="0">Normal</button><button type="button" data-v="1">Ters</button></div></div>`;
     body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); UI.applyScale(); Save.store(); }));
@@ -143,6 +148,7 @@ const Game = {
     seg('#s-q', () => S.quality, v => { S.quality = v; this.applyQuality(); });
     seg('#s-inv', () => S.invertY ? '1' : '0', v => { S.invertY = v === '1'; });
     seg('#s-sl', () => S.shiftLock ? '1' : '0', v => { S.shiftLock = v === '1'; UI.syncLock(); });
+    seg('#s-shk', () => String(S.shake === undefined ? 1 : S.shake), v => { S.shake = parseFloat(v); });
   },
   async finale() {
     UI.hud(false); await UI.fade(1, 1.5);

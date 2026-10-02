@@ -7,7 +7,12 @@ const UI = {
     this.catch.addEventListener('pointerdown', e => { e.preventDefault(); this.advance(); });
     addEventListener('keydown', e => { if ((e.code === 'Space' || e.code === 'Enter') && !this.dlg.hidden) { e.preventDefault(); this.advance(); } if ((e.code === 'Space' || e.code === 'Enter') && !$('#system').hidden) this.sysAdvance && this.sysAdvance(); });
     $('#system').addEventListener('pointerdown', e => { e.preventDefault(); this.sysAdvance && this.sysAdvance(); });
-    $('#skip').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Story.skip(); });
+    $('#skip').addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); const b = $('#skip');
+      if (b.classList.contains('arm')) { b.classList.remove('arm'); b.textContent = 'Atla ››'; clearTimeout(this.skT); Story.skip(); return; }
+      b.classList.add('arm'); b.textContent = 'Atlamak için tekrar dokun'; Audio.sfx('ui', 0.4);
+      clearTimeout(this.skT); this.skT = setTimeout(() => { b.classList.remove('arm'); b.textContent = 'Atla ››'; }, 2600);
+    });
     $('#pausebtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Game.pause(true); });
     $('#lockbtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); G.settings.shiftLock = !G.settings.shiftLock; this.syncLock(); Save.store(); Audio.sfx('ui'); UI.toast(G.settings.shiftLock ? 'Shift lock açık: karakter kameranın baktığı yöne döner' : 'Shift lock kapalı', 1800); });
     this.syncLock(); this.applyScale();
@@ -23,7 +28,7 @@ const UI = {
   say(spk, text, o = {}) {
     return new Promise(res => {
       const d = this.dlg; d.hidden = false; this.catch.hidden = false;
-      d.className = o.thought ? 'thought' : o.narr ? 'narr' : '';
+      d.className = (o.thought ? 'thought' : o.narr ? 'narr' : '') + (Portrait.on ? ' hasport' : '');
       this.dname.textContent = spk ? spk.name : ''; this.dname.style.color = spk ? spk.color : '';
       if (spk && spk.rank) { this.dbadge.hidden = false; this.dbadge.textContent = spk.rank; this.dbadge.style.color = RANK_COLORS[spk.rank] || '#ccc'; } else this.dbadge.hidden = true;
       this.full = text; this.shown = 0; this.typing = true; this.res = res; this.dtext.textContent = '';
@@ -45,12 +50,12 @@ const UI = {
   },
   bark(spk, text, dur = 3600) {
     if (!this.catch.hidden || (this.res && !this.dlg.hidden)) return;
-    const d = this.dlg; d.hidden = false; d.className = spk === CAST.thought ? 'thought done' : 'done';
+    const d = this.dlg; d.hidden = false; Portrait.hide(); d.className = spk === CAST.thought ? 'thought done' : 'done';
     this.dname.textContent = spk ? spk.name : ''; this.dname.style.color = spk ? spk.color : ''; this.dbadge.hidden = true; this.dtext.textContent = text;
     const a = spk && spk.actor; if (a) a.say(true);
     clearTimeout(this.bt); this.bt = setTimeout(() => { if (!this.res) d.hidden = true; if (a) a.say(false); }, dur);
   },
-  hideDialog() { this.dlg.hidden = true; this.catch.hidden = true; clearInterval(this.ti); },
+  hideDialog() { this.dlg.hidden = true; this.catch.hidden = true; clearInterval(this.ti); Portrait.hide(); },
   choice(opts) {
     return new Promise(res => {
       const box = $('#choices'); box.innerHTML = ''; box.hidden = false; this.catch.hidden = false; this.dlg.hidden = false; this.dlg.classList.add('done');
@@ -70,6 +75,13 @@ const UI = {
     const o = $('#objective'); if (!text) { o.hidden = true; return; }
     const changed = $('#obj-text').textContent !== text; $('#obj-text').textContent = text; o.hidden = false;
     if (changed) { o.classList.remove('pulse'); void o.offsetWidth; o.classList.add('pulse'); Audio.sfx('objective', 0.7); }
+  },
+  streak(n, broken) {
+    const el = $('#streak'); if (!el) return;
+    if (!n) { if (!el.hidden) { el.classList.add(broken ? 'broke' : 'out'); clearTimeout(this.skt); this.skt = setTimeout(() => { el.hidden = true; el.classList.remove('out', 'broke'); }, 380); } return; }
+    clearTimeout(this.skt); el.hidden = false; el.classList.remove('out', 'broke');
+    el.querySelector('b').textContent = n; el.querySelector('small').textContent = n >= 8 ? 'Durdurulamaz' : n >= 5 ? 'Harika' : 'Vuruş';
+    el.classList.toggle('hot', n >= 5); const b = el.querySelector('b'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';
   },
   counter(text) { const c = $('#counter'); if (text === null || text === undefined) c.hidden = true; else { c.hidden = false; c.textContent = text; } },
   interact(label, solo) { const b = $('#interact'); if (!label) { b.hidden = true; return; } $('#interact-l').textContent = label; b.hidden = false; b.classList.toggle('solo', !!solo); },

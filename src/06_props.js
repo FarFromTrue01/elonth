@@ -79,6 +79,9 @@ function windMaterial(opts = {}) {
       #else
       vec4 iw = vec4(0.0);
       #endif
+      #ifdef USE_INSTANCING
+      { float cd = length(iw.xyz - cameraPosition); transformed *= smoothstep(0.7, 2.4, cd); }
+      #endif
       float hh = max(transformed.y, 0.0);
       float sw = sin(time * 1.7 + iw.x * 0.45 + iw.z * 0.38) * 0.10 + sin(time * 3.3 + iw.x * 1.3 - iw.z) * 0.035;
       transformed.x += sw * hh * hh * 2.4; transformed.z += sw * hh * hh * 1.3;`);

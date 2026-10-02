@@ -36,6 +36,91 @@ function makeTruck() {
   return g;
 }
 
+// Pencereden zemine düşen yumuşak ışık huzmesi (köşe alfa geçişli, eklemeli)
+function lightShaft(L, top, dir, color = '#fff0d0', a = 0.1, floorY = 0.02) {
+  const c = new T.Color(color), P = [], C = [];
+  const bot = top.map(v => { const t = (v[1] - floorY) / -dir[1]; return [v[0] + dir[0] * t, floorY, v[2] + dir[2] * t]; });
+  for (let i = 0; i < 4; i++) {
+    const A = top[i], B = top[(i + 1) % 4], Cc = bot[(i + 1) % 4], D = bot[i];
+    P.push(...A, ...B, ...Cc, ...A, ...Cc, ...D);
+    for (const al of [a, a, 0, a, 0, 0]) C.push(c.r, c.g, c.b, al);
+  }
+  const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(P, 3)); g.setAttribute('color', new T.Float32BufferAttribute(C, 4));
+  const m = new T.Mesh(g, new T.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide, fog: false }));
+  m.renderOrder = 5; L.add(m); return m;
+}
+// Kulübe içi ayrıntılar: ahşap lambri, dikmeler, kurutulmuş otlar, yatak başlıkları, ocak taşları, ışık huzmesi
+function hutDetails(L, W, D, H, variant) {
+  const b = L.b, gb = L.gb, wainC = '#6e5238', railC = '#4e3622';
+  // lambri + üst kuşak
+  b.box(wainC, 0, 0, -D / 2 + 0.02, W, 0.5, 0.04); b.box(railC, 0, 0.5, -D / 2 + 0.03, W, 0.06, 0.06);
+  b.box(wainC, -2.85, 0, D / 2 - 0.02, 1.3, 0.5, 0.04); b.box(wainC, 1.2, 0, D / 2 - 0.02, 4.6, 0.5, 0.04); b.box(railC, 1.2, 0.5, D / 2 - 0.03, 4.6, 0.06, 0.06); b.box(railC, -2.85, 0.5, D / 2 - 0.03, 1.3, 0.06, 0.06);
+  for (const sx of [-1, 1]) { b.box(wainC, sx * (W / 2 - 0.02), 0, 0, 0.04, 0.5, D); b.box(railC, sx * (W / 2 - 0.03), 0.5, 0, 0.06, 0.06, D); }
+  // duvar dikmeleri ve çapraz payandalar (arka ve sol duvar)
+  for (const x of [-2.25, 2.25]) b.box(COL.beam, x, 0, -D / 2 + 0.03, 0.16, H, 0.07);
+  b.add('box', COL.beam, -2.9, 1.05, -D / 2 + 0.04, 0.12, 1.25, 0.06, 0, 0, 0.62); b.add('box', COL.beam, 2.9, 1.05, -D / 2 + 0.04, 0.12, 1.25, 0.06, 0, 0, -0.62);
+  for (const z of [-1.0, 1.0]) b.box(COL.beam, -W / 2 + 0.03, 0, z, 0.07, H, 0.16);
+  b.box(COL.beam, -W / 2 + 0.03, 1.55, 0, 0.07, 0.1, D);
+  // perde (pencere)
+  for (const s of [-1, 1]) { b.add('box', '#c8b28a', s * 0.82, 1.42, -D / 2 + 0.2, 0.26, 1.05, 0.03, 0, 0, s * 0.03); b.add('box', '#b09a72', s * 0.82, 1.42, -D / 2 + 0.215, 0.06, 1.0, 0.03); }
+  b.box(COL.beamL, 0, 1.96, -D / 2 + 0.2, 1.9, 0.04, 0.04);
+  // pencere önünde saksı
+  b.add('cyl8', '#a0603c', -0.35, 1.03, -D / 2 + 0.05, 0.16, 0.14, 0.16); b.add('blob2', '#5f8a3a', -0.35, 1.13, -D / 2 + 0.05, 0.22, 0.14, 0.2);
+  for (let i = 0; i < 4; i++) b.add('ico0', pick(['#e8c84a', '#f0f0f0', '#d86a6a']), -0.42 + i * 0.05, 1.2, -D / 2 + 0.03 + (i % 2) * 0.04, 0.05, 0.05, 0.05);
+  // kurutulmuş ot demetleri ve sarımsak
+  for (let i = 0; i < 6; i++) { const x = -1.6 + i * 0.55, c = pick(['#7a8a4a', '#8a7a3a', '#6a7a3a', '#9a8a5a']); b.add('box', '#c8b088', x, H - 0.3, -0.6, 0.01, 0.2, 0.01); b.add('cone6', c, x, H - 0.6, -0.6, 0.14, 0.3, 0.14, 0, rnd(0, 3), 0); b.add('blob1', shade(c, 1.1), x, H - 0.72, -0.6, 0.13, 0.08, 0.13); b.add('cyl6', '#8a6a3a', x, H - 0.43, -0.6, 0.06, 0.04, 0.06); }
+  for (let i = 0; i < 5; i++) b.add('sph8', '#ece2cc', 3.32, 1.95 - i * 0.1, -0.15 + (i % 2) * 0.04, 0.08, 0.09, 0.08);
+  // asılı fener
+  b.add('box', COL.iron, -0.4, H - 0.32, 0.2, 0.012, 0.3, 0.012); b.add('cyl6', COL.iron, -0.4, H - 0.52, 0.2, 0.2, 0.04, 0.2); b.add('cyl6', COL.iron, -0.4, H - 0.76, 0.2, 0.2, 0.03, 0.2);
+  for (const [dx, dz] of [[-0.08, -0.08], [0.08, -0.08], [-0.08, 0.08], [0.08, 0.08]]) b.add('box', COL.iron, -0.4 + dx, H - 0.64, 0.2 + dz, 0.015, 0.22, 0.015);
+  gb.add('cyl6', variant === 'day' ? '#e8c890' : '#ffd890', -0.4, H - 0.64, 0.2, 0.1, 0.18, 0.1);
+  // Joseph'in yatağı: başlık, ayak tahtası, direkler, yama yorgan, yastık
+  b.box(COL.woodD, -2.5, 0, -2.5, 1.06, 0.9, 0.07); b.box(COL.wood, -2.5, 0.9, -2.5, 1.12, 0.06, 0.1); b.box(COL.woodD, -2.5, 0, -0.33, 1.06, 0.6, 0.07);
+  for (const sx of [-1, 1]) { b.add('cylS8', COL.woodD, -2.5 + sx * 0.53, 0.5, -2.5, 0.08, 1.0, 0.08); b.add('sphS', COL.wood, -2.5 + sx * 0.53, 1.02, -2.5, 0.1, 0.1, 0.1); b.add('cylS8', COL.woodD, -2.5 + sx * 0.53, 0.33, -0.33, 0.08, 0.66, 0.08); }
+  const patch = ['#8a5a4a', '#7a6a4a', '#9a6a52', '#6a5a62', '#8a7a58'];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 4; j++) b.box(patch[(i + j * 2) % 5], -2.5 + (i - 1) * 0.31, 0.6, -1.55 + j * 0.31, 0.3, 0.015, 0.3, 0, 0, 0);
+  b.add('sphS', '#efe4cc', -2.5, 0.68, -2.15, 0.62, 0.14, 0.32);
+  // Lily'nin yatağı: başlık, yastık, bez bebek; yanında bacağı kırık tahta at
+  b.box(COL.woodD, 2.6, 0, -2.88, 0.86, 0.72, 0.07); b.add('sphS', COL.wood, 2.6, 0.74, -2.88, 0.86, 0.08, 0.1);
+  b.add('sphS', '#f0e6d0', 2.6, 0.52, -2.62, 0.5, 0.12, 0.26);
+  b.add('sphS', '#d8a088', 2.85, 0.55, -2.55, 0.1, 0.1, 0.1); b.add('sphS', '#b86a6a', 2.85, 0.47, -2.47, 0.13, 0.14, 0.1); b.add('box', '#3a2a20', 2.85, 0.6, -2.56, 0.1, 0.03, 0.06);
+  b.begin(2.0, 0, -1.05, 0.7);
+  b.add('box', '#a07a4e', 0, 0.2, 0, 0.09, 0.09, 0.26); b.add('box', '#a07a4e', 0, 0.3, 0.13, 0.07, 0.15, 0.07, -0.4, 0, 0); b.add('box', '#a07a4e', 0, 0.35, 0.2, 0.07, 0.07, 0.12); b.add('box', '#5a3a22', 0, 0.36, 0.08, 0.02, 0.1, 0.06);
+  for (const [lx, lz, h, rz] of [[-0.035, 0.1, 0.15, 0], [0.035, 0.1, 0.15, 0], [-0.035, -0.1, 0.15, 0], [0.04, -0.12, 0.09, 0.5]]) b.add('box', '#8a6440', lx, h / 2, lz, 0.025, h, 0.025, 0, 0, rz);
+  b.add('box', '#c8b088', 0, 0.2, -0.15, 0.02, 0.06, 0.06);
+  b.end();
+  // ocak: düzensiz taşlar, rafa kavanozlar, asılı kazan, odun yığını, köz
+  for (let i = 0; i < 14; i++) { const t = i / 13, a = t * Math.PI; b.add(pick(['dode', 'box']), pick([COL.stone, COL.stoneD, '#8a8274']), 2.8, 0.05 + Math.sin(a) * 0.95, 0.9 + Math.cos(a) * 0.55, 0.2, 0.17, 0.2, rnd(-0.3, 0.3), rnd(-0.3, 0.3), rnd(-0.3, 0.3)); }
+  b.box(COL.woodD, 3.0, 1.12, 0.9, 0.85, 0.08, 1.9);
+  for (let i = 0; i < 4; i++) b.add(pick(['cyl8', 'sph8']), pick(['#9a6a48', '#7a5a40', '#b89a6a', '#5a6a5a']), 2.85, 1.3, 0.25 + i * 0.4, 0.16, 0.22, 0.16);
+  b.add('box', COL.iron, 2.95, 0.95, 0.9, 0.012, 0.3, 0.012); b.add('sph8', '#2a2420', 2.95, 0.62, 0.9, 0.34, 0.26, 0.34);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3 - i; j++) b.add('cylS8', pick(['#7a5434', '#6a4a2e', '#8a6440']), 3.1, 0.09 + i * 0.16, -0.65 + j * 0.17 + i * 0.085, 0.16, 0.62, 0.16, Math.PI / 2, 0, 0);
+  L.addBox(3.1, -0.45, 0.35, 0.3);
+  gb.add('ico0', '#ff7a2a', 2.95, 0.12, 0.85, 0.32, 0.08, 0.3); gb.add('ico0', '#ffb04a', 3.0, 0.14, 1.0, 0.2, 0.06, 0.2);
+  // masa: mum, kaseler, ekmek
+  b.add('cyl8', '#efe6d0', 0.8, 0.84, 0.72, 0.05, 0.16, 0.05); gb.add('cone6', '#ffd27a', 0.8, 0.96, 0.72, 0.035, 0.07, 0.035);
+  b.add('sphS', '#c8955a', -0.1, 0.81, 1.05, 0.26, 0.11, 0.16, 0, 0.4, 0); b.add('cyl8', '#7a6a58', 0.35, 0.79, 1.15, 0.2, 0.05, 0.2);
+  // kapı: tahta çizgileri, menteşeler, mandal
+  for (let i = 0; i < 4; i++) b.box('#3e2a1c', -1.6 - 0.375 + i * 0.25, 0, D / 2 - 0.07, 0.025, 1.95, 0.02);
+  for (const y of [0.35, 1.5]) b.box(COL.iron, -1.85, y, D / 2 - 0.075, 0.5, 0.06, 0.02);
+  b.box(COL.iron, -1.2, 0.95, D / 2 - 0.08, 0.08, 0.14, 0.03);
+  // askılık: Daniel'in ceketi ve şapkası
+  for (let i = 0; i < 3; i++) b.add('cyl6', COL.woodD, -0.55 + i * 0.32, 1.62, D / 2 - 0.1, 0.035, 0.14, 0.035, Math.PI / 2, 0, 0);
+  b.box(COL.wood, -0.23, 1.68, D / 2 - 0.035, 0.9, 0.1, 0.03);
+  b.add('box', '#5a4a3a', -0.55, 1.3, D / 2 - 0.12, 0.34, 0.62, 0.06, 0.06, 0, 0.04); b.add('box', '#4a3a2c', -0.55, 1.55, D / 2 - 0.13, 0.22, 0.1, 0.07);
+  b.add('cyl8', '#6a5a40', -0.23, 1.6, D / 2 - 0.16, 0.26, 0.05, 0.26, 1.2, 0, 0); b.add('cyl8', '#6a5a40', -0.23, 1.6, D / 2 - 0.2, 0.15, 0.12, 0.15, 1.2, 0, 0);
+  // sepet ve elmalar
+  b.add('cyl8', '#a8844e', -1.05, 0.14, 2.35, 0.42, 0.28, 0.42); b.add('torus', '#8a6a3a', -1.05, 0.28, 2.35, 0.84, 0.84, 1.2, Math.PI / 2, 0, 0);
+  for (let i = 0; i < 6; i++) b.add('sph8', pick(['#c83a2a', '#b8402e', '#d8a03a']), -1.05 + rnd(-0.1, 0.1), 0.3, 2.35 + rnd(-0.1, 0.1), 0.09, 0.09, 0.09);
+  L.addCircle(-1.05, 2.35, 0.25);
+  // ışık huzmesi (gündüz)
+  if (variant === 'day') {
+    lightShaft(L, [[-0.55, 1.9, -D / 2], [0.55, 1.9, -D / 2], [0.55, 1.0, -D / 2], [-0.55, 1.0, -D / 2]], [-0.2, -0.8, 1], '#ffeecc', 0.1);
+    const fl = new T.Mesh(new T.PlaneGeometry(1.25, 1.15), new T.MeshBasicMaterial({ color: '#5a4630', transparent: true, blending: T.AdditiveBlending, depthWrite: false, opacity: 0.55 }));
+    fl.rotation.x = -Math.PI / 2; fl.position.set(-0.2, 0.005, -D / 2 + 1.81); L.add(fl);
+  }
+}
+
 // ===== Kulübe içi =====
 function buildHut(variant = 'day') {
   const L = new Level('hut'); const b = L.b; seed(11);
@@ -84,7 +169,6 @@ function buildHut(variant = 'day') {
   // raflar, çömlekler, otlar
   b.box(COL.wood, -3.3, 1.4, 1.2, 0.3, 0.05, 1.6); b.box(COL.wood, -3.3, 1.8, 1.2, 0.3, 0.05, 1.6);
   for (let i = 0; i < 5; i++) b.add(pick(['cyl8', 'sph8']), pick(['#9a6a48', '#7a5a40', '#a88a5a', '#6a7a6a']), -3.3, 1.55, 0.6 + i * 0.28, 0.2, 0.25, 0.2);
-  for (let i = 0; i < 4; i++) b.add('box', pick(['#7a8a4a', '#8a7a3a', '#5a6a3a']), -1 + i * 0.6, H - 0.55, -0.6, 0.12, 0.4, 0.12);
   // ebeveyn köşesi: perde
   b.box('#8a7a5a', 2.0, 0, 2.0, 0.05, 2.1, 1.8); b.box(COL.woodD, 2.9, 0, 2.2, 1.0, 0.4, 1.4); b.box('#c8b88a', 2.9, 0.4, 2.2, 0.95, 0.15, 1.35);
   L.addBox(2.9, 2.2, 0.55, 0.8); L.addBox(2.0, 2.0, 0.05, 0.9);
@@ -96,7 +180,8 @@ function buildHut(variant = 'day') {
   b.box(COL.woodD, 1.25, 0, -2.55, 0.5, 0.5, 0.5); b.add('cyl8', '#8a6a48', 1.25, 0.6, -2.55, 0.6, 0.2, 0.6); b.add('cyl8', '#5a7a88', 1.25, 0.69, -2.55, 0.5, 0.02, 0.5, 0, 0, 0, 0);
   L.addBox(1.25, -2.55, 0.3, 0.3); L.pts.basin = V3(1.25, 0, -2.0);
   // halı
-  b.box('#8a4a3a', -0.4, -0.04, 0.2, 2.2, 0.02, 1.6, 0, 0, 0); b.box('#a86a4a', -0.4, -0.03, 0.2, 1.8, 0.02, 1.2, 0, 0, 0);
+  b.box('#8a4a3a', -0.4, 0, 0.2, 2.2, 0.012, 1.6, 0, 0, 0); b.box('#a86a4a', -0.4, 0.004, 0.2, 1.8, 0.012, 1.2, 0, 0, 0); b.box('#c8a060', -0.4, 0.008, 0.2, 1.2, 0.012, 0.65, 0, 0, 0);
+  hutDetails(L, W, D, H, variant);
   L.pts = Object.assign(L.pts, { bedJoseph: V3(-2.5, 0, -1.4), bedLily: V3(2.6, 0, -2.1), door: V3(-1.6, 0, 2.4), window: V3(0, 0, -2.4), table: V3(0.3, 0, 0.9), hearth: V3(2.4, 0, 0.9) });
   L.finalize();
   return L;
@@ -189,7 +274,7 @@ function buildVillage(o = {}) {
   L.harvested = o.harvested || null;
   if (!W) { const wp = []; for (let z = 41.6; z < 57.6; z += 0.75) for (let x = -31; x < 5; x += 0.42) { const xx = x + rnd(-0.12, 0.12), zz = z + rnd(-0.15, 0.15); if (L.harvested && L.harvested(xx, zz)) continue; wp.push([xx, zz, mixHex('#fff4d0', '#e8c890', rng()), rnd(0.9, 1.15)]); } vegetation(L, 'wheat', wp); }
   for (let z = 41.2; z < 58; z += 0.75) b.add('box', '#6a5030', -13, L.h(-13, z) - 0.02, z, 37, 0.06, 0.22, 0, 0, 0, 0.04);
-  fence(L, -33, 39.5, -33, 59, { collide: false }); fence(L, -33, 59, 7, 59, { collide: false }); fence(L, 7, 39.5, 7, 59, { collide: false });
+  fence(L, -33, 39.5, -33, 59, { collide: false }); fence(L, -33, 59, 7, 59, { collide: false }); fence(L, 7, 39.5, 7, 48.6, { collide: false }); fence(L, 7, 51.9, 7, 59, { collide: false });
   // korkuluk
   { const x = -14, z = 49, y = L.h(x, z); b.add('cylS8', COL.woodD, x, y + 1.2, z, 0.1, 2.4, 0.1); b.add('cylS8', COL.woodD, x, y + 1.8, z, 0.1, 1.5, 0.1, 0, 0, Math.PI / 2); b.add('sphS', '#7a5a3a', x, y + 1.55, z, 0.5, 0.7, 0.35); b.add('sphS', '#d8b878', x, y + 2.15, z, 0.36, 0.36, 0.32); b.add('coneS', '#c8a050', x, y + 2.42, z, 0.8, 0.3, 0.8); for (const s2 of [-1, 1]) b.add('sphS', '#d8b870', x + s2 * 0.75, y + 1.8, z, 0.18, 0.18, 0.18); }
   haystack(L, 10, 45, 1); haystack(L, 11, 49, 0.9); cart(L, 10.5, 53, 0.2);
@@ -199,7 +284,7 @@ function buildVillage(o = {}) {
   for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + 0.4; b.add('cylS', COL.trunk, 46 + Math.cos(a) * 6.5, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5, 0.5, 2.2, 0.5, Math.PI / 2, a, 0); b.add('cylS', '#c8a878', 46 + Math.cos(a) * 6.5 + Math.cos(a + 1.57) * 1.11, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5 + Math.sin(a + 1.57) * 1.11, 0.46, 0.02, 0.46, Math.PI / 2, a, 0, 0); }
   rock(L, 52, -7, 1.3); rock(L, 41, -18, 1.1);
   // tepe ve büyük ağaç
-  tree(L, -33, -39, 'oak', 1.6); L.pts.hillTop = V3(-31, 0, -35); rock(L, -36, -34, 0.9); flowers(L, -29, -37, 10);
+  tree(L, -33, -39, 'oak', 1.6); L.pts.hillTop = V3(-31.4, 0, -41.2); rock(L, -36, -34, 0.9); flowers(L, -29, -37, 10);
   // kuzey: şehir duvarı ve kapı
   const gz = -74;
   wallSeg(L, -70, gz, -7, gz, 7); wallSeg(L, 3, gz, 75, gz, 7);
@@ -239,6 +324,66 @@ function buildVillage(o = {}) {
 }
 
 // ===== Eros çarşısı (şehir meydanı) =====
+// Maceracılar Loncası binası (yerel koordinat: ön cephe z = +4.5)
+function guildHall(L, b) {
+  const gb = L.gb, st = COL.stoneL, stD = '#a49a88', stG = '#8e8574', plaster = '#e4d8bc', beam = '#4e3422', F = 4.5;
+  // kaide ve zemin kat taş duvar
+  b.box(stG, 0, 0, 0, 16.4, 0.6, 9.4); b.box(st, 0, 0.6, 0, 16, 4.4, 9);
+  for (let y = 1.2; y < 5; y += 0.62) { b.box(stD, 0, y, F + 0.005, 16, 0.05, 0.03); for (const sx of [-1, 1]) b.box(stD, sx * 8.005, y, 0, 0.03, 0.05, 9); }
+  for (let i = 0; i < 7; i++) for (const sx of [-1, 1]) b.box(i % 2 ? st : '#c4bba8', sx * (7.75 - (i % 2) * 0.15), 0.6 + i * 0.62, F - 0.25 + (i % 2) * 0.1, 0.6 + (i % 2) * 0.3, 0.6, 0.6);
+  // pilastrlar
+  for (const px of [-5.4, -2.3, 2.3, 5.4]) { b.box(st, px, 0.6, F + 0.12, 0.7, 4.4, 0.3); b.box(stD, px, 0.6, F + 0.2, 0.86, 0.35, 0.36); b.box(stD, px, 4.65, F + 0.2, 0.86, 0.35, 0.36); }
+  // kemerli kapı
+  b.box('#3a2618', 0, 0.6, F + 0.02, 2.4, 2.9, 0.12); b.add('cyl16', '#3a2618', 0, 3.5, F + 0.02, 2.4, 0.12, 2.4, Math.PI / 2, 0, 0);
+  for (let i = 0; i < 6; i++) b.box('#2a1a10', -1.0 + i * 0.4, 0.6, F + 0.09, 0.03, 3.3, 0.03);
+  for (let i = 0; i < 9; i++) { const a = -Math.PI / 2 + (i / 8) * Math.PI; b.add('box', i === 4 ? COL.gold : '#c4bba8', Math.sin(a) * 1.42, 3.5 + Math.cos(a) * 1.42, F + 0.14, 0.42, 0.34, 0.3, 0, 0, -a); }
+  for (const sx of [-1, 1]) b.box('#c4bba8', sx * 1.42, 0.6, F + 0.14, 0.34, 2.9, 0.3);
+  for (const sx of [-1, 1]) for (const y of [1.3, 2.9]) b.add('sph8', COL.iron, sx * 0.6, y, F + 0.11, 0.08, 0.08, 0.05);
+  b.add('torus', COL.iron, 0.42, 2.0, F + 0.12, 0.3, 0.3, 0.6);
+  // basamaklar
+  b.box(stD, 0, -0.1, F + 1.0, 5, 0.45, 2.0); b.box(stG, 0, -0.25, F + 2.1, 6, 0.3, 1.4);
+  // zemin kat pencereleri (kemerli, çerçeveli)
+  for (const sx of [-1, 1]) for (const wx of [3.85, 6.7]) {
+    const cx = sx * wx; b.box(beam, cx, 1.55, F + 0.03, 1.2, 2.1, 0.1); gb.box('#ffd890', cx, 1.65, F + 0.08, 0.95, 1.9, 0.03); gb.add('cyl12', '#ffd890', cx, 3.55, F + 0.08, 0.95, 0.03, 0.95, Math.PI / 2, 0, 0);
+    b.add('cyl12', beam, cx, 3.6, F + 0.03, 1.2, 0.1, 1.2, Math.PI / 2, 0, 0); b.box(beam, cx, 1.65, F + 0.11, 0.07, 2.35, 0.04); b.box(beam, cx, 2.55, F + 0.11, 0.95, 0.07, 0.04);
+    b.box(stD, cx, 1.42, F + 0.12, 1.45, 0.14, 0.32); b.box('#6a4a32', cx, 1.15, F + 0.22, 1.2, 0.25, 0.25); b.add('blob2', '#5a9a3a', cx, 1.42, F + 0.25, 1.1, 0.28, 0.3);
+    for (let i = 0; i < 3; i++) b.add('sphS', pick(['#e85a5a', '#f0d040', '#ffffff', '#c86ac8']), cx - 0.35 + i * 0.35, 1.56, F + 0.33, 0.13, 0.12, 0.13);
+  }
+  // kat silmesi ve dişli korniş
+  b.box(stD, 0, 5.0, 0.2, 16.6, 0.35, 9.6); for (let i = 0; i < 33; i++) b.box(st, -8.0 + i * 0.5, 4.86, F + 0.32, 0.22, 0.16, 0.14);
+  // çıkma üst kat (yarı ahşap)
+  b.box(plaster, 0, 5.35, 0.2, 16.4, 3.9, 9.4);
+  for (let i = 0; i <= 8; i++) b.box(beam, -8.1 + i * 2.025, 5.35, F + 0.42, 0.2, 3.9, 0.08);
+  b.box(beam, 0, 5.35, F + 0.42, 16.4, 0.2, 0.08); b.box(beam, 0, 9.05, F + 0.42, 16.4, 0.2, 0.08); b.box(beam, 0, 7.15, F + 0.43, 16.4, 0.14, 0.08);
+  for (let i = 0; i < 8; i++) { const cx = -7.1 + i * 2.025; if (i % 2 === 0) { b.add('box', beam, cx, 6.25, F + 0.43, 0.14, 2.1, 0.06, 0, 0, 0.75); } else { b.add('box', beam, cx, 6.25, F + 0.43, 0.14, 2.1, 0.06, 0, 0, -0.75); } }
+  for (const sx of [-1, 1]) for (const wx of [1.0, 3.05, 5.05, 7.05]) {
+    const cx = sx * wx; if (wx === 1.0) continue;
+    b.box(beam, cx, 7.45, F + 0.44, 1.0, 1.35, 0.08); gb.box('#ffe2a0', cx, 7.55, F + 0.48, 0.78, 1.15, 0.03); b.box(beam, cx, 7.55, F + 0.5, 0.05, 1.15, 0.03); b.box(beam, cx, 8.1, F + 0.5, 0.78, 0.05, 0.03);
+    for (const s2 of [-1, 1]) b.add('box', '#2a4a7a', cx + s2 * 0.68, 8.12, F + 0.5, 0.36, 1.3, 0.05, 0, s2 * 0.25, 0);
+    b.box('#6a4a32', cx, 7.25, F + 0.58, 1.0, 0.2, 0.25); b.add('blob1', '#5a9a3a', cx, 7.48, F + 0.6, 0.95, 0.22, 0.26);
+  }
+  // çıkma altı kiriş başları
+  for (let i = 0; i < 17; i++) b.box(beam, -8.0 + i * 1.0, 5.2, F + 0.3, 0.16, 0.16, 0.3);
+  // arma (kapı üstü kalkan) ve tabela
+  b.add('box', '#1f3a6a', 0, 6.9, F + 0.52, 1.1, 1.0, 0.1); b.add('cone4', '#1f3a6a', 0, 6.15, F + 0.52, 1.1, 0.5, 0.1, Math.PI, 0, 0); b.add('box', COL.gold, 0, 6.75, F + 0.59, 0.08, 1.2, 0.04); b.add('box', COL.gold, 0, 7.05, F + 0.59, 0.6, 0.08, 0.04);
+  b.box(beam, 0, 9.3, F + 0.6, 5.4, 0.9, 0.14); b.box(COL.gold, 0, 9.42, F + 0.68, 5.0, 0.06, 0.04); b.box(COL.gold, 0, 10.04, F + 0.68, 5.0, 0.06, 0.04);
+  for (let i = 0; i < 9; i++) b.box('#f0e2b0', -2.0 + i * 0.5, 9.58, F + 0.68, 0.32, 0.36, 0.02);
+  for (const sx of [-1, 1]) { b.add('box', '#d8dde3', sx * 2.9, 9.75, F + 0.66, 0.07, 1.0, 0.03, 0, 0, sx * 0.7); b.add('box', '#d8dde3', sx * 2.9, 9.75, F + 0.66, 0.07, 1.0, 0.03, 0, 0, -sx * 0.7); }
+  // çatı: arduvaz, mahya, çatı pencereleri, bacalar, kule
+  b.add('roof', COL.slate, 0, 9.25, 0, 11.6, 4.6, 18, 0, Math.PI / 2, 0);
+  b.add('box', '#3e4658', 0, 13.85, 0, 0.3, 0.2, 17.6, 0, Math.PI / 2, 0);
+  b.add('roof', plaster, 0, 9.25, F + 0.4, 4.0, 3.0, 0.2, 0, 0, 0); b.add('roof', COL.slate, 0, 9.3, 3.4, 4.8, 3.3, 3.4, 0, 0, 0);
+  gb.add('cyl12', '#ffe2a0', 0, 10.6, F + 0.52, 1.0, 0.04, 1.0, Math.PI / 2, 0, 0); b.add('torus', beam, 0, 10.6, F + 0.53, 1.0, 1.0, 0.8);
+  for (const sx of [-1, 1]) { const dx = sx * 5; b.box(plaster, dx, 10.3, 3.4, 1.4, 1.3, 1.4); b.add('roof', COL.slate, dx, 11.55, 3.4, 1.7, 0.9, 1.6, 0, 0, 0); gb.box('#ffe2a0', dx, 10.75, 4.11, 0.7, 0.6, 0.03); b.box(beam, dx, 10.75, 4.13, 0.05, 0.6, 0.03); }
+  for (const sx of [-1, 1]) { b.box(COL.stoneD, sx * 6.3, 11.0, -1.8, 0.9, 3.6, 0.9); b.box(stG, sx * 6.3, 14.5, -1.8, 1.05, 0.25, 1.05); L.smoke.push(V3(sx * 6.3, 14.9, -22.8)); }
+  b.box(plaster, 0, 13.4, -0.4, 1.8, 2.0, 1.8); for (const [ox, oz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.box(beam, ox * 0.86, 13.4, -0.4 + oz * 0.86, 0.16, 2.0, 0.16);
+  for (const [ox, oz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) { b.box('#2a2018', ox * 0.88, 14.0, -0.4 + oz * 0.88, ox ? 0.06 : 0.9, 1.0, oz ? 0.06 : 0.9); b.add('cyl12', '#2a2018', ox * 0.88, 15.0, -0.4 + oz * 0.88, 0.9, 0.06, 0.9, oz ? Math.PI / 2 : 0, 0, ox ? Math.PI / 2 : 0); }
+  b.add('cone8', COL.gold, 0, 14.6, -0.4, 0.55, 0.6, 0.55); b.add('sph8', COL.gold, 0, 14.28, -0.4, 0.3, 0.2, 0.3);
+  b.add('cone4', COL.slate, 0, 16.1, -0.4, 2.6, 1.8, 2.6); b.add('cyl6', COL.gold, 0, 17.3, -0.4, 0.06, 0.8, 0.06); b.add('box', COL.gold, 0, 17.6, -0.4, 0.04, 0.1, 0.6);
+  // kapı fenerleri
+  for (const sx of [-1, 1]) { b.box(COL.iron, sx * 1.95, 3.5, F + 0.2, 0.06, 0.06, 0.45); b.add('cyl6', COL.iron, sx * 1.95, 3.42, F + 0.42, 0.3, 0.06, 0.3); gb.add('cyl6', '#ffd890', sx * 1.95, 3.22, F + 0.42, 0.22, 0.32, 0.22); b.add('cone6', COL.iron, sx * 1.95, 3.55, F + 0.42, 0.34, 0.2, 0.34); }
+}
+
 function buildEros(o = {}) {
   const L = new Level('eros'); seed(77);
   L.hf = (x, z) => 0; L.th = (x, z) => { const d = Math.max(Math.abs(x) - 26, Math.abs(z) - 30); return d > 0 ? d * 0.12 + fbm(x * 0.05, z * 0.05) * 2 : 0; };
@@ -254,16 +399,7 @@ function buildEros(o = {}) {
   });
   const b = L.b;
   // lonca binası (kuzey)
-  { const x = 0, z = -21; b.begin(x, 0, z, 0);
-    b.box(COL.stoneL, 0, 0, 0, 16, 7, 9); b.box('#d8ccae', 0, 7, 0, 16.6, 4, 9.6);
-    for (let i = -4; i <= 4; i++) b.box(COL.beam, i * 2, 7, 4.85, 0.18, 4, 0.08);
-    b.add('roof', COL.slate, 0, 11, 0, 11.4, 4.5, 18, 0, Math.PI / 2, 0);
-    b.add('roof', '#d8ccae', 0, 10.9, 4.8, 3.5, 2.6, 0.2, 0, 0, 0); b.add('roof', COL.slate, 0, 11, 3.6, 4.2, 3, 3, 0, 0, 0);
-    b.box('#3a2618', 0, 0, 4.55, 2.6, 3.6, 0.1); b.add('cyl12', '#3a2618', 0, 3.55, 4.55, 2.6, 0.1, 2.6, Math.PI / 2, 0, 0);
-    b.box(COL.stoneD, 0, -0.1, 5.5, 5, 0.25, 2.2); b.box(COL.stoneD, 0, -0.25, 6.6, 6, 0.25, 1.4);
-    for (const sx of [-1, 1]) { for (let i = 1; i <= 3; i++) L.gb.box('#ffd890', sx * (1.6 + i * 1.6), 1.6, 4.56, 0.8, 1.6, 0.04); for (let i = 0; i < 4; i++) L.gb.box('#ffd890', sx * (1 + i * 2), 8.1, 4.86, 0.7, 1.2, 0.04); }
-    // tabela
-    b.box(COL.woodD, 0, 4.2, 4.9, 4.4, 1.0, 0.15); b.box(COL.gold, 0, 4.35, 5.0, 0.7, 0.7, 0.05); b.add('box', '#d8dde3', 0, 4.65, 5.05, 0.08, 0.9, 0.04, 0, 0, 0.7); b.add('box', '#d8dde3', 0, 4.65, 5.05, 0.08, 0.9, 0.04, 0, 0, -0.7);
+  { const x = 0, z = -21; b.begin(x, 0, z, 0); guildHall(L, b);
     b.end(); L.addBox(x, z, 8.3, 4.8);
     banner(L, -4.2, z + 5.3, 0, '#1f3a6a', 6, COL.gold); banner(L, 4.2, z + 5.3, 0, '#1f3a6a', 6, COL.gold);
     noticeBoard(L, 6.5, z + 8, -0.3); L.pts.board = V3(6.0, 0, z + 9.2); L.pts.guildDoor = V3(0, 0, z + 6.5);
@@ -313,6 +449,29 @@ function buildHall() {
   for (let k = -3; k <= 3; k++) for (const sx of [-1, 1]) { const x = sx * 6, z = k * 6 + 2; b.add('cyl8', '#c8beac', x, H / 2, z, 1.1, H, 1.1); b.add('box', '#b0a694', x, 0.2, z, 1.5, 0.4, 1.5); b.add('box', '#b0a694', x, H - 1.3, z, 1.5, 0.5, 1.5); L.addCircle(x, z, 0.7);
     // sancak
     b.add('box', COL.elonth, x - sx * 0.6, 7, z, 0.04, 4.5, 1.2, 0, 0, 0); b.add('box', COL.gold, x - sx * 0.63, 8, z, 0.04, 0.6, 0.6, 0, 0, 0); b.add('wedge', COL.elonth, x - sx * 0.6, 4.75, z, 0.04, 0.6, 1.2, Math.PI, 0, 0); }
+  // duvar ayrıntıları: lambri, plastırlar, pencere çerçeveleri, korniş
+  for (const sx of [-1, 1]) {
+    const wx = sx * (W / 2 - 0.04);
+    b.box('#5a3e2a', wx, 0, 0, 0.08, 2.4, Ln); b.box('#7a5a3a', wx - sx * 0.03, 2.4, 0, 0.14, 0.12, Ln);
+    for (let z = -Ln / 2 + 0.6; z < Ln / 2; z += 1.2) b.box('#4a3222', wx - sx * 0.04, 0.1, z, 0.04, 2.2, 0.08);
+    for (let k = -5; k <= 4; k++) { const z = k * 5 + 2.5; b.box('#b8ae9a', wx - sx * 0.12, 0, z, 0.3, H - 0.6, 0.9); b.box('#c8bea8', wx - sx * 0.18, H - 1.9, z, 0.4, 0.5, 1.1); b.box('#c8bea8', wx - sx * 0.18, 0, z, 0.4, 0.5, 1.1); }
+    for (let k = -4; k <= 4; k++) { const z = k * 5; b.box('#c8bea8', wx - sx * 0.06, 6.1, z, 0.18, 0.3, 2.2); for (const sz of [-1, 1]) b.box('#c8bea8', wx - sx * 0.06, 6.3, z + sz * 0.9, 0.16, 4.6, 0.2); b.box('#5a4a3a', wx - sx * 0.07, 6.3, z, 0.08, 4.6, 0.05); b.box('#5a4a3a', wx - sx * 0.07, 8.6, z, 0.08, 0.05, 1.6); }
+    b.box('#b0a694', wx - sx * 0.2, H - 1.6, 0, 0.5, 0.4, Ln);
+  }
+  // avizeler
+  for (const z of [-11, 1, 13]) {
+    b.add('box', COL.iron, 0, H - 2.3, z, 0.05, 2.6, 0.05); b.add('torus', COL.iron, 0, H - 3.6, z, 5.2, 5.2, 4, Math.PI / 2, 0, 0); b.add('torus', COL.iron, 0, H - 3.3, z, 3.0, 3.0, 3, Math.PI / 2, 0, 0);
+    for (let i = 0; i < 4; i++) { const a = i / 4 * TAU; b.add('box', COL.iron, Math.cos(a) * 1.3, H - 3.0, z + Math.sin(a) * 1.3, 0.04, 1.3, 0.04, 0, -a, 0.5 * (i % 2 ? 1 : -1)); }
+    for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; b.add('cyl6', '#efe6d0', Math.cos(a) * 2.6, H - 3.45, z + Math.sin(a) * 2.6, 0.08, 0.3, 0.08); L.gb.add('cone6', '#ffd27a', Math.cos(a) * 2.6, H - 3.2, z + Math.sin(a) * 2.6, 0.08, 0.18, 0.08); }
+  }
+  // arka duvar: büyük goblen ve gül pencere; ön duvar: büyük kapı
+  b.box(COL.elonth, 0, 4.0, -Ln / 2 + 0.06, 6, 5.4, 0.08); b.box(COL.gold, 0, 4.0, -Ln / 2 + 0.1, 6.2, 0.18, 0.06); b.box(COL.gold, 0, 9.25, -Ln / 2 + 0.1, 6.2, 0.18, 0.06);
+  b.add('cone4', COL.elonth, 0, 3.7, -Ln / 2 + 0.06, 6, 0.6, 0.08, Math.PI, 0, 0);
+  b.add('box', COL.gold, 0, 6.6, -Ln / 2 + 0.12, 0.25, 3.0, 0.04); b.add('box', COL.gold, 0, 7.4, -Ln / 2 + 0.12, 2.0, 0.25, 0.04); b.add('sphS', COL.gold, 0, 8.55, -Ln / 2 + 0.12, 0.55, 0.55, 0.06);
+  L.gb.add('cyl16', '#cfe4ff', 0, 11.0, -Ln / 2 + 0.05, 2.4, 0.04, 2.4, Math.PI / 2, 0, 0); b.add('torus', '#b0a694', 0, 11.0, -Ln / 2 + 0.08, 2.6, 2.6, 2, 0, 0, 0);
+  for (let i = 0; i < 8; i++) b.add('box', '#7a7060', 0, 11.0, -Ln / 2 + 0.09, 0.06, 2.35, 0.04, 0, 0, i / 8 * Math.PI);
+  b.box('#3a2618', 0, 0, Ln / 2 - 0.08, 4.4, 5.5, 0.12); b.add('cyl16', '#3a2618', 0, 5.5, Ln / 2 - 0.08, 4.4, 0.12, 4.4, Math.PI / 2, 0, 0); b.box(COL.gold, 0, 0, Ln / 2 - 0.16, 0.08, 7.6, 0.04);
+  for (const sx of [-1, 1]) for (const y of [1.5, 4.0]) b.box(COL.gold, sx * 1.1, y, Ln / 2 - 0.16, 1.6, 0.1, 0.04);
   // kürsü ve taş
   const dz = -Ln / 2 + 5;
   b.box('#8a8274', 0, 0, dz, 12, 0.5, 7); b.box('#9a9284', 0, 0.5, dz - 0.6, 9, 0.4, 5); b.box('#7a1e22', 0, 0.5, dz + 2.6, 3.2, 0.02, 1.2);
@@ -329,6 +488,8 @@ function buildHall() {
   const sl = new T.PointLight('#a8d8ff', 8, 16, 1.4); sl.position.copy(stone.position); L.light(sl);
   const halo = new T.Mesh(prim('sph12'), new T.MeshBasicMaterial({ color: '#a8d8ff', transparent: true, opacity: 0.12, depthWrite: false, blending: T.AdditiveBlending, fog: false })); halo.scale.set(3, 4.6, 3); stone.add(halo);
   const pillar = new T.Mesh(new T.CylinderGeometry(1.3, 1.6, 14, 16, 1, true), new T.MeshBasicMaterial({ color: '#a8d8ff', transparent: true, opacity: 0.0, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide, fog: false })); pillar.position.set(0, 7, dz - 0.6); L.add(pillar);
+  const shards = []; for (let i = 0; i < 5; i++) { const m = new T.Mesh(prim('octa'), sm); m.scale.set(0.22, 0.5, 0.22); L.add(m); shards.push({ m, a: i / 5 * TAU, r: 1.9 + (i % 2) * 0.35, y: (i % 3) * 0.5 - 0.4 }); }
+  L.anims.push(dt => { for (const sh of shards) { sh.a += dt * (0.35 + L.stone.glow * 1.5); sh.m.position.set(Math.cos(sh.a) * sh.r, stone.position.y + sh.y + Math.sin(G.t * 1.5 + sh.a) * 0.15, stone.position.z + Math.sin(sh.a) * sh.r); sh.m.rotation.y += dt; } });
   L.stone = { group: stone, mat: sm, light: sl, glow: 0, color: new T.Color('#7aa8d8') };
   L.anims.push(dt => { stone.rotation.y += dt * 0.25; stone.position.y = 3.1 + Math.sin(G.t * 1.2) * 0.12; const g = L.stone.glow; sm.emissive.copy(L.stone.color); sm.emissiveIntensity = 0.5 + g * 2.6 + Math.sin(G.t * 2) * 0.1; sl.color.copy(L.stone.color); sl.intensity = 7 + g * 30; halo.material.color.copy(L.stone.color); halo.material.opacity = 0.1 + g * 0.3 + Math.sin(G.t * 3) * 0.02; halo.scale.set(3 + g, 4.6 + g * 1.5, 3 + g); pillar.material.color.copy(L.stone.color); pillar.material.opacity = g * 0.16; });
   // tahtlar
@@ -338,8 +499,7 @@ function buildHall() {
   const tl1 = new T.PointLight('#ffc27a', 6, 18, 1.4); tl1.position.set(0, 4, 8); L.light(tl1);
   const tl2 = new T.PointLight('#ffc27a', 5, 18, 1.4); tl2.position.set(0, 4, -6); L.light(tl2);
   // ışık huzmeleri
-  const shaftM = new T.MeshBasicMaterial({ color: '#fff2d0', transparent: true, opacity: 0.07, depthWrite: false, blending: T.AdditiveBlending, fog: false });
-  for (let k = -4; k <= 4; k += 2) { const s = new T.Mesh(prim('box'), shaftM); s.scale.set(1.6, 14, 1.4); s.position.set(-3.5, 5.5, k * 5); s.rotation.z = -0.75; L.add(s); }
+  for (let k = -4; k <= 4; k += 2) lightShaft(L, [[-W / 2 + 0.05, 10.6, k * 5 - 0.75], [-W / 2 + 0.05, 10.6, k * 5 + 0.75], [-W / 2 + 0.05, 6.6, k * 5 + 0.75], [-W / 2 + 0.05, 6.6, k * 5 - 0.75]], [0.72, -1, 0.08], '#fff2d0', 0.09);
   // kalabalık (statik)
   seed(17);
   for (let row = 0; row < 3; row++) for (let i = 0; i < 6; i++) for (const sx of [-1, 1]) { const x = sx * (2.6 + i * 0.95 + rnd(-0.1, 0.1)), z = -8 + row * 1.3; bakeHumanoid(b, randomNoble(rng() < 0.5), pick(['behind', null, 'crossArms']), x, 0, z, Math.PI + sx * 0.25); }

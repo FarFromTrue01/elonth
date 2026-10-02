@@ -54,26 +54,74 @@ const LOOK = {
 // At + süvari
 class HorseModel {
   constructor(color = '#5a3a26') {
-    const root = this.root = new T.Group(); this.o = { scale: 1 }; this.allMats = [];
-    const M = c => { const m = new T.MeshLambertMaterial({ color: c }); this.allMats.push(m); return m; };
-    const coat = M(color), dark = M('#1e1612'), saddle = M('#3a2418'), cloth = M('#2f5a3a'), gold = M('#c9a85a');
-    const P = (par, t, m, x, y, z, sx, sy, sz, rx = 0) => { const k = new T.Mesh(prim(t), m); k.position.set(x, y, z); k.scale.set(sx, sy, sz); k.rotation.x = rx; k.castShadow = true; par.add(k); return k; };
-    const body = this.body = new T.Group(); body.position.y = 1.35; root.add(body);
-    P(body, 'box', coat, 0, 0, 0, 0.75, 0.75, 1.9); P(body, 'box', cloth, 0, 0.05, -0.1, 0.8, 0.6, 1.1); P(body, 'box', saddle, 0, 0.42, -0.1, 0.55, 0.12, 0.7);
-    const neck = new T.Group(); neck.position.set(0, 0.25, 0.85); body.add(neck); P(neck, 'box', coat, 0, 0.4, 0.15, 0.35, 0.9, 0.45, -0.55); P(neck, 'box', dark, 0, 0.5, -0.02, 0.1, 0.9, 0.2, -0.55);
-    const head = this.head = new T.Group(); head.position.set(0, 0.85, 0.45); neck.add(head); P(head, 'box', coat, 0, 0, 0.25, 0.3, 0.32, 0.65, 0.35); P(head, 'box', gold, 0, 0.05, 0.25, 0.32, 0.05, 0.4, 0.35);
-    P(body, 'box', dark, 0, 0.1, -1.05, 0.14, 0.7, 0.14, 0.45);
-    this.legs = []; for (const [x, z] of [[0.24, 0.75], [-0.24, 0.75], [0.24, -0.75], [-0.24, -0.75]]) { const g = new T.Group(); g.position.set(x, -0.3, z); body.add(g); P(g, 'box', coat, 0, -0.45, 0, 0.17, 0.9, 0.2); P(g, 'box', dark, 0, -0.95, 0.02, 0.18, 0.12, 0.22); this.legs.push(g); }
-    this.phase = 0; this.talking = false;
+    const root = this.root = new T.Group(); this.o = { scale: 1 }; this.allMats = []; this.outlines = [];
+    const mats = {}; const parts = new Map();
+    const mat = c => { const k = c; if (mats[k]) return mats[k]; const dbl = c.endsWith('|2'); const m = TOON.mat(c.replace('|2', ''), dbl ? { side: T.DoubleSide } : {}); this.allMats.push(m); return mats[k] = m; };
+    const add = (grp, geo, col, m) => { let g = parts.get(grp); if (!g) parts.set(grp, g = {}); (g[col] = g[col] || []).push({ geo, m }); };
+    const coat = color, dark = '#1e1612', hoofC = '#2a2420', cloth = '#2f5a3a|2', gold = '#c9a85a', leather = '#3a2418', nose = shade(color, 0.72);
+    const S = sphGeo(18, 12), S2 = sphGeo(10, 8);
+    const body = this.body = new T.Group(); body.position.y = 1.3; root.add(body);
+    add(body, S, coat, mtx(0, 0, 0, 0.68, 0.84, 1.55)); add(body, S, coat, mtx(0, 0.04, 0.6, 0.64, 0.82, 0.68)); add(body, S, coat, mtx(0, 0.08, -0.6, 0.72, 0.82, 0.76)); add(body, S, coat, mtx(0, 0.34, 0.42, 0.4, 0.34, 0.52));
+    // eyer örtüsü, eyer, üzengiler
+    const cg = new T.CylinderGeometry(0.4, 0.4, 0.74, 18, 1, true, -Math.PI / 2, Math.PI); cg.computeVertexNormals();
+    add(body, cg, cloth, mtx(0, 0.02, -0.05, 1, 1, 1, Math.PI / 2, 0, 0));
+    for (const sx of [-1, 1]) add(body, S2, gold, mtx(sx * 0.395, 0.02, -0.05, 0.035, 0.06, 0.74));
+    add(body, S, leather, mtx(0, 0.41, -0.05, 0.48, 0.16, 0.6)); add(body, S2, leather, mtx(0, 0.5, 0.2, 0.14, 0.14, 0.1)); add(body, S2, leather, mtx(0, 0.49, -0.3, 0.32, 0.14, 0.08));
+    for (const sx of [-1, 1]) { add(body, S2, leather, mtx(sx * 0.37, 0.12, 0.0, 0.025, 0.5, 0.04)); add(body, S2, '#8a8d90', mtx(sx * 0.38, -0.15, 0.0, 0.09, 0.04, 0.09)); }
+    // boyun, yele
+    const neck = this.neck = new T.Group(); neck.position.set(0, 0.28, 0.8); neck.rotation.x = 0.55; body.add(neck);
+    add(neck, capsGeo(0.17, 0.3, 0.78, 14), coat, mtx(0, 0.78, 0, 0.74, 1, 1));
+    for (let i = 0; i < 7; i++) add(neck, S2, dark, mtx(0, 0.12 + i * 0.11, -0.17 + i * 0.025 - (i > 4 ? (i - 4) * 0.02 : 0), 0.07, 0.18, 0.14, -0.2));
+    // baş
+    const head = this.head = new T.Group(); head.position.set(0, 0.8, 0.02); head.rotation.x = 0.15; neck.add(head);
+    add(head, S, coat, mtx(0, 0.04, 0, 0.28, 0.32, 0.38)); add(head, capsGeo(0.135, 0.115, 0.44, 12), coat, mtx(0, -0.02, 0.06, 0.88, 1, 1, -Math.PI / 2, 0, 0));
+    add(head, S, nose, mtx(0, -0.035, 0.5, 0.23, 0.19, 0.16));
+    for (const sx of [-1, 1]) {
+      add(head, S2, '#120c0a', mtx(sx * 0.06, -0.02, 0.575, 0.035, 0.045, 0.02));
+      add(head, S2, '#0a0806', mtx(sx * 0.13, 0.085, 0.1, 0.05, 0.065, 0.06)); add(head, S2, '#ffffff', mtx(sx * 0.152, 0.1, 0.115, 0.012, 0.016, 0.012));
+      add(head, new T.ConeGeometry(0.5, 1, 8), coat, mtx(sx * 0.085, 0.24, -0.07, 0.07, 0.17, 0.05, -0.15, 0, -sx * 0.25));
+      add(head, S2, leather, mtx(sx * 0.14, 0.0, 0.14, 0.02, 0.24, 0.03));
+    }
+    add(head, S2, dark, mtx(0, 0.2, 0.04, 0.12, 0.07, 0.16, 0.4)); add(head, S2, gold, mtx(0, 0.15, 0.13, 0.3, 0.025, 0.03));
+    add(head, S2, leather, mtx(0, -0.02, 0.36, 0.25, 0.03, 0.03, 0, 0, 0)); add(head, new T.TorusGeometry(0.13, 0.014, 6, 14), leather, mtx(0, -0.03, 0.36, 1, 0.85, 1, Math.PI / 2 - 0.1, 0, 0));
+    // bacaklar (diz ekleminde iki parça)
+    this.legs = []; this.knees = [];
+    for (const [x, z, back] of [[0.19, 0.62, 0], [-0.19, 0.62, 0], [0.2, -0.64, 1], [-0.2, -0.64, 1]]) {
+      const g = new T.Group(); g.position.set(x, -0.14, z); body.add(g);
+      add(g, capsGeo(back ? 0.17 : 0.13, 0.085, 0.58, 12), coat, mtx(0, 0.02, back ? -0.03 : 0));
+      const k = new T.Group(); k.position.y = -0.56; g.add(k);
+      add(k, capsGeo(0.08, 0.065, 0.48, 10), coat, mtx(0, 0, 0)); add(k, S2, coat, mtx(0, -0.46, 0.01, 0.13, 0.12, 0.14));
+      add(k, new T.CylinderGeometry(0.078, 0.098, 0.11, 12), hoofC, mtx(0, -0.555, 0.015)); add(k, S2, '#e8e0d0', mtx(0, -0.49, 0.01, 0.15, 0.06, 0.16));
+      this.legs.push(g); this.knees.push({ k, back });
+    }
+    // kuyruk
+    const tail = this.tail = new T.Group(); tail.position.set(0, 0.28, -0.98); tail.rotation.x = 0.35; body.add(tail);
+    add(tail, capsGeo(0.06, 0.1, 0.62, 10), dark, mtx(0, 0, 0)); add(tail, S2, dark, mtx(0, -0.66, -0.02, 0.17, 0.3, 0.15));
+    // birleştir + kontur
+    for (const [grp, cols] of parts) for (const col in cols) {
+      const geo = mergeParts(cols[col]); const mesh = new T.Mesh(geo, mat(col)); mesh.castShadow = true; mesh.receiveShadow = true; grp.add(mesh);
+      if (!col.endsWith('|2')) { const ol = new T.Mesh(geo, TOON.outline); ol.userData.outline = true; grp.add(ol); this.outlines.push(ol); }
+    }
+    this.phase = 0; this.talking = false; this.t = Math.random() * 10;
   }
-  play() { return 0; } setStance() { } setWeapon() { } flash() { }
-  update(dt, speed) { this.phase += dt * (3 + speed * 1.1); const a = Math.min(1, speed / 3) * 0.6; this.legs.forEach((l, i) => l.rotation.x = Math.sin(this.phase + [0, 1.2, 2.6, 3.8][i]) * a); this.body.position.y = 1.35 + Math.abs(Math.sin(this.phase)) * 0.1 * a; this.head.rotation.x = Math.sin(this.phase) * 0.1 * a; }
+  play() { return 0; } setStance() { } setWeapon() { } setExpression() { }
+  flash(color = '#ffffff', t = 0.12) { }
+  update(dt, speed) {
+    this.t += dt; this.phase += dt * (3 + speed * 1.1); const a = Math.min(1, speed / 3) * 0.55, ph = this.phase;
+    const off = [0, Math.PI, Math.PI * 0.5, Math.PI * 1.5];
+    this.legs.forEach((l, i) => { l.rotation.x = Math.sin(ph + off[i]) * a; const kb = this.knees[i]; const bend = Math.max(0, Math.sin(ph + off[i] + 1.3)) * a * 1.4; kb.k.rotation.x = kb.back ? -bend * 0.8 : bend; });
+    this.body.position.y = 1.3 + Math.abs(Math.sin(ph)) * 0.07 * a;
+    this.neck.rotation.x = 0.55 + Math.sin(ph * 2) * 0.05 * a + Math.sin(this.t * 0.5) * 0.03;
+    this.head.rotation.x = 0.15 + Math.sin(this.t * 0.8) * 0.04 * (1 - a);
+    this.tail.rotation.z = Math.sin(this.t * 1.4) * 0.12; this.tail.rotation.x = 0.35 + a * 0.4 + Math.sin(this.t * 0.9) * 0.05;
+    if (G.camera && (this._olT = (this._olT || 0) + dt) > 0.4) { this._olT = 0; const far = G.camera.position.distanceTo(this.root.position) > 34; for (const ol of this.outlines) ol.visible = !far; }
+  }
   dispose() { for (const m of this.allMats) m.dispose(); }
 }
 function spawnRider(look) {
   const horse = new Actor({ model: new HorseModel(), radius: 0.8, name: 'At', solid: false });
   const rider = new Humanoid(look); rider.setStance('sit', true);
-  rider.root.position.set(0, 0.06, -0.1); horse.model.body.add(rider.root);
+  rider.root.position.set(0, 0.11, -0.1); horse.model.body.add(rider.root);
   rider.pose.lgLz = 0.5; horse.rider = rider;
   const upd = horse.model.update.bind(horse.model);
   horse.model.update = (dt, sp) => { upd(dt, sp); rider.update(dt, 0); rider.lgL.rotation.z = 0.45; rider.lgR.rotation.z = -0.45; rider.knL.rotation.x = 0.9; rider.knR.rotation.x = 0.9; rider.lgL.rotation.x = -0.5; rider.lgR.rotation.x = -0.5; };

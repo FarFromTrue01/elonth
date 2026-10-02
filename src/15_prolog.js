@@ -162,6 +162,18 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   await S.interact(L.pts.basin, 'Suya bak', 1.2);
   S.clearObjective(); lily.follow = null;
   S.cine(true); p.faceNow(V3(1.25, 0, -2.6));
+  // su yüzeyinde yansıma
+  {
+    const rc = await Portrait.snap(p, { w: 150, h: 150, ang: 0, bot: -0.2, bgColor: '#2c4a54' });
+    const tc = document.createElement('canvas'); tc.width = rc.width; tc.height = rc.height; const rx = tc.getContext('2d');
+    rx.translate(tc.width, 0); rx.scale(-1, 1); rx.drawImage(rc, 0, 0); rx.setTransform(1, 0, 0, 1, 0, 0);
+    rx.globalCompositeOperation = 'multiply'; rx.fillStyle = '#86b4c2'; rx.fillRect(0, 0, tc.width, tc.height); rx.globalCompositeOperation = 'source-over';
+    for (let i = 0; i < 7; i++) { rx.strokeStyle = `rgba(255,255,255,${0.05 + (i % 2) * 0.05})`; rx.lineWidth = 2; rx.beginPath(); rx.ellipse(tc.width / 2, tc.height / 2, tc.width * (0.12 + i * 0.06), tc.height * (0.12 + i * 0.06), 0, 0, TAU); rx.stroke(); }
+    const rt = new T.CanvasTexture(tc); rt.colorSpace = T.SRGBColorSpace;
+    const disc = new T.Mesh(new T.CircleGeometry(0.232, 32), new T.MeshBasicMaterial({ map: rt, transparent: true, opacity: 0.94, fog: false }));
+    disc.rotation.x = -Math.PI / 2; disc.position.set(1.25, 0.704, -2.55); L.add(disc);
+    L.anims.push(() => { disc.scale.setScalar(1 + Math.sin(G.t * 2.3) * 0.012); disc.rotation.z = Math.sin(G.t * 0.7) * 0.05; });
+  }
   p.model.play('pickup'); await S.wait(0.5); p.model.act.hold = true;
   await S.shot(V3(1.15, 0.9, -2.3), V3(1.25, 0.6, -2.55), 1.0);
   await S.wait(0.5);
@@ -288,30 +300,33 @@ Story.def('p_village', { chapter: 'Prolog', title: 'Yeni Dünya', sub: 'Eros, k�
   await S.say('lily', 'Üstün çamur oldu... Boş ver, annem yıkar. Hadi! Sana en sevdiğim yeri göstereceğim!');
   S.cine(false);
   S.objective('Lily\'yi takip et', lily);
-  await lilyLead(S, lily, [V3(-8, 0, 4), V3(-15, 0, -6), V3(-22, 0, -19), V3(-27, 0, -29), V3(-30.3, 0, -34.2)]);
+  await lilyLead(S, lily, [V3(-8, 0, 4), V3(-15, 0, -6), V3(-22, 0, -19), V3(-27, 0, -29), V3(-29.6, 0, -36), V3(-30.9, 0, -41.0)]);
   await S.reach(L.pts.hillTop, 3.2);
   S.clearObjective();
-  // tepe
+  // tepe: ağacın önünde, saraya bakan yamaç
   S.cine(true); S.music('title');
-  lily.place(-30.3, -34.2, 2.85); lily.model.setStance('sitGround'); p.walkTo([V3(-31.3, 0, -34.6)], 1.2);
-  const hy = L.h(-31, -35);
-  await S.shot(V3(-32.5, hy + 2.4, -30.5), V3(-26, hy + 5, -70), 0);
-  await S.shot(V3(-31.0, hy + 5.2, -36.5), V3(-12, hy + 8, -120), 5, easeInOut);
-  p.model.setStance('sitGround'); p.faceNow(V3(-25, 0, -70));
-  await S.shot(V3(-33.4, hy + 2.1, -29.4), V3(-24, hy + 3.2, -72), 0);
+  const J = V3(-32.0, 0, -41.0), LP = V3(-31.1, 0, -40.8), hy = L.h(J.x, J.z);
+  lily.place(LP.x, LP.z, Math.PI * 0.95); lily.model.setStance('sitSlope'); p.walkTo([J], 1.2);
+  const at = (dx, dy, dz) => V3(J.x + dx, hy + dy, J.z + dz);
+  await S.shot(at(0.9, 1.5, 3.9), at(4, 1.4, -40), 0);
+  await S.wait(0.4);
+  await S.shot(at(0.6, 2.8, -3.5), at(4, 4, -90), 5, easeInOut);
+  p.stopWalk && p.stopWalk(); p.place(J.x, J.z, Math.PI * 0.97); p.model.setStance('sitSlope'); p.faceNow(V3(-25, 0, -90));
+  await S.shot(at(0.9, 1.5, 3.9), at(4, 1.4, -40), 0);
   await S.say('lily', 'Şurası Eros Sarayı. Lordlar orada yaşıyor. Hepsinin kendine ait bir yatağı varmış!');
   await S.say('lily', 'Bir gün ben de orada beyaz ekmek yiyeceğim.');
   await S.say('joseph', 'Beyaz ekmek mi?');
   await S.say('lily', 'Hiç yemedik ki! Ama bir kere fırının önünden geçerken kokusunu duymuştum.');
   await S.think('Önceki hayatımda beyaz ekmeği çöpe atardım.');
   await S.wait(0.6);
+  await S.shot(at(3.4, 0.9, -0.9), at(0.4, 0.55, -0.1), 0);
   lily.lookAt(p.root);
   await S.say('lily', 'Abi... bir daha uyumayacaksın, değil mi? O kadar uzun?');
   const c2 = await S.choice(['"Söz veriyorum."', '"Artık hiçbir yere gitmiyorum."']);
   await S.say('joseph', c2 === 0 ? 'Söz veriyorum.' : 'Artık hiçbir yere gitmiyorum.');
   lily.model.setStance('hugKnees');
   await S.say('lily', 'İyi. Çünkü sen uyurken annem her gece ağladı. Babam da ağladı ama gizli gizli.');
-  await S.shot(V3(-30.4, hy + 1.7, -37.4), V3(-30.8, hy + 0.7, -34.4), 3);
+  await S.shot(at(2.6, 1.25, -2.2), at(0.45, 0.6, 0.0), 3);
   await S.think('Bu insanları tanımıyorum. Bir hafta önce yoktular.');
   await S.think('Ama onları ağlatan her şeyle savaşırım.');
   await S.wait(0.8);

@@ -30,7 +30,7 @@ Story.def('c1_alley', { chapter: 'Bölüm 1 · Taban', title: 'Arka Sokak', sub:
   victor.model.setStance('crossArms');
   for (let i = 0; i < 3; i++) { const w = new Wanderer({ look: randomVillager(i === 1) }); w.place(-4 + i * 3, -2 + i, 0); w.home = V3(-2 + i * 2, 0, -2); w.homeR = 4; }
   S.cine(true);
-  await S.shot(V3(8.5, 2.4, 9.5), V3(12, 1.0, 15), 0);
+  await S.shot(V3(10.6, 1.9, 12.6), V3(12.4, 1.0, 15.2), 0);
   await S.fadeIn(1);
   UI.title('Birkaç hafta sonra', 'Arka Sokak', '');
   S.walk(p, [V3(10.4, 0, 15.6), V3(14.6, 0, 15.6)], 1.6);
@@ -44,7 +44,7 @@ Story.def('c1_alley', { chapter: 'Bölüm 1 · Taban', title: 'Arka Sokak', sub:
   await S.say('victor', 'İblis mi? Bu sefil sokakta iblis bile yaşamaz.');
   S.walk(victor, [V3(15.6, 0, 15.9)], 1.6); await S.wait(0.9);
   victor.model.play('push'); await S.wait(0.25); p.model.setWeapon(null); p.model.play('hit'); S.sfx('hit', 0.6);
-  const bread = new T.Mesh(prim('box'), lam('#c8955a')); bread.scale.set(0.13, 0.11, 0.3); bread.position.set(15.0, L.h(15, 15.2) + 0.06, 15.2); bread.rotation.y = 0.7; L.add(bread);
+  const bread = new T.Mesh(prim('sphS'), TOON.mat('#c8955a', { gradientMap: TOON.gradSoft })); bread.scale.set(0.16, 0.11, 0.32); bread.castShadow = true; bread.position.set(15.0, L.h(15, 15.2) + 0.06, 15.2); bread.rotation.y = 0.7; L.add(bread);
   await S.say('victor', 'Torbada ne var? Ekmek mi? Benim köpeklerim bile bunu yemez.');
   await S.shot(V3(13.6, 1.0, 14.6), V3(15.4, 0.9, 15.9), 0.6);
   await S.say('joseph', 'O ekmek annemin üç günlük emeği. Yerden kaldır.');
@@ -93,41 +93,62 @@ Story.def('c1_alley', { chapter: 'Bölüm 1 · Taban', title: 'Arka Sokak', sub:
   });
   UI.hideDialog();
   // ---- kaçış
-  for (const e of [bram, osric, victor]) { e.active = false; e.removeRing && e.removeRing(); }
-  combatOff(p); if (nora) nora.active = false; if (leo) leo.active = false;
+  for (const e of [bram, osric, victor]) { e.active = false; e.removeRing && e.removeRing(); e.vel.set(0, 0, 0); }
+  combatOff(p); if (nora) { nora.active = false; nora.vel.set(0, 0, 0); } if (leo) { leo.active = false; leo.vel.set(0, 0, 0); }
   S.cine(true); S.music('village');
   victor.alive = true; victor.untargetable = true; victor.model.setStance(null);
-  await S.shot(V3(p.pos.x + 3, 1.6, p.pos.z - 1), V3(victor.pos.x, 1.0, victor.pos.z), 0.6);
-  victor.faceTo(p);
+  // sahneyi sabit, açık bir düzene yeniden diz
+  await S.fadeOut(0.35);
+  p.place(14.6, 15.0, Math.PI / 2); p.model.setStance(null);
+  nora.place(15.5, 14.2, -0.6); victor.place(19.0, 16.4, -1.6); bram.place(19.6, 15.2, -1.7); osric.place(18.8, 17.6, -1.5);
+  for (const e of [bram, osric]) { e.alive = true; e.untargetable = true; e.model.setStance(null); e.model.act = null; }
+  if (leo) { leo.place(13.4, 16.6, 2.0); leo.model.setStance(null); leo.model.act = null; }
+  victor.faceTo(p); bram.faceTo(p); osric.faceTo(p); nora.faceTo(victor); p.faceTo(victor);
+  await S.shot(V3(12.4, 1.55, 13.4), V3(18.6, 1.1, 16.2), 0);
+  await S.fadeIn(0.35);
   await S.say('victor', 'Bu... bu daha bitmedi! Babam duyunca hepinizi köyden sürdürecek!');
   for (const e of [bram, osric, victor]) { e.alive = false; e.corpse = true; e.model.setStance(null); e.fleeTo = true; e.walkTo([V3(22.6, 0, 18.4), V3(27, 0, 21), V3(33, 0, 30)], 4.5); }
+  nora.model.play('laugh');
   await S.wait(1.5);
-  for (const e of [bram, osric, victor]) e.setVisible(false);
+  for (const e of [bram, osric, victor]) { e.stopWalk && e.stopWalk(); e.setVisible(false); }
   L.arena = null;
-  // ---- sonrası
-  p.model.setStance('sitGround'); p.faceTo(nora);
-  nora.faceNow(p); nora.walkTo([V3(p.pos.x + 0.9, 0, p.pos.z + 0.3)], 1.5);
-  if (!leo) { leo = S.cast('leo', npc(LOOK.leo(10), 10, 16.5, 1.4)); leo.walkTo([V3(p.pos.x - 0.9, 0, p.pos.z + 0.6)], 3); }
-  else { leo.model.setStance(null); leo.walkTo([V3(p.pos.x - 0.9, 0, p.pos.z + 0.6)], 2); }
-  await S.shot(V3(p.pos.x + 2.4, 1.3, p.pos.z + 2.6), V3(p.pos.x, 0.6, p.pos.z), 1.2);
+  // ---- sonrası: Joseph ekmeğin yanında oturuyor; herkes kendi yerinde
+  await S.fadeOut(0.3);
+  p.place(14.7, 15.2, -Math.PI / 2); p.model.setStance('sitGround', true);
+  nora.place(15.2, 14.1, -0.5); nora.model.setStance(null);
+  if (!leo) leo = S.cast('leo', npc(LOOK.leo(10), 10.0, 16.5, 1.4));
+  leo.place(15.3, 16.4, -2.6); leo.model.setStance('hips'); leo.model.act = null;
+  for (const a2 of [nora, leo]) { a2.pinned = true; a2.solid = false; }
+  bread.position.set(15.15, L.h(15.15, 15.55) + 0.06, 15.55);
+  nora.faceTo(p); leo.faceTo(p);
+  await S.shot(V3(12.3, 1.35, 15.0), V3(14.9, 0.75, 15.25), 0);
+  await S.fadeIn(0.4);
+  await S.shot(V3(12.9, 1.15, 15.4), V3(14.9, 0.7, 15.2), 2.0);
   nora.lookAt(p.root); nora.model.play('reach');
   await S.say('nora', 'Kalk bakalım. Sen Joseph\'sin, değil mi? Komadan dönen çocuk.');
-  p.model.setStance(null);
   await S.say('joseph', 'Teşekkür ederim. Sen olmasan...');
   await S.say('nora', 'Sen olmasan da o ekmek yerde kalırdı. Ben Nora. Bu da Leo.');
-  leo.lookAt(p.root);
+  leo.lookAt(p.root); leo.model.setStance(null);
   await S.say('nora', 'Koşarken bile düşer ama kalbi temizdir.');
+  leo.model.play('point');
   await S.say('leo', 'Düşmedim! Taktik yaptım! Düşmanın dikkatini dağıttım!');
-  const clara = S.cast('clara', npc(LOOK.clara(10), 10.4, 16.8, 1.4));
+  const clara = S.cast('clara', npc(LOOK.clara(10), 10.2, 16.6, 1.4, { watch: false }));
   await S.say('clara', 'Kanıyorsun! Dur, kıpırdama.');
-  await S.walk(clara, [V3(p.pos.x + 0.2, 0, p.pos.z - 0.8)], 3.2);
-  clara.faceNow(p); clara.lookAt(p.root); clara.model.play('reach');
-  await S.wait(0.6); p.model.addExtra({ t: 'bandage', c: '#e8dfcc' });
+  await S.shot(V3(12.2, 1.4, 14.2), V3(14.2, 0.8, 15.4), 0.8);
+  await S.walk(clara, [V3(13.9, 0, 15.5)], 3.0);
+  clara.pinned = true; clara.solid = false;
+  clara.faceNow(p); clara.lookAt(p.root); clara.model.setStance('kneel'); await S.wait(0.4); clara.model.play('reach');
+  await S.wait(0.6); p.model.addExtra({ t: 'bandage', c: '#e8dfcc' }); S.sfx('cloth', 0.5);
+  await S.shot(V3(13.0, 1.05, 14.3), V3(14.4, 0.75, 15.35), 0.8);
   await S.say('nora', 'Clara? Senin burada ne işin var? Annen seni bizimle görse...');
   await S.say('clara', 'Annem görmüyor.');
   clara.model.play('nod');
   await S.say('clara', 'Ben Clara. Babam köprünün öbür tarafında kumaş satıyor. Ama ben bu tarafı daha çok seviyorum. Burada insanlar gülüyor.');
-  p.walkTo([V3(15.0, 0, 15.7)], 1.4); await S.wait(1.2); p.model.play('pickup'); await S.wait(0.6); bread.visible = false; p.model.setWeapon('bread');
+  clara.model.setStance(null); clara.pinned = false; clara.walkTo([V3(14.0, 0, 16.6)], 1.2);
+  // ayağa kalk, ekmeği al
+  p.model.setStance(null); p.faceNow(V3(15.15, 0, 15.55)); await S.wait(0.4); p.model.play('pickup'); await S.wait(0.6); bread.visible = false; p.model.setWeapon('bread');
+  await S.shot(V3(12.4, 1.5, 15.6), V3(14.7, 1.0, 15.2), 1.0);
+  p.faceTo(nora);
   await S.think('Önceki hayatımda bir sürü meslektaşım vardı. Hiç arkadaşım olmadı.');
   await S.say('joseph', 'Size bir borcum var.');
   nora.model.play('shrug');
@@ -190,8 +211,9 @@ Story.def('c1_selen', { chapter: 'Bölüm 1 · Taban', title: 'Merhem', sub: 'Le
   await S.think('Gece oldu. Annem merak eder.');
   S.cine(false); Cam.yaw = p2.facing + Math.PI;
   S.objective('Eve dön', L.pts.homeDoor);
-  await S.until(() => p2.dist(V3(ld.x, 0, ld.z)) > 9);
+  await S.until(() => p2.dist(V3(ld.x, 0, ld.z)) > 8);
   S.cine(true); S.clearObjective();
+  { const dx = p2.pos.x - ld.x, dz = p2.pos.z - ld.z, d = Math.hypot(dx, dz) || 1; if (d > 9) p2.place(ld.x + dx / d * 8.5, ld.z + dz / d * 8.5, p2.facing); }
   const selen2 = S.cast('selen', npc(LOOK.selen(), ld.x - 2.5, ld.z + 0.1, 0, { watch: false, weapon: 'jar' }));
   await S.think('...?');
   p2.faceTo(selen2);
@@ -411,9 +433,10 @@ Story.def('c1_harvest', { chapter: 'Bölüm 1 · Taban', title: 'Hasat', sub: '1
   await S.say('joseph', 'Teşekkür ederim, baba.');
   p.model.setExpression('smile');
   await S.wait(0.5);
-  const lily = S.cast('lily', npc(LOOK.lily(17), -8, 40, 2.5));
-  S.walk(lily, [V3(cartP.x - 2.6, 0, cartP.z + 3.2)], 3.4);
-  await S.shot(V3(cartP.x - 4.5, 1.6, cartP.z + 5.5), V3(cartP.x - 1.5, 0.9, cartP.z + 2.4), 1.2);
+  const lily = S.cast('lily', npc(LOOK.lily(17), 13, 37, Math.PI));
+  S.walk(lily, [V3(8.2, 0, 44), V3(8.5, 0, 52.4)], 3.4);
+  await S.shot(V3(cartP.x - 1.0, 1.55, cartP.z + 4.6), V3(cartP.x - 2.0, 1.0, cartP.z - 3), 0);
+  Cam.shot(V3(cartP.x - 1.1, 1.5, cartP.z + 4.0), V3(cartP.x - 2.0, 1.0, cartP.z - 3), 3.0);
   await S.say('lily', 'Abi! Baba! Annem "yahni soğudu" diyor! Üçüncü kez!');
   await S.until(() => !lily.path);
   lily.lookAt(p.root); lily.model.setStance('hips'); lily.model.setExpression('angry');
@@ -421,6 +444,7 @@ Story.def('c1_harvest', { chapter: 'Bölüm 1 · Taban', title: 'Hasat', sub: '1
   daniel.model.play('laugh'); p.model.setExpression('smile');
   await S.say('daniel', 'Teşekkürler, büyük avcı Lily.');
   lily.model.setExpression('smile');
+  await S.shot(V3(cartP.x + 3.2, 2.3, cartP.z + 5.2), V3(cartP.x - 1.2, 0.8, cartP.z + 1.2), 3.5);
   await S.think('Bir yıl sonra her şey değişecek. Ama bu akşamı unutmayacağım.');
   await S.fadeOut(1.5);
 });
@@ -476,6 +500,7 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   await S.walk(g2, [V3(p.pos.x + 0.9, 0, p.pos.z - 0.7)], 3.2);
   g2.faceTo(p); g2.model.play('push'); await S.wait(0.3);
   p.model.play('knock'); S.sfx('hitHeavy', 0.6); Screen.addShake(0.4);
+  setTimeout(() => { if (!p.removed) { p.model.stop(); p.model.setStance('sitGround'); } }, 700);
   await S.say('guard', 'Leydi Isolde\'den uzak dur, sefil!');
   S.sfx('laugh'); S.sfx('crowd');
   await S.shot(V3(p.pos.x - 1.5, 0.7, p.pos.z + 1.2), V3(p.pos.x, 0.5, p.pos.z), 0.6);
@@ -491,6 +516,7 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   await S.shot(V3(p.pos.x + 0.8, 2.6, p.pos.z + 1.8), V3(p.pos.x, 0.3, p.pos.z), 2);
   await S.think('Yere düştüğümde kimse elini uzatmadı.');
   await S.think('Bunu da öğrendim.');
+  p.model.setStance(null);
   await S.fadeOut(1.2);
   // ---- gece: birikim
   L = await S.level(() => buildHut('night'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true });
@@ -503,9 +529,9 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   S.cine(false);
   S.objective('Sandığın altındaki gevşek tahtayı kaldır', V3(-1.4, 0, -2.0));
   await S.interact(V3(-1.4, 0, -2.0), 'Tahtayı kaldır', 1.3);
-  S.clearObjective(); S.cine(true); p2.faceNow(V3(-1.4, 0, -2.6));
+  S.clearObjective(); S.cine(true); p2.place(-1.4, -1.85, Math.PI); p2.faceNow(V3(-1.4, 0, -2.6));
   p2.model.setStance('kneel'); await S.wait(0.6); p2.model.setWeapon('pouch'); S.sfx('coin');
-  await S.shot(V3(-0.6, 1.2, -1.5), V3(-1.4, 0.6, -2.2), 1);
+  await S.shot(V3(-0.45, 1.0, -2.5), V3(-1.4, 0.55, -2.15), 1);
   await S.say('sys', 'Kese · 5 gümüş, 12 bronz', { narr: true });
   await S.think('Beş yıl. Beş gümüş.');
   await S.think('Loncaya girmek on gümüş.');

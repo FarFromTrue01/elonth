@@ -4,7 +4,7 @@ const Story = {
   scenes: {}, order: [], runId: 0, current: null, skipping: false, canSkip: true, markerTarget: null, waiters: [], inter: [],
   def(id, meta, fn) { this.scenes[id] = Object.assign({ id, fn }, meta); if (!meta.debug) this.order.push(id); },
   skip() { if (!G.inCine || !this.canSkip) return; this.skipping = true; UI.advance(); if (UI.sysAdvance) { UI.sysAdvance(); UI.sysAdvance && UI.sysAdvance(); } for (const w of this.waiters) if (w.skippable) w.t = 1e9; },
-  abort() { this.runId++; this.waiters = []; this.inter = []; this.skipping = false; UI.hideDialog(); $('#choices').hidden = true; $('#system').hidden = true; UI.interact(null); UI.objective(null); UI.counter(null); UI.boss(null); this.markerTarget = null; },
+  abort() { this.runId++; this.waiters = []; this.inter = []; this.skipping = false; UI.hideDialog(); $('#choices').hidden = true; $('#system').hidden = true; UI.interact(null); UI.objective(null); UI.counter(null); UI.boss(null); this.markerTarget = null; $('#streak').hidden = true; Portrait.hide(); },
   async run(id) {
     const sc = this.scenes[id]; if (!sc) { Game.toMenu(); return; }
     this.abort(); const my = this.runId; this.current = id; Save.reach(id); this.canSkip = sc.noSkip ? false : true;
@@ -12,8 +12,8 @@ const Story = {
     try {
       await sc.fn(S);
       if (my !== this.runId) return;
-      Loading.show(); const i = this.order.indexOf(id); const nx = sc.next || this.order[i + 1];
-      if (nx) { Save.reach(nx); this.run(nx); } else Game.finale();
+      const i = this.order.indexOf(id); const nx = sc.next || this.order[i + 1];
+      if (nx) { Loading.show(this.scenes[nx]); Save.reach(nx); this.run(nx); } else Game.finale();
     } catch (e) {
       if (e === ABORT) return;
       console.error(e); Game.showError(e);
@@ -34,6 +34,21 @@ const Story = {
   },
 };
 
+// Sinematik kamera bina içine düşmesin: bakış noktasından kameraya doğru tara, ilk engelde dur
+function safeShotPos(pos, look) {
+  const L = G.level; if (!L || L.interior || typeof pos === 'function' || typeof look === 'function' || !L.boxes) return pos;
+  if (pos.distanceTo(look) < 3.2) return pos; // yakın çekimler elle yerleştirildi
+  const inBld = (x, z) => { for (const b of L.boxes) { if (Math.min(b.hw, b.hd) < 1.3) continue; const dx = x - b.x, dz = z - b.z; const lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c; if (Math.abs(lx) < b.hw + 0.3 && Math.abs(lz) < b.hd + 0.3) return true; } return false; };
+  const steps = 24; let seenFree = false, k = 1;
+  for (let i = 1; i <= steps; i++) {
+    const u = i / steps, x = lerp(look.x, pos.x, u), z = lerp(look.z, pos.z, u), y = lerp(look.y, pos.y, u);
+    const bl = y < L.h(x, z) + 4.2 && inBld(x, z);
+    if (!bl) seenFree = true; else if (seenFree) { k = (i - 1) / steps; break; }
+  }
+  if (k >= 1) return pos;
+  if (G.auto) console.warn('shot adjusted', Story.current, pos.x.toFixed(1), pos.y.toFixed(1), pos.z.toFixed(1), 'k=' + k.toFixed(2));
+  const out = look.clone().lerp(pos, Math.max(0.3, k - 0.02)); out.y = Math.max(out.y, pos.y * 0.6 + look.y * 0.4); return out;
+}
 function makeS(my) {
   const chk = () => { if (my !== Story.runId) throw ABORT; };
   const S = {
@@ -53,6 +68,7 @@ function makeS(my) {
       const c = typeof who === 'string' ? CAST[who] : who; const a = c && c.actor && !c.actor.removed ? c.actor : null;
       if (a) a.say(true);
       if (o.look && a) { a.faceTo(o.look); }
+      if (o.narr || !c || o.noPort) Portrait.hide(); else { const pa = a || (c === CAST.thought && CAST.joseph.actor && !CAST.joseph.actor.removed ? CAST.joseph.actor : null); Portrait.show(pa, c === CAST.thought ? CAST.joseph : c, c === CAST.thought); }
       await UI.say(c, text, Object.assign({ thought: c === CAST.thought }, o)); if (a) a.say(false); chk();
     },
     think(text) { return S.say('thought', text, { thought: true }); },
@@ -62,7 +78,7 @@ function makeS(my) {
       G.inCine = on; G.controlEnabled = !on; UI.cine(on); UI.hud(!on); if (!on) { Story.skipping = false; Cam.follow(G.player); Loading.hide(); if ($('#fade').style.opacity !== '0') UI.fade(0, 0.5); } Input.reset();
       if (on && G.player) { G.player.vel.set(0, 0, 0); if (G.player.state !== 'dead') G.player.state = 'move'; }
     },
-    async shot(pos, look, dur = 0, ease) { const p = Cam.shot(pos, look, Story.skipping ? 0 : dur, ease); if (dur > 0 && !Story.skipping) { await new Promise(res => Story.waiters.push({ fn: () => Cam.shotT >= Cam.shotDur || Story.skipping, res })); } chk(); },
+    async shot(pos, look, dur = 0, ease) { pos = safeShotPos(pos, look); const p = Cam.shot(pos, look, Story.skipping ? 0 : dur, ease); if (dur > 0 && !Story.skipping) { await new Promise(res => Story.waiters.push({ fn: () => Cam.shotT >= Cam.shotDur || Story.skipping, res })); } chk(); },
     follow(snap) { Cam.follow(G.player, snap); },
     async fadeOut(d = 0.8) { await UI.fade(1, d); chk(); },
     async fadeIn(d = 0.8) { Loading.hide(); await UI.fade(0, d); chk(); },
@@ -109,9 +125,17 @@ const LOAD_TIPS = [
   'Elonth\'ta loncaya girmek on gümüş. Bir köylü için iki yıllık birikim.',
   'Enkron yüz kişiden yaklaşık on kişiye verilir. Ne yaptığını yalnızca sahibi bilir.',
   'Lonca rütbeleri G\'den SS\'e uzanır. Dünyada yalnızca üç SS vardır.',
-  'Sinematikleri sağ üstteki Atla düğmesiyle geçebilirsin.',
+  'Sinematikleri sağ üstteki Atla düğmesine iki kez dokunarak geçebilirsin.',
+  'Dövüşte birbiri ardına isabet ettirdiğin vuruşlar seri sayacını büyütür. Darbe alırsan seri sıfırlanır.',
+  'Ayarlar > Ekran sarsıntısı ile dövüşteki kamera titremesini azaltabilir ya da kapatabilirsin.',
 ];
 const Loading = {
-  show() { const el = $('#loading'); if (!el.hidden) return; el.hidden = false; const s = Story.scenes[Story.current]; $('#ld-chap').textContent = s ? s.chapter : ''; $('#ld-title').textContent = s ? s.title : ''; $('#ld-tip').textContent = pick(LOAD_TIPS); el.classList.remove('out'); },
-  hide() { const el = $('#loading'); if (el.hidden) return; el.classList.add('out'); setTimeout(() => { el.hidden = true; el.classList.remove('out'); }, 450); },
+  tok: 0,
+  show(sc) {
+    const el = $('#loading'); this.tok++; const s = sc || Story.scenes[Story.current];
+    $('#ld-chap').textContent = s ? s.chapter : ''; $('#ld-title').textContent = s ? s.title : '';
+    if (!el.hidden && !el.classList.contains('out')) return;
+    el.hidden = false; el.classList.remove('out'); $('#ld-tip').textContent = pick(LOAD_TIPS);
+  },
+  hide() { const el = $('#loading'); if (el.hidden) return; el.classList.add('out'); const t = ++this.tok; setTimeout(() => { if (t !== this.tok) return; el.hidden = true; el.classList.remove('out'); }, 450); },
 };

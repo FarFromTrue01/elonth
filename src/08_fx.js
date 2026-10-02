@@ -8,7 +8,14 @@ const FX = {
     this.discGeo = new T.CircleGeometry(1, 32); this.discGeo.rotateX(-Math.PI / 2);
     this.layer = document.getElementById('fxlayer');
   },
-  clear() { for (const p of this.parts) this.scene.remove(p.m); this.parts = []; for (const r of this.rings) this.scene.remove(r.m); this.rings = []; for (const t of this.texts) t.el.remove(); this.texts = []; },
+  // yumuşak hedef göstergesi (hedef yardımı kimi vuracaksa onun ayağında)
+  target(e) {
+    if (!this.tgt) { const m = new T.Mesh(new T.RingGeometry(0.42, 0.52, 40, 1), new T.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.55, depthWrite: false, fog: false, blending: T.AdditiveBlending })); m.geometry.rotateX(-Math.PI / 2); m.renderOrder = 4; this.tgt = m; this.scene.add(m); }
+    const m = this.tgt; if (!e) { m.visible = false; return; }
+    if (m.parent !== this.scene) this.scene.add(m);
+    m.visible = true; m.position.set(e.pos.x, e.pos.y + 0.04, e.pos.z); const k = (e.radius || 0.35) / 0.35 * (1 + Math.sin(G.t * 6) * 0.04); m.scale.setScalar(k); m.rotation.y += 0.02;
+  },
+  clear() { if (this.tgt) this.tgt.visible = false; for (const p of this.parts) this.scene.remove(p.m); this.parts = []; for (const r of this.rings) this.scene.remove(r.m); this.rings = []; for (const t of this.texts) t.el.remove(); this.texts = []; },
   burst(pos, o = {}) {
     const n = o.n || 8;
     for (let i = 0; i < n; i++) {
@@ -71,7 +78,7 @@ const Screen = {
   shake: 0,
   set(o, instant) { Object.assign(this.target, o); if (instant) Object.assign(this.fx, o); },
   reset() { this.set({ blur: 0, gray: 0, sat: 1, bright: 1, vig: 0, red: 0, wobble: 0 }, true); this.shake = 0; },
-  addShake(v) { this.shake = Math.min(1.2, this.shake + v); },
+  addShake(v) { const k = G.settings.shake === undefined ? 1 : G.settings.shake; this.shake = Math.min(1.2, this.shake + v * k); },
   update(dt) {
     const f = this.fx, t = this.target;
     for (const k in f) f[k] = damp(f[k], t[k], 3.5, dt);

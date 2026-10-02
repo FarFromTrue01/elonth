@@ -12,7 +12,7 @@ class Actor {
     this.poise = o.poise || 0; this.poiseMax = this.poise; this.lockY = null; this.visible = true;
     G.actors.push(this);
   }
-  place(x, z, facing = 0, y) { this.pos.set(x, y !== undefined ? y : (G.level ? G.level.h(x, z) : 0), z); this.facing = facing; this.root.position.copy(this.pos); this.root.rotation.y = facing; this.path = null; this.vel.set(0, 0, 0); this.kv.set(0, 0, 0); return this; }
+  place(x, z, facing = 0, y) { this.pos.set(x, y !== undefined ? y : (G.level ? G.level.h(x, z) : 0), z); this.facing = facing; this.wantFacing = facing; this.root.position.copy(this.pos); this.root.rotation.y = facing; this.path = null; this.vel.set(0, 0, 0); this.kv.set(0, 0, 0); return this; }
   placeAt(v, facing) { return this.place(v.x, v.z, facing === undefined ? this.facing : facing); }
   get position() { return this.pos; }
   faceTo(t) { const p = t.isVector3 ? t : t.pos; this.wantFacing = Math.atan2(p.x - this.pos.x, p.z - this.pos.z); }
@@ -172,6 +172,13 @@ class Player extends Actor {
     if (this.state === 'hitstun' || this.state === 'knock') { this.vel.x = damp(this.vel.x, 0, 8, dt); this.vel.z = damp(this.vel.z, 0, 8, dt); }
     if (G.settings.shiftLock && ctl && !G.inCine && (this.state === 'move' || this.state === 'hitstun') && !this.noShiftFace) { this.wantFacing = Cam.yaw + Math.PI; }
     if (this.weakWalk) { this.wobT = (this.wobT || 0) + dt; const w = Math.sin(this.wobT * 1.7) * 0.5 + Math.sin(this.wobT * 0.6) * 0.5; if (this.moving) { this.vel.x += Math.cos(this.facing) * w * 0.5; this.vel.z -= Math.sin(this.facing) * w * 0.5; } }
+    if (this.streak) { this.streakT += dt; if (this.streakT > 2.6) { this.streak = 0; UI.streak(0); } }
+    if (G.combat && this.canFight && !G.inCine) {
+      let tdx, tdz; const id = this.inputDir();
+      if (this.atk && this.atk.target && this.atk.target.alive) this._tg = this.atk.target;
+      else { if (G.settings.shiftLock && id.mag <= 0.5) { tdx = -Math.sin(Cam.yaw); tdz = -Math.cos(Cam.yaw); } else if (id.mag) { tdx = id.x; tdz = id.z; } else { tdx = Math.sin(this.facing); tdz = Math.cos(this.facing); } this._tg = this.findTarget(tdx, tdz); }
+      FX.target(this._tg && this._tg.alive ? this._tg : null);
+    } else if (this._tg !== undefined) { this._tg = undefined; FX.target(null); }
     this.integrate(dt);
     if (this.model.stanceName === 'fight' && !G.combat) this.model.setStance(null);
   }
@@ -195,7 +202,7 @@ class Player extends Actor {
       any = true;
     }
     if (!any && this.dummy) { const dm = this.dummy; if (distXZ(this.pos, dm.group.position) < d.range + 0.4) { const a = Math.abs(angDiff(this.facing, Math.atan2(dm.group.position.x - this.pos.x, dm.group.position.z - this.pos.z))); if (a < d.arc / 2 + 0.4) { dm.hit(d); any = true; } } }
-    if (any) { G.hitstop = d.heavy ? 0.09 : 0.05; Screen.addShake(d.heavy ? 0.35 : 0.15); }
+    if (any) { G.hitstop = d.heavy ? 0.09 : 0.05; Screen.addShake(d.heavy ? 0.35 : 0.15); this.streak = (this.streak || 0) + 1; this.streakT = 0; if (this.streak >= 2) UI.streak(this.streak); }
   }
   // düşman saldırısı oyuncuya
   receive(att, def) {
@@ -212,7 +219,7 @@ class Player extends Actor {
     this.model.flash('#ff3020', 0.12); Screen.redFlash(0.35 + (def.heavy ? 0.25 : 0)); Screen.addShake(def.heavy ? 0.6 : 0.3); Audio.sfx(def.heavy ? 'hitHeavy' : 'hurt');
     FX.impact(V3(this.pos.x, this.pos.y + 1.1 * this.scale, this.pos.z), dir.clone().negate(), def.heavy);
     G.hitstop = def.heavy ? 0.1 : 0.06;
-    this.atk = null; this.queued = false; this.combo = 0;
+    this.atk = null; this.queued = false; this.combo = 0; if (this.streak) { this.streak = 0; UI.streak(0, true); }
     if (this.hp <= 0) {
       if (this.noDeath) { this.hp = 1; this.downs = (this.downs || 0) + 1; }
       else { this.hp = 0; this.alive = false; this.state = 'dead'; this.model.setStance('lie'); this.vel.set(0, 0, 0); if (this.onDeath) this.onDeath(); return 'hit'; }

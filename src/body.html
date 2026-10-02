@@ -15,6 +15,7 @@
     <div id="bossbar" hidden><div class="bname"></div><div class="bbar"><em></em><i></i></div></div>
     <div id="marker" hidden><div class="arrow"></div><span id="marker-d"></span></div>
     <div id="hpbars"></div>
+    <div id="streak" hidden><b>2</b><small>Vuruş</small></div>
     <button id="lockbtn" type="button" aria-label="Shift lock"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke-width="2.2"/><circle cx="12" cy="15.5" r="1.6" class="dot"/></svg><span>Kilit</span></button>
     <button id="pausebtn" type="button" aria-label="Duraklat"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
     <div id="actions" hidden>
@@ -27,7 +28,7 @@
   <div id="cine-top"></div><div id="cine-bot"></div>
   <button id="skip" type="button" hidden>Atla ››</button>
   <div id="dlgcatch" hidden></div>
-  <div id="dialog" hidden><div class="dname"><span class="nm"></span><span class="badge" hidden></span></div><div class="dtext"></div><div class="dnext">▾</div></div>
+  <div id="dialog" hidden><div id="dport" hidden><canvas width="240" height="240"></canvas></div><div class="dname"><span class="nm"></span><span class="badge" hidden></span></div><div class="dtext"></div><div class="dnext">▾</div></div>
   <div id="choices" hidden></div>
   <div id="titlecard" hidden><div class="kicker"></div><h1></h1><div class="rule"></div><div class="sub"></div></div>
   <div id="toast" hidden></div>
@@ -42,6 +43,7 @@
         <button type="button" data-m="continue" id="m-continue">Devam et <small id="m-cont-sub"></small></button>
         <button type="button" data-m="new">Yeni oyun</button>
         <button type="button" data-m="chapters">Bölümler</button>
+        <button type="button" data-m="codex">Günlük</button>
         <button type="button" data-m="settings">Ayarlar</button>
         <button type="button" data-m="fullscreen" id="m-fs">Tam ekran</button>
       </nav>
@@ -56,9 +58,10 @@
       <button type="button" data-p="resume">Devam et</button>
       <button type="button" data-p="restart">Sahneyi yeniden başlat</button>
       <button type="button" data-p="chapters">Bölümler</button>
+      <button type="button" data-p="codex">Günlük</button>
       <button type="button" data-p="settings">Ayarlar</button>
       <button type="button" data-p="menu">Ana menü</button>
-      <div class="pz-help"><b>Kontroller</b> Sol taraf: hareket · Sağ taraf: kamerayı çevir · Diyalog: ekrana dokun</div>
+      <div class="pz-help"><b>Kontroller</b> Sol taraf: hareket · Sağ taraf: kamerayı çevir · Kilit: shift lock · Diyalog: ekrana dokun</div>
     </div>
   </div>
   <div id="loading" hidden><div class="ld-inner"><div class="ld-chap" id="ld-chap"></div><div class="ld-title" id="ld-title"></div><div class="ld-row"><div class="ld-mark"></div><div class="ld-text">Yükleniyor</div></div><div class="ld-tip" id="ld-tip"></div></div></div>

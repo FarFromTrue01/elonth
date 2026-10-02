@@ -52,6 +52,7 @@ const STANCES = {
   think: { full: false, p: { shRx: -1.1, shRz: 0.3, elR: -2.3, shLx: -0.5, shLz: -0.3, elL: -1.6, hdX: 0.1, hdZ: 0.12 } },
   sit: { full: true, p: { lift: -0.48, lgLx: -1.55, knL: 1.55, lgRx: -1.5, knR: 1.6, lgLz: 0.06, lgRz: -0.06, shLx: -0.45, shRx: -0.45, elL: -0.6, elR: -0.6 } },
   sitGround: { full: true, p: { lift: -0.86, lgLx: -1.45, knL: 0.3, lgRx: -1.45, knR: 0.35, shLx: 0.4, shRx: 0.4, elL: -0.2, elR: -0.2, spX: -0.1 } },
+  sitSlope: { full: true, p: { lift: -0.8, lgLx: -1.12, knL: 0.55, lgRx: -1.18, knR: 0.48, shLx: 0.45, shRx: 0.45, elL: -0.2, elR: -0.2, spX: -0.12 } },
   hugKnees: { full: true, p: { lift: -0.82, lgLx: -2.4, knL: 2.5, lgRx: -2.4, knR: 2.5, spX: 0.55, hdX: 0.5, shLx: -1.2, shRx: -1.2, shLz: -0.2, shRz: 0.2, elL: -0.4, elR: -0.4 } },
   kneel: { full: true, p: { lift: -0.45, lgLx: -1.45, knL: 1.5, lgRx: 0.15, knR: 1.75, spX: 0.1 } },
   kneel2: { full: true, p: { lift: -0.5, lgLx: 0.05, knL: 1.65, lgRx: 0.05, knR: 1.65, spX: 0.45, hdX: 0.4, shLx: -0.5, shRx: -0.5, elL: -0.2, elR: -0.2 } },
@@ -102,7 +103,7 @@ class Humanoid {
     const fg = new T.SphereGeometry(0.5 * 1.012, 20, 16, Math.PI / 2 - 0.873, 1.746, 0.96, 1.4); deformHead(fg, fem ? 0.4 : 0.34);
     this.faceF = { skin: o.skin, eyes: o.eyes, female: fem, child: ch, brow: shade(o.hair, 0.55), stern: o.stern, beard: o.faceBeard, mustache: o.faceMustache, blush: o.blush };
     this.faceTex = {}; this.expr = o.expr || 'neutral'; this.faceState = '';
-    this.faceMat = TOON.mat('#ffffff', { map: this.faceTexFor('neutral', 'open', 'closed'), gradientMap: TOON.gradSoft }); this.allMats.push(this.faceMat);
+    this.faceMat = TOON.mat('#ffffff', { map: this.faceTexFor('neutral', 'open', 'closed'), gradientMap: TOON.gradFace }); this.allMats.push(this.faceMat);
     const face = new T.Mesh(fg, this.faceMat); face.position.copy(this.hc); face.scale.set(W, H, Dd); face.castShadow = false; face.userData.noBake = true; head.add(face); this.face = face;
     this.buildHair(o.hairStyle, o.hair);
     // kollar
@@ -152,7 +153,7 @@ class Humanoid {
     if (!this.mats[key]) {
       const [hex, flag] = key.split('|');
       const soft = hex === this.o.skin;
-      const m = TOON.mat(hex, flag === '2' ? { side: T.DoubleSide } : (flag === 'm' || soft) ? { gradientMap: TOON.gradSoft } : {});
+      const m = TOON.mat(hex, flag === '2' ? { side: T.DoubleSide } : soft ? { gradientMap: TOON.gradFace } : flag === 'm' ? { gradientMap: TOON.gradSoft } : {});
       this.mats[key] = m; this.allMats.push(m);
     }
     return this.mats[key];

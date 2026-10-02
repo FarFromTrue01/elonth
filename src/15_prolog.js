@@ -134,7 +134,7 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   await S.say('daniel', 'Bak şuna, Marta. Bize bakıyor. Gerçekten bakıyor.');
   // doğrul
   await S.fadeOut(0.5);
-  p.place(-2.12, -1.3, Math.PI / 2); p.model.setStance('sit', true); p.lockY = 0.42;
+  p.place(-2.12, -1.3, Math.PI / 2); p.model.setStance('sit', true); p.lockY = 0.17;
   lily.place(-1.3, 0.2, -2.3); marta.place(-1.25, -1.9, -1.1); marta.model.setStance(null, true); marta.pinned = false;
   daniel.place(-0.9, -0.9, -1.6);
   for (const a of [lily, marta, daniel]) a.lookAt(p.root);

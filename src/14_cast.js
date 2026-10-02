@@ -24,6 +24,9 @@ const CAST = {
   crowd: { name: 'Kalabalık', color: '#a89c88' },
   noble: { name: 'Soylu bir kadın', color: '#d8b0c0' },
   villager: { name: 'Köylü kadın', color: '#c8b498' },
+  mira: { name: 'Mira', color: '#9fdcc4', rank: 'E' },
+  greta: { name: 'Greta', color: '#d0c4a8' },
+  garrick: { name: 'Garrick', color: '#c89868', rank: 'D' },
   sys: { name: 'SİSTEM', color: '#74d8ff' },
 };
 const AGE = { 10: { scale: 0.72, child: 1 }, 12: { scale: 0.79, child: 0.82 }, 15: { scale: 0.91, child: 0.42 }, 17: { scale: 0.98, child: 0.12 }, 18: { scale: 1.0, child: 0 } };
@@ -48,6 +51,9 @@ const LOOK = {
   guard() { return { scale: 1.02, skin: SKIN.light, hair: '#2a1d14', hairStyle: 'short', shirt: '#5a6a7a', pants: '#3a3a40', boots: true, shoes: '#2a2a2a', extras: [{ t: 'armor', c: '#9aa2ac', trim: '#6a7480' }, { t: 'cape', c: '#2f5a3a', len: 1.1 }] }; },
   knight() { return { scale: 1.02, skin: SKIN.light, hair: '#3a2a1c', hairStyle: 'short', shirt: '#2f5a3a', pants: '#2a2e2a', boots: true, shoes: '#8a9098', gloves: '#8a9098', sleeves: 'long', extras: [{ t: 'armor', c: '#b8bec8', trim: '#d8b060' }, { t: 'cape', c: '#2f5a3a', collar: '#d8b060' }, { t: 'sheath' }] }; },
   priest() { return { scale: 0.98, skin: SKIN.light, hair: '#e8e4dc', hairStyle: 'bald', shirt: '#ece4d0', pants: '#d8d0bc', sleeves: 'long', extras: [{ t: 'robe', c: '#e8e0cc' }, { t: 'sash', c: '#c9a85a' }, { t: 'beard', c: '#f0ece4' }, { t: 'cape', c: '#c9a85a', len: 1.6 }] }; },
+  greta() { return { female: true, scale: 0.93, skin: '#c0987a', hair: '#cfcac2', hairStyle: 'bun', shirt: '#4a4a52', pants: '#3a3a40', sleeves: 'long', shoes: '#2a2420', extras: [{ t: 'dress', c: '#4e4c58', len: 0.95 }, { t: 'apron', c: '#a8a290' }, { t: 'necklace', c: '#a8a08a' }] }; },
+  mira() { return { female: true, scale: 0.96, skin: '#dcb694', hair: '#8c5c38', hairStyle: 'bob', shirt: '#d4c9a4', pants: '#4a4034', boots: true, shoes: '#4a3424', sleeves: 'short', extras: [{ t: 'vest', c: '#7a5a3a' }, { t: 'belt', c: '#2e2218' }, { t: 'satchel', c: '#8a6a44' }, { t: 'scarf', c: '#5a8a7a' }] }; },
+  garrick() { return { scale: 1.1, skin: '#b88a64', hair: '#2a1c14', hairStyle: 'short', shirt: '#5a4636', pants: '#3a3430', boots: true, shoes: '#2a2018', wide: 1.18, sleeves: 'short', extras: [{ t: 'armor', c: '#8e949c', trim: '#6a7078' }, { t: 'beard', c: '#2a1c14' }, { t: 'belt', c: '#2a1e16' }, { t: 'sheath' }] }; },
   kid(f) { const o = randomVillager(f); o.scale = rnd(0.55, 0.68); o.child = 1; o.extras = o.extras.filter(e => e.t !== 'beard' && e.t !== 'hat'); return o; },
 };
 
@@ -68,6 +74,9 @@ const VRM_CAST = {
   isolde: { base: 'fg', hair: 'fa', headScale: 0.97, faceMix: { relaxed: 0.2 }, lid: 0.1, hairColor: '#ece2c8', eyeColor: '#7a9ac8', browColor: '#c8bc9a' },
   seraphine: { base: 'fg', hair: 'fg', headScale: 1.01, lid: 0.2, hairColor: '#16121c', eyeColor: '#8a6ad8', browColor: '#141016' },
   rowena: { base: 'fa', hair: 'fg', freckles: 0.9, faceMix: { happy: 0.18 }, hairTrim: 0.2, hairColor: '#b8481e', eyeColor: '#6a8a3a', browColor: '#7a2e14' },
+  greta: { base: 'fg', hair: 'fg', hairTrim: 0.3, age: 0.9, headScale: 1.0, eyeColor: '#4a5058', browColor: '#b8b4ac', lid: 0.14, faceMix: { angry: 0.2 } },
+  mira: { base: 'fa', hair: 'fa', hairColor: '#9a6a40', eyeColor: '#6a8a5a', browColor: '#6a4a2a', headScale: 1.02, faceMix: { happy: 0.3 }, freckles: 0.5 },
+  garrick: { base: 'm', hair: 'm', hairColor: '#2a1c14', age: 0.4, scar: 1, headScale: 1.1, chestW: 1.22, shoulder: 0.045, eyeColor: '#3a2a1a', browColor: '#1a1410', faceMix: { angry: 0.2 } },
   guard: { base: 'm', hair: 'none', age: 0.25, scar: 1, chestW: 1.12, extraAcc: [{ t: 'helmet', c: '#9aa2ac' }] },
   knight: { base: 'm', hair: 'none', age: 0.1, chestW: 1.14, extraAcc: [{ t: 'helmet', c: '#b8bec8' }] },
   priest: { base: 'm', hair: 'm', age: 0.8, hairColor: '#ece8e0', hairGain: 1.15, chestW: 1.0, eyeColor: '#5a5048', browColor: '#e8e4dc' },

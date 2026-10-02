@@ -2,7 +2,7 @@
 
 Elonth dünyasında geçen, tarayıcıda çalışan 3D aksiyon ve hikâye oyunu. Tablet için dokunmatik kontrollü, ana ekrana uygulama olarak kurulabilir (PWA).
 
-**Arc 1 · Tabandaki Çocuk** — şu an oynanabilir olan kısım: Prolog ve Bölüm 1.
+**Arc 1 · Tabandaki Çocuk** — tamamı oynanabilir: Prolog, Bölüm 1 ve Bölüm 2 · Dipten (Ceza, On Gümüş, G Görevleri, Fareler, Fare Kralı).
 
 ## Oynamak
 
@@ -28,6 +28,16 @@ Dövüşte hafif hedef yardımı vardır: saldırı yönün rakibe ~35° yakıns
 ## Ayarlar
 
 Arayüz boyutu (tablette sağ alttaki butonları büyütür), shift lock, ekran sarsıntısı, kamera hassasiyeti, metin hızı, müzik/efekt sesi, grafik kalitesi ve **karakter görünümü** (Anime: VRM modelleri / Basit: hafif modeller, zayıf cihazlar için).
+
+## Sürüm 0.4.0'da neler değişti
+
+- **Bölüm 2 · Dipten** eklendi (Arc 1'in sonu): Ceza, On Gümüş (lonca kaydı, Greta), G Görevleri (ahır, kasap avlusu, kapı önü; Victor ve Mira), Fareler (değirmen, mahzen, kanal) ve final **Fare Kralı** (tuzak levhası + savak mekaniği). Yeni mekânlar: lonca iç salonu, değirmen, mahzen, kanal. Yeni yaratıklar: fare, kanal faresi, örümcek, Fare Kralı. Yeni karakterler: Greta, Mira, Garrick.
+- **Karakter çeşitliliği:** herkesin kafa/omuz/göğüs oranı, yüz ifadesi eğilimi, çil/yara ve **yaş** (kırışıklık, ağarmış saç, kamburluk) farklı. Yaşlı köylüler. Joseph ile Daniel artık aynı kişi gibi görünmüyor. Erkeklerin göğsü düzleştirildi, omuzları genişletildi.
+- **Saç fiziği:** kökler kafaya yapışık, yalnızca uçlar savruluyor.
+- **Kol pozları** ters kinematikle yeniden hesaplandı: eller gövdeye girmiyor, havada kalmıyor (bel, kolları kavuşturma, düşünme, ağlama, destek, sırtında taşınma).
+- Tören: yürümeden art arda 12 kişi taşa dokunur, kimine Enkron çıkar kimine çıkmaz. Eve dönüşte yürüyüş hatası (kayma, daire, ani hızlanma) giderildi.
+- Çanta/ekmek bohçası belirgin; Victor yakına gelip düşürüyor. Yatak: yorgan ve yastık gövdeye girmiyor. Kaza sonrası siyah ekranda metin artık görünüyor.
+- Performans: uzak karakterlerde kemik/yay güncellemesi seyreltildi, kontur mesafesi kısaldı.
 
 ## Sürüm 0.3.0'da neler değişti
 

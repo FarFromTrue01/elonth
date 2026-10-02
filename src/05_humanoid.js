@@ -67,7 +67,7 @@ const STANCES = {
 
 // Poz bileşimi (yürüme, duruş, aksiyon, bakış): Humanoid ve VRMHumanoid ortak kullanır
 class PoseRig {
-  setStance(name, instant) { if (name === this.stanceName) return; this.prevStance = this.stance; this.prevW = this.stanceW; this.stance = name ? STANCES[name] : null; this.stanceName = name; this.stanceW = instant ? 1 : 0; if (instant) this.prevW = 0; }
+  setStance(name, instant) { if (name === this.stanceName) return; this.prevStance = this.stance; this.prevW = this.stanceW; this.stance = name ? ((this.vrm && VSTANCES[name]) || STANCES[name]) : null; this.stanceName = name; this.stanceW = instant ? 1 : 0; if (instant) this.prevW = 0; }
   setUpper(name) { this.upperSt = name; this.upperW = 0; }
   play(name, speedMul = 1) { const a = ACTIONS[name]; if (!a) return 0; this.act = { a, t: 0, dur: a.dur / speedMul, name }; return this.act.dur; }
   stop() { this.act = null; }
@@ -121,7 +121,7 @@ class PoseRig {
     const blendIn = (src, w, keepLegs) => { for (const k in src) { if (keepLegs && speed > 0.05 && (k[0] === 'l' || k[0] === 'k' || k === 'lift')) continue; P[k] = lerp(P[k], src[k] + (k === 'spX' || k === 'hdX' ? p[k] * 0.3 : 0), w); } };
     if (this.prevStance && this.prevW > 0) { this.prevW = Math.max(0, this.prevW - dt * 4); blendIn(this.prevStance.p, smooth(this.prevW) * (1 - smooth(this.stanceW)), !this.prevStance.full); }
     if (st) blendIn(st.p, smooth(this.stanceW), !st.full);
-    if (this.upperSt) { this.upperW = Math.min(1, (this.upperW || 0) + dt * 4); const up = STANCES[this.upperSt].p, w = smooth(this.upperW); for (const k in up) { if (k[0] === 'l' || k[0] === 'k' || k === 'roll' || k === 'rollZ') continue; P[k] = lerp(P[k], up[k] + (k === 'lift' ? P.lift : 0), w); } }
+    if (this.upperSt) { this.upperW = Math.min(1, (this.upperW || 0) + dt * 4); const up = ((this.vrm && VSTANCES[this.upperSt]) || STANCES[this.upperSt]).p, w = smooth(this.upperW); for (const k in up) { if (k[0] === 'l' || k[0] === 'k' || k === 'roll' || k === 'rollZ') continue; P[k] = lerp(P[k], up[k] + (k === 'lift' ? P.lift : 0), w); } }
     // aksiyon
     if (this.act) {
       const A = this.act; A.t += dt; const u = clamp(A.t / A.dur, 0, 1);

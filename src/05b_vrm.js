@@ -506,6 +506,18 @@ const R2D_Li = R2D_L.clone().invert(), R2D_Ri = R2D_R.clone().invert();
 const FINGERS = ['Index', 'Middle', 'Ring', 'Little'], PHAL = ['Proximal', 'Intermediate', 'Distal'];
 const OLD_H = (o) => { const ch = o.child || 0, hk = 1 + 0.3 * ch, lk = 1 - 0.07 * ch; return { hip: (0.44 + 0.43) * lk + 0.06, height: (0.44 + 0.43) * lk + 0.06 + 0.06 + 0.53 * (1 - 0.05 * ch) + 0.07 + 0.265 * hk }; };
 
+// VRM iskeleti için ters kinematikle bulunmuş kol pozları (eller gövdeye girmesin, havada kalmasın)
+const VSTANCES = {
+  hips: { full: false, p: { shLx: 1.18, shLy: -0.32, shLz: 1.13, elL: -1.59, shRx: 1.18, shRy: 0.32, shRz: -1.13, elR: -1.6 } },
+  crossArms: { full: false, p: { shLx: -0.13, shLy: -1.28, shLz: 0.28, elL: -1.37, shRx: -0.23, shRy: 1.33, shRz: -0.42, elR: -1.39 } },
+  think: { full: false, p: { shRx: -0.57, shRy: 0.52, shRz: -0.58, elR: -2.13, shLx: -0.61, shLy: -1.16, shLz: -0.22, elL: -1.05, hdX: 0.1, hdZ: 0.12 } },
+  support: { full: false, p: { shRx: 1.55, shRy: -0.4, shRz: -1.18, elR: -1.54 } },
+  supportL: { full: false, p: { shLx: 1.54, shLy: 0.4, shLz: 1.17, elL: -1.54 } },
+  carried: { full: false, p: { spX: 0.25, hdX: 0.45, shLx: 1.05, shLy: 0.45, shLz: 1.31, elL: -1.05, shRx: 1.05, shRy: -0.46, shRz: -1.31, elR: -1.06, knL: 0.3, knR: 0.3, lift: -0.06 } },
+  cry: { full: false, p: { shLx: -0.8, shLy: -0.52, shLz: 0.6, elL: -2.02, shRx: -0.8, shRy: 0.53, shRz: -0.62, elR: -2.02, hdX: 0.45, spX: 0.25 } },
+  behind: { full: false, p: { shLx: 1.12, shLy: -0.61, shLz: 0.28, elL: -1.08, shRx: 1.12, shRy: 0.62, shRz: -0.28, elR: -1.08 } },
+};
+
 class VRMHumanoid extends PoseRig {
   constructor(o) {
     super();

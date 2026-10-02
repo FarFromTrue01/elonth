@@ -716,7 +716,7 @@ Story.def('c1_walk', { chapter: 'Bölüm 1 · Taban', title: 'Eve Dönüş', sub
   G.onFrame = dt => {
     hdg += angDiff(hdg, p.facing) * Math.min(1, dt * 4);
     const f = hdg, c = Math.cos(f), s = Math.sin(f);
-    nora.pos.set(p.pos.x + c * 0.64, p.pos.y, p.pos.z - s * 0.64); leo.pos.set(p.pos.x - c * 0.64, p.pos.y, p.pos.z + s * 0.64);
+    nora.pos.set(p.pos.x + c * 0.52, p.pos.y, p.pos.z - s * 0.52); leo.pos.set(p.pos.x - c * 0.52, p.pos.y, p.pos.z + s * 0.52);
     nora.facing = leo.facing = f; nora.vel.copy(p.vel); leo.vel.copy(p.vel);
     for (const a of [nora, leo]) { a.root.position.copy(a.pos); a.root.rotation.y = f; }
   };
@@ -774,7 +774,7 @@ Story.def('c1_walk', { chapter: 'Bölüm 1 · Taban', title: 'Eve Dönüş', sub
 Story.def('c1_system', { chapter: 'Bölüm 1 · Taban', title: 'Sistem', sub: 'O gece', kind: 'Hikâye' }, async S => {
   const L = await S.level(() => buildHut('dark'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true, hemi: 0.7, sun: 0.8 });
   S.amb('interior'); S.music('none');
-  const p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.solid = false; p.collides = false;
+  const p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.455; p.solid = false; p.collides = false;
   const lily = npc(LOOK.lily(18), 2.6, -1.85, 0, { stance: 'lie', watch: false }); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false; lily.collides = false; S.cast('lily', lily);
   S.cine(true);
   Screen.set({ vig: 0.7, sat: 0.7 }, true);

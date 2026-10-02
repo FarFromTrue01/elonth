@@ -23,7 +23,8 @@ const Cam = {
     const p = this.target; if (!p) return;
     const sc = p.scale || 1;
     const tgt = V3(p.pos.x, p.pos.y + this.height * Math.max(0.75, sc), p.pos.z);
-    if (this.lockTarget && this.lockTarget.alive) {
+    const SL = G.settings.shiftLock && !G.inCine;
+    if (!SL && this.lockTarget && this.lockTarget.alive) {
       const lt = this.lockTarget.pos; const want = Math.atan2(p.pos.x - lt.x, p.pos.z - lt.z);
       this.yaw = dampAngle(this.yaw, want, 2.2, dt);
     }
@@ -33,7 +34,10 @@ const Cam = {
     this.pitch = clamp(this.pitch, -0.15, 1.1);
     if (Math.abs(Input.look.x) + Math.abs(Input.look.y) > 0) this.idle = 0; else this.idle += dt;
     // hareket ederken hafifçe arkaya yerleş
-    if (this.recenter && p.moving && this.idle > 1.2 && !this.lockTarget) this.yaw = dampAngle(this.yaw, p.facing + Math.PI, 0.6, dt);
+    if (!SL && !G.combat && this.recenter && p.moving && this.idle > 1.5 && !this.lockTarget) this.yaw = dampAngle(this.yaw, p.facing + Math.PI, 0.5, dt);
+    // shift lock: omuz ofseti
+    this.sl = damp(this.sl || 0, SL ? 1 : 0, 6, dt || 0.016);
+    if (this.sl > 0.01) { const off = 0.55 * this.sl * Math.max(0.75, sc); tgt.x += Math.cos(this.yaw) * off; tgt.z -= Math.sin(this.yaw) * off; tgt.y += 0.1 * this.sl; }
     const d = this.dist * Math.max(0.8, sc);
     const want = V3(tgt.x + Math.sin(this.yaw) * Math.cos(this.pitch) * d, tgt.y + Math.sin(this.pitch) * d, tgt.z + Math.cos(this.yaw) * Math.cos(this.pitch) * d);
     const L = G.level;
@@ -59,6 +63,7 @@ const Cam = {
       const o = this.orbit; o.a += o.speed * dt;
       this.pos.set(o.center.x + Math.sin(o.a) * o.r, o.center.y + o.h, o.center.z + Math.cos(o.a) * o.r); this.look.copy(o.center);
     }
+    if (this.mode !== 'follow' && G.level && !G.level.interior) { const gh = G.level.h(this.pos.x, this.pos.z) + 0.35; if (this.pos.y < gh) this.pos.y = gh; }
     this.fov = damp(this.fov, this.fovT, 4, dt);
     const c = this.cam; c.position.copy(this.pos);
     if (Screen.shake > 0) { const s = Screen.shake * Screen.shake * 0.18; c.position.x += (Math.random() - 0.5) * s; c.position.y += (Math.random() - 0.5) * s; c.position.z += (Math.random() - 0.5) * s; }

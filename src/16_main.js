@@ -4,7 +4,7 @@ const Game = {
   init() {
     window.addEventListener('error', e => this.showError(e.error || e.message));
     Save.load();
-    initMaterials();
+    TOON.init(); initMaterials();
     const r = G.renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     r.outputColorSpace = T.SRGBColorSpace; r.toneMapping = T.NoToneMapping;
     r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap;
@@ -12,7 +12,7 @@ const Game = {
     G.scene = new T.Scene();
     G.camera = new T.PerspectiveCamera(55, 1, 0.1, 900);
     G.env = new Env(G.scene);
-    Cam.init(G.camera); FX.init(G.scene); Input.init(); UI.init();
+    Cam.init(G.camera); FX.init(G.scene); Ambient.init(G.scene); Input.init(); UI.init();
     this.applyQuality(); this.resize(); addEventListener('resize', () => this.resize());
     this.bindMenus();
     G.env.set('dusk'); this.last = performance.now();
@@ -37,7 +37,7 @@ const Game = {
     for (const a of [...G.actors]) a.remove();
     G.actors = []; G.enemies = []; G.allies = []; G.attackers.clear(); G.player = null; UI.clearBars();
     if (G.level) { G.scene.remove(G.level.group); G.level.dispose(); G.level = null; }
-    FX.clear(); G.combat = false; Audio.stopAmbience();
+    FX.clear(); Ambient.clear(); WATER.length = 0; G.combat = false; Audio.stopAmbience();
   },
   loop(now) {
     requestAnimationFrame(t => this.loop(t));
@@ -56,6 +56,7 @@ const Game = {
     Cam.update(raw * (G.hitstop > 0 ? 0.3 : 1) * (G.slowmo > 0 ? 0.5 : 1));
     if (G.player) G.env.focus.copy(G.player.pos); else G.env.focus.copy(Cam.look);
     G.env.update(dt, G.camera);
+    WIND.time.value += dt; Ambient.update(dt);
     FX.update(dt, G.camera); Screen.update(raw); UI.frame(raw);
     if (G.onFrame) G.onFrame(dt);
     Input.endFrame();
@@ -91,7 +92,7 @@ const Game = {
   },
   menuScene() {
     Story.abort(); Story.current = null; this.clearWorld(); UI.hud(false); UI.cine(false); G.inCine = false;
-    const L = buildVillage({ night: false }); G.level = L; G.scene.add(L.group); G.env.set('dusk');
+    const L = buildVillage({ night: false }); G.level = L; G.scene.add(L.group); G.env.set('dusk'); Ambient.setup(L, 'dusk');
     const n = new NPC({ look: LOOK.joseph(18), watch: false }); n.place(-31, -35, 2.9); n.model.setStance('sitGround', true);
     const l = new NPC({ look: LOOK.lily(15), watch: false }); l.place(-30.1, -34.8, 2.8); l.model.setStance('hugKnees', true);
     const hy = L.h(-31, -35);
@@ -133,13 +134,15 @@ const Game = {
     $('#panel').hidden = false; $('#p-title').textContent = 'Ayarlar';
     const S = G.settings, body = $('#p-body');
     const range = (id, label, key, min, max, step) => `<div class="set-row"><label for="${id}">${label}</label><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${S[key]}" data-k="${key}"></div>`;
-    body.innerHTML = range('s-sens', 'Kamera hassasiyeti', 'sens', 0.3, 2.5, 0.1) + range('s-mus', 'Müzik', 'music', 0, 1, 0.05) + range('s-sfx', 'Efektler', 'sfx', 0, 1, 0.05) + range('s-txt', 'Metin hızı', 'textSpeed', 0.5, 3, 0.1)
+    body.innerHTML = range('s-ui', 'Arayüz boyutu', 'uiScale', 0.8, 1.8, 0.05) + range('s-sens', 'Kamera hassasiyeti', 'sens', 0.3, 2.5, 0.1) + range('s-mus', 'Müzik', 'music', 0, 1, 0.05) + range('s-sfx', 'Efektler', 'sfx', 0, 1, 0.05) + range('s-txt', 'Metin hızı', 'textSpeed', 0.5, 3, 0.1)
+      + `<div class="set-row"><label>Shift lock</label><div class="seg" id="s-sl"><button type="button" data-v="1">Açık</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Grafik</label><div class="seg" id="s-q"><button type="button" data-v="low">Akıcı</button><button type="button" data-v="high">Kaliteli</button></div></div>`
       + `<div class="set-row"><label>Dikey kamera</label><div class="seg" id="s-inv"><button type="button" data-v="0">Normal</button><button type="button" data-v="1">Ters</button></div></div>`;
-    body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); Save.store(); }));
+    body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); UI.applyScale(); Save.store(); }));
     const seg = (id, get, set) => { const el = $(id); const upd = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === get())); el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.v); upd(); Save.store(); }); upd(); };
     seg('#s-q', () => S.quality, v => { S.quality = v; this.applyQuality(); });
     seg('#s-inv', () => S.invertY ? '1' : '0', v => { S.invertY = v === '1'; });
+    seg('#s-sl', () => S.shiftLock ? '1' : '0', v => { S.shiftLock = v === '1'; UI.syncLock(); });
   },
   async finale() {
     UI.hud(false); await UI.fade(1, 1.5);

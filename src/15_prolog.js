@@ -16,13 +16,15 @@ async function lilyLead(S, lily, pts, near = 6.5, speed = 2.6) {
 }
 
 // ======================= PROLOG =======================
-Story.def('p_crash', { chapter: 'Prolog', title: 'Yağmur', sub: 'Son gece', kind: 'Sinematik' }, async S => {
+Story.def('p_crash', { chapter: 'Prolog', title: 'Yağmur', sub: 'Son gece', kind: 'Sinematik', noSkip: true }, async S => {
   const L = await S.level(buildRoad, 'storm', { weather: 'storm' });
   const car = makeCar(); L.add(car); car.rotation.y = Math.PI;
   const truck = makeTruck(); L.add(truck); truck.rotation.y = 0; truck.visible = false;
   const st = { z: 40, v: 31, sw: 0, roll: 0, tz: -300, tv: 0, tx: -1.9, spin: 0 };
   L.anims.push(dt => {
-    st.z -= st.v * dt; car.position.set(1.9 + st.sw, 0, st.z); car.rotation.set(0, Math.PI + st.spin, st.roll);
+    st.z -= st.v * dt;
+    if (st.z < -300) { st.z += L.period; st.tz += L.period; Cam.pos.z += L.period; Cam.look.z += L.period; Cam.fromPos.z += L.period; Cam.fromLook.z += L.period; }
+    car.position.set(1.9 + st.sw, 0, st.z); car.rotation.set(0, Math.PI + st.spin, st.roll);
     if (truck.visible) { st.tz += st.tv * dt; truck.position.set(st.tx, 0, st.tz); }
   });
   G.env.flashFn = () => setTimeout(() => Audio.sfx('thunder', 0.8), 300 + Math.random() * 500);
@@ -78,7 +80,7 @@ Story.def('p_crash', { chapter: 'Prolog', title: 'Yağmur', sub: 'Son gece', kin
 Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir beden', kind: 'Hikâye' }, async S => {
   const L = await S.level(() => buildHut('day'), 'interior', { sunDir: [0.25, 0.55, -0.8], noSky: true });
   S.amb('interior'); S.amb('fire');
-  const p = spawnJoseph(10, -2.5, -1.25, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.model.closedEyes = true; p.solid = false;
+  const p = spawnJoseph(10, -2.5, -1.25, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.model.closedEyes = true; p.solid = false; p.collides = false;
   const marta = S.cast('marta', npc(LOOK.marta(), -1.55, -1.45, -Math.PI / 2, { stance: 'kneel', watch: false }));
   marta.model.setUpper('cry'); marta.pinned = true;
   const lily = S.cast('lily', npc(LOOK.lily(10), -2.45, 0.05, Math.PI, { watch: false }));
@@ -149,7 +151,7 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   await S.think('Biraz suya ihtiyacım var. Ve kim olduğuma bakmaya.');
   // kontrol
   await S.fadeOut(0.4);
-  p.model.setStance(null, true); p.lockY = null; p.solid = true; p.place(-1.7, -0.7, Math.PI * 0.8);
+  p.model.setStance(null, true); p.lockY = null; p.solid = true; p.collides = true; p.place(-1.7, -0.7, Math.PI * 0.8);
   marta.place(-0.9, 0.9, -2.2); marta.model.setStance('crossArms'); daniel.place(2.3, 1.75, -2.4); daniel.model.setStance('crossArms', true);
   lily.place(-1.0, -0.2, -2.0);
   S.cine(false); p.speedMul = 0.55; p.allowRun = false; Cam.yaw = 0.15; Cam.pitch = 0.5;
@@ -199,7 +201,7 @@ Story.def('p_village', { chapter: 'Prolog', title: 'Yeni Dünya', sub: 'Eros, k�
   const wander = (x, z, f, r = 4) => { const w = new Wanderer({ look: randomVillager(rng() < 0.5) }); w.place(x, z, rnd(0, TAU)); w.home = V3(x, 0, z); w.homeR = r; return w; };
   const villagers = [wander(2, 6), wander(-3, -6), wander(8, -2), wander(-8, 10, 0, 3), wander(14, 2, 0, 5), wander(-4, 18, 0, 3), wander(20, -10, 0, 4), wander(-18, -10, 0, 4)];
   const ws = npc(randomVillager(true), 1.4, 1.2, -2.2, { stance: 'pickup' }); ws.model.setWeapon('bucket');
-  const elder = S.cast('elder', npc(LOOK.elder(), L.pts.elder.x, L.pts.elder.z, -0.9, { stance: 'sit' })); elder.lockY = L.h(5.4, -3.2) + 0.0; elder.pinned = true; elder.solid = true;
+  const elder = S.cast('elder', npc(LOOK.elder(), L.pts.elder.x, L.pts.elder.z, -0.9, { stance: 'sit' })); elder.lockY = L.h(5.4, -3.2) + 0.0; elder.pinned = true; elder.solid = true; elder.collides = false;
   const kids = [];
   for (let i = 0; i < 3; i++) { const a = -0.9 + (i - 1) * 0.55, kx = 5.4 + Math.sin(a) * 1.9, kz = -3.2 + Math.cos(a) * 1.9; const k = npc(LOOK.kid(i === 1), kx, kz, a + Math.PI, { stance: 'sitGround', watch: false }); kids.push(k); k.lookAt(elder.root); }
   S.cast('kid', kids[1]);
@@ -293,10 +295,10 @@ Story.def('p_village', { chapter: 'Prolog', title: 'Yeni Dünya', sub: 'Eros, k�
   S.cine(true); S.music('title');
   lily.place(-30.3, -34.2, 2.85); lily.model.setStance('sitGround'); p.walkTo([V3(-31.3, 0, -34.6)], 1.2);
   const hy = L.h(-31, -35);
-  await S.shot(V3(-28.5, hy + 1.5, -31.5), V3(-26, hy + 6, -70), 0);
-  await S.shot(V3(-29.5, hy + 4, -38), V3(-12, hy + 8, -120), 5, easeInOut);
+  await S.shot(V3(-32.5, hy + 2.4, -30.5), V3(-26, hy + 5, -70), 0);
+  await S.shot(V3(-31.0, hy + 5.2, -36.5), V3(-12, hy + 8, -120), 5, easeInOut);
   p.model.setStance('sitGround'); p.faceNow(V3(-25, 0, -70));
-  await S.shot(V3(-33.6, hy + 1.6, -29.8), V3(-24, hy + 3.2, -72), 0);
+  await S.shot(V3(-33.4, hy + 2.1, -29.4), V3(-24, hy + 3.2, -72), 0);
   await S.say('lily', 'Şurası Eros Sarayı. Lordlar orada yaşıyor. Hepsinin kendine ait bir yatağı varmış!');
   await S.say('lily', 'Bir gün ben de orada beyaz ekmek yiyeceğim.');
   await S.say('joseph', 'Beyaz ekmek mi?');
@@ -309,7 +311,7 @@ Story.def('p_village', { chapter: 'Prolog', title: 'Yeni Dünya', sub: 'Eros, k�
   await S.say('joseph', c2 === 0 ? 'Söz veriyorum.' : 'Artık hiçbir yere gitmiyorum.');
   lily.model.setStance('hugKnees');
   await S.say('lily', 'İyi. Çünkü sen uyurken annem her gece ağladı. Babam da ağladı ama gizli gizli.');
-  await S.shot(V3(-30.5, hy + 1.1, -37.5), V3(-30.8, hy + 0.6, -34.4), 3);
+  await S.shot(V3(-30.4, hy + 1.7, -37.4), V3(-30.8, hy + 0.7, -34.4), 3);
   await S.think('Bu insanları tanımıyorum. Bir hafta önce yoktular.');
   await S.think('Ama onları ağlatan her şeyle savaşırım.');
   await S.wait(0.8);
@@ -320,7 +322,7 @@ Story.def('p_window', { chapter: 'Prolog', title: 'Pencere', sub: 'İlk gece', k
   const L = await S.level(() => buildHut('night'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true });
   S.amb('interior'); S.music('none');
   const p = spawnJoseph(10, -2.1, -0.4, Math.PI * 0.9); p.speedMul = 0.6; p.allowRun = false;
-  const lily = npc(LOOK.lily(10), 2.6, -1.85, 0, { stance: 'lie', watch: false }); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false;
+  const lily = npc(LOOK.lily(10), 2.6, -1.85, 0, { stance: 'lie', watch: false }); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false; lily.collides = false;
   S.cast('lily', lily);
   S.cine(true);
   await S.shot(V3(0.5, 2.2, 1.8), V3(-1.5, 0.7, -1), 0);

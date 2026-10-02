@@ -41,6 +41,14 @@ class Env {
     this.moon = new T.Mesh(new T.SphereGeometry(9, 16, 12), new T.MeshBasicMaterial({ color: '#f1efe2', fog: false }));
     this.moon.renderOrder = -8; scene.add(this.moon);
     this.focus = new T.Vector3();
+    // uzak dağlar ve bulutlar
+    this.far = new T.Group(); this.far.renderOrder = -5; scene.add(this.far);
+    { const b = new Builder(0); seed(1234);
+      for (let ring = 0; ring < 2; ring++) for (let i = 0; i < 46; i++) { const a = i / 46 * TAU + ring * 0.07 + rnd(-0.03, 0.03), r = ring ? 440 : 360; const h = rnd(50, 120) * (ring ? 1.25 : 1), w = rnd(70, 130); b.add(pick(['coneS', 'blob1', 'blob3']), ring ? '#c8d0dc' : '#9aa6b6', Math.cos(a) * r, -10, Math.sin(a) * r, w, h * (rng() < 0.5 ? 1 : 0.7), w * 0.8, 0, rnd(0, 3), 0, 0.05); }
+      this.mtnMat = new T.MeshBasicMaterial({ vertexColors: true, fog: false }); const m = b.build(this.mtnMat, { cast: false, receive: false }); this.far.add(m); }
+    { const b = new Builder(0); seed(4321);
+      for (let i = 0; i < 26; i++) { const a = rnd(0, TAU), r = rnd(240, 360), y = rnd(70, 135), n = rndi(4, 8); for (let k = 0; k < n; k++) { const s = rnd(14, 30); b.add('sphS', k % 3 ? '#ffffff' : '#e6ecf4', Math.cos(a) * r + rnd(-30, 30), y + rnd(-4, 8), Math.sin(a) * r + rnd(-18, 18), s * 1.6, s * 0.75, s * 1.2, 0, 0, 0, 0.04); } }
+      this.cloudMat = new T.MeshBasicMaterial({ vertexColors: true, fog: false, transparent: true, opacity: 0.95, depthWrite: false }); this.clouds = b.build(this.cloudMat, { cast: false, receive: false }); this.far.add(this.clouds); }
     this.rain = null; this.snow = null; this.weather = 'none'; this.lightning = 0; this.lightTimer = 6; this.flashFn = null;
     this.preset = null;
   }
@@ -57,8 +65,13 @@ class Env {
     this.scene.fog.color.set(p.hor); this.scene.fog.near = p.fogNear; this.scene.fog.far = p.fogFar;
     this.stars.material.opacity = p.stars; this.stars.visible = p.stars > 0;
     this.moon.visible = !!p.moon;
-    this.sky.visible = !opts.noSky;
+    this.sky.visible = !opts.noSky; this.far.visible = !opts.noSky;
+    const dark = p.stars >= 0.9 || name === 'storm';
+    this.mtnMat.color.set(mixHex(p.hor, p.mtn || '#7a8aa0', dark ? 0.3 : 0.45)); if (dark) this.mtnMat.color.multiplyScalar(0.55);
+    this.cloudMat.color.set(p.cloud || (name === 'dusk' || name === 'winterdusk' ? '#ffc8b0' : dark ? '#3a4660' : '#ffffff')); this.cloudMat.opacity = name === 'storm' ? 0 : dark ? 0.55 : 0.95;
+    if (typeof syncWaterFog === 'function') syncWaterFog(this.scene.fog);
     this.setWeather(opts.weather || 'none');
+    TOON.syncFog(this.scene.fog);
   }
   setWeather(w) {
     this.weather = w;
@@ -81,7 +94,7 @@ class Env {
   }
   flash(v = 1) { this.lightning = Math.max(this.lightning, v); }
   update(dt, cam) {
-    this.sky.position.copy(cam.position); this.stars.position.copy(cam.position);
+    this.sky.position.copy(cam.position); this.stars.position.copy(cam.position); this.far.position.set(cam.position.x, 0, cam.position.z); this.clouds.rotation.y += dt * 0.004;
     if (this.moon.visible) this.moon.position.copy(cam.position).addScaledVector(this.sunDir, 380);
     const f = this.focus;
     this.sun.position.copy(f).addScaledVector(this.sunDir, 70);

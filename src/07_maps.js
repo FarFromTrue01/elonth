@@ -3,19 +3,18 @@ const hillF = (x, z, cx, cz, r, h) => { const d = Math.hypot(x - cx, z - cz) / r
 
 // ===== Gece yolu (kaza) =====
 function buildRoad() {
-  const L = new Level('road');
-  L.hf = (x, z) => { const ax = Math.abs(x); return ax < 7 ? 0 : (ax - 7) * 0.15 + fbm(x * 0.05, z * 0.05) * 3 * smooth(clamp((ax - 7) / 20, 0, 1)); };
-  terrain(L, -60, -620, 60, 160, 6, (x, z, y) => Math.abs(x) < 4.3 ? '#26282c' : Math.abs(x) < 5.2 ? '#3a3a38' : (hash2(x, z) > 0.5 ? '#1f2a1c' : '#243020'));
+  const L = new Level('road'); const P = 240;
+  L.hf = (x, z) => { const ax = Math.abs(x); const zz = ((z % P) + P) % P; return ax < 7 ? 0 : (ax - 7) * 0.15 + fbm(x * 0.05, zz * 0.05) * 3 * smooth(clamp((ax - 7) / 20, 0, 1)); };
+  terrain(L, -60, -620, 60, 160, 4, (x, z, y) => Math.abs(x) < 4.3 ? '#2c2e33' : Math.abs(x) < 5.2 ? '#46463f' : (hash2(Math.floor(x / 3), Math.floor(((z % P) + P) % P / 3)) > 0.5 ? '#26341f' : '#2c3a24'));
   const b = L.b;
-  for (let z = 150; z > -620; z -= 9) { b.add('box', '#c8c8b8', 0, 0.02, z, 0.15, 0.02, 4, 0, 0, 0, 0); }
-  for (const sx of [-1, 1]) { b.add('box', '#b8b8a8', sx * 4.0, 0.02, -235, 0.12, 0.02, 770, 0, 0, 0, 0); }
-  for (let z = 150; z > -620; z -= 4) for (const sx of [-1, 1]) b.add('box', '#8a8d92', sx * 5.4, 0.35, z, 0.1, 0.7, 0.1, 0, 0, 0, 0.02);
-  for (const sx of [-1, 1]) b.add('box', '#a4a8ae', sx * 5.4, 0.6, -235, 0.06, 0.25, 770, 0, 0, 0, 0);
-  for (let z = 140; z > -620; z -= 42) { const sx = (Math.round(z / 42) % 2) ? 1 : -1; b.add('box', '#55585e', sx * 6, 3.5, z, 0.15, 7, 0.15); b.add('box', '#55585e', sx * 5.2, 7, z, 1.8, 0.1, 0.12); L.gb.add('box', '#ffe2a8', sx * 4.4, 6.9, z, 0.6, 0.1, 0.3); }
-  seed(3);
-  for (let i = 0; i < 260; i++) { const sx = rng() < 0.5 ? -1 : 1, x = sx * rnd(9, 55), z = rnd(-610, 150); tree(L, x, z, 'pine', rnd(1.2, 2.2)); }
-  // uzak şehir ışıkları
-  for (let i = 0; i < 40; i++) { const x = rnd(-180, 180), z = rnd(-700, -560), h = rnd(10, 60); b.add('boxb', '#0e1118', x, 0, z, rnd(6, 14), h, rnd(6, 14)); for (let k = 0; k < 6; k++) L.gb.add('box', pick(['#ffd890', '#ffeec8', '#a8c8ff']), x + rnd(-3, 3), rnd(2, h), z + 7.2, 0.6, 0.6, 0.1); }
+  for (let z = 160; z > -620; z -= 8) { b.add('box', '#d8d8c8', 0, 0.02, z, 0.15, 0.02, 4, 0, 0, 0, 0); }
+  for (const sx of [-1, 1]) { b.add('box', '#c8c8b8', sx * 4.0, 0.02, -230, 0.12, 0.02, 780, 0, 0, 0, 0); }
+  for (let z = 160; z > -620; z -= 4) for (const sx of [-1, 1]) b.add('box', '#8a8d92', sx * 5.4, 0.35, z, 0.1, 0.7, 0.1, 0, 0, 0, 0.02);
+  for (const sx of [-1, 1]) b.add('box', '#a4a8ae', sx * 5.4, 0.6, -230, 0.06, 0.25, 780, 0, 0, 0, 0);
+  for (let z = 160; z > -620; z -= 40) { const sx = (Math.round(z / 40) % 2) ? 1 : -1; b.add('box', '#55585e', sx * 6, 3.5, z, 0.15, 7, 0.15); b.add('box', '#55585e', sx * 5.2, 7, z, 1.8, 0.1, 0.12); L.gb.add('box', '#ffe2a8', sx * 4.4, 6.9, z, 0.6, 0.1, 0.3); }
+  seed(3); const trees = []; for (let i = 0; i < 90; i++) trees.push([(rng() < 0.5 ? -1 : 1) * rnd(9, 55), rnd(0, P), rnd(1.2, 2.2)]);
+  for (let k = -3; k <= 1; k++) for (const [x, z, s] of trees) { const zz = z + k * P; if (zz < -620 || zz > 160) continue; tree(L, x, zz, 'pine', s); }
+  L.period = P;
   L.finalize();
   L.camBox = null;
   return L;
@@ -132,23 +131,24 @@ function buildVillage(o = {}) {
   L.extraResolve = (p, r) => { const rx = riverX(p.z), d = p.x - rx; if (Math.abs(d) < 3.3 + r && Math.abs(p.z - bridge.z) > bridge.hw - 0.2) p.x = rx + Math.sign(d || 1) * (3.3 + r); };
   const W = L.winter;
   const fieldIn = (x, z) => x > -32 && x < 6 && z > 40 && z < 58;
-  terrain(L, -110, -200, 120, 120, 1.8, (x, z, y, ny) => {
+  terrain(L, -110, -200, 120, 120, 1.4, (x, z, y, ny) => {
     const pd = distToPath(x, z, VILLAGE_PATHS);
     const rd = Math.abs(x - riverX(z));
-    if (rd < 4.2) return W ? '#9aa4ae' : '#6a6a52';
-    if (W) { if (pd < 1.8) return '#b9b2a6'; return hash2(x * 0.5, z * 0.5) > 0.5 ? COL.snow : COL.snow2; }
-    if (pd < 1.6 || Math.hypot(x, z) < 7) { const h = hash2(x * 0.7, z * 0.7); return h > 0.66 ? COL.dirt : h > 0.33 ? COL.dirtD : '#8c7050'; }
-    if (pd < 2.4) return '#8a8048';
-    if (fieldIn(x, z)) return '#7a6038';
-    if (ny < 0.85) return '#6a7a44';
-    const n = fbm(x * 0.08, z * 0.08); return n > 0.55 ? COL.grass2 : n > 0.38 ? COL.grass : '#7a9448';
+    const n = fbm(x * 0.06, z * 0.06), n2 = fbm(x * 0.21 + 7, z * 0.21);
+    if (W) { if (rd < 4.4) return '#a8b8c8'; if (pd < 1.7) return mixHex('#c8bcae', '#e8ecf2', smooth(clamp((pd - 0.6) / 1.1, 0, 1))); return mixHex(COL.snow2, COL.snow, n2); }
+    if (rd < 3.9) return '#6e6a50';
+    if (rd < 5.2) return mixHex('#8a8a5a', COL.grassD, (rd - 3.9) / 1.3);
+    const plaza = Math.hypot(x, z) < 7.5;
+    const grassC = n > 0.56 ? mixHex(COL.grass2, COL.grassD, (n - 0.56) * 4) : n > 0.36 ? mixHex(COL.grass, COL.grass2, (n - 0.36) * 5) : mixHex(COL.grassL, COL.grass, n / 0.36);
+    if (fieldIn(x, z)) return mixHex('#8a6a40', '#7a5c36', n2);
+    if (pd < 2.3 || plaza) { const t = plaza ? 0 : smooth(clamp((pd - 1.2) / 1.1, 0, 1)); const dc = mixHex(COL.dirt, COL.dirtD, n2); return mixHex(dc, grassC, t); }
+    if (ny < 0.8) return mixHex(grassC, '#7a7a52', 0.4);
+    return grassC;
   });
   // nehir suyu
-  { const pts = []; for (let z = -200; z <= 120; z += 4) pts.push(z); const N = pts.length; const pos = []; for (let i = 0; i < N - 1; i++) { const z1 = pts[i], z2 = pts[i + 1], a1 = riverX(z1), a2 = riverX(z2), w = 3.6; pos.push(a1 - w, 0, z1, a1 + w, 0, z1, a2 - w, 0, z2, a1 + w, 0, z1, a2 + w, 0, z2, a2 - w, 0, z2); }
+  { const pts = []; for (let z = -200; z <= 120; z += 2) pts.push(z); const N = pts.length; const pos = []; for (let i = 0; i < N - 1; i++) { const z1 = pts[i], z2 = pts[i + 1], a1 = riverX(z1), a2 = riverX(z2), w = 3.9; pos.push(a1 - w, 0, z1, a1 + w, 0, z1, a2 - w, 0, z2, a1 + w, 0, z1, a2 + w, 0, z2, a2 - w, 0, z2); }
     const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
-    const wm = W ? new T.MeshLambertMaterial({ color: '#b8c8d4', transparent: true, opacity: 0.9 }) : MAT.water;
-    const water = new T.Mesh(g, wm); water.position.y = -1.0; water.receiveShadow = true; L.add(water);
-    if (!W) L.anims.push(() => { MAT.water.emissive.setRGB(0.04 + Math.sin(G.t * 1.3) * 0.01, 0.13 + Math.sin(G.t * 1.7) * 0.015, 0.17); }); }
+    const water = new T.Mesh(g, waterMaterial(W ? { deep: '#9ab4c8', shallow: '#c8dceb', opacity: 0.96, ice: true } : {})); water.position.y = -0.95; L.add(water); }
   const b = L.b;
   // köprü
   { const x0 = riverX(0); b.begin(x0, 0, 0, 0);
@@ -186,15 +186,17 @@ function buildVillage(o = {}) {
   L.pts.alley = V3(16.5, 0, 15.5);
   crate(L, 13.0, 19.8, 0.9, 0.2); crate(L, 13.0, 19.8, 0.7, 0.5, L.h(13, 19.8) + 0.72); barrel(L, 21.4, 11.6); crate(L, 21.0, 18.9, 0.8, 0.9); barrel(L, 14.6, 11.8, 0.85); haystack(L, 20.2, 20.0, 0.7);
   // tarlalar
-  for (let z = 41.5; z < 57.5; z += 1.4) { if (W) break; b.add('box', z % 2.8 < 1.4 ? COL.wheat : COL.wheat2, -13, L.h(-13, z) + 0.35, z, 36, 0.7, 0.55, 0, 0, 0, 0.05); for (let x = -30; x < 4; x += 1.1) b.add('cone4', COL.wheat, x + rnd(-0.3, 0.3), L.h(x, z) + 0.82, z + rnd(-0.1, 0.1), 0.22, 0.35, 0.22, 0, rnd(0, 1), 0, 0.12); }
+  L.harvested = o.harvested || null;
+  if (!W) { const wp = []; for (let z = 41.6; z < 57.6; z += 0.75) for (let x = -31; x < 5; x += 0.42) { const xx = x + rnd(-0.12, 0.12), zz = z + rnd(-0.15, 0.15); if (L.harvested && L.harvested(xx, zz)) continue; wp.push([xx, zz, mixHex('#fff4d0', '#e8c890', rng()), rnd(0.9, 1.15)]); } vegetation(L, 'wheat', wp); }
+  for (let z = 41.2; z < 58; z += 0.75) b.add('box', '#6a5030', -13, L.h(-13, z) - 0.02, z, 37, 0.06, 0.22, 0, 0, 0, 0.04);
   fence(L, -33, 39.5, -33, 59, { collide: false }); fence(L, -33, 59, 7, 59, { collide: false }); fence(L, 7, 39.5, 7, 59, { collide: false });
   // korkuluk
-  { const x = -14, z = 49, y = L.h(x, z); b.add('box', COL.woodD, x, y + 1.2, z, 0.1, 2.4, 0.1); b.add('box', COL.woodD, x, y + 1.8, z, 1.4, 0.1, 0.1); b.add('box', '#7a5a3a', x, y + 1.6, z, 0.45, 0.6, 0.3); b.add('box', '#c8a868', x, y + 2.15, z, 0.35, 0.35, 0.3); b.add('cone8', '#b8984a', x, y + 2.42, z, 0.7, 0.3, 0.7); }
+  { const x = -14, z = 49, y = L.h(x, z); b.add('cylS8', COL.woodD, x, y + 1.2, z, 0.1, 2.4, 0.1); b.add('cylS8', COL.woodD, x, y + 1.8, z, 0.1, 1.5, 0.1, 0, 0, Math.PI / 2); b.add('sphS', '#7a5a3a', x, y + 1.55, z, 0.5, 0.7, 0.35); b.add('sphS', '#d8b878', x, y + 2.15, z, 0.36, 0.36, 0.32); b.add('coneS', '#c8a050', x, y + 2.42, z, 0.8, 0.3, 0.8); for (const s2 of [-1, 1]) b.add('sphS', '#d8b870', x + s2 * 0.75, y + 1.8, z, 0.18, 0.18, 0.18); }
   haystack(L, 10, 45, 1); haystack(L, 11, 49, 0.9); cart(L, 10.5, 53, 0.2);
   L.pts.field = V3(-13, 0, 50); L.pts.fieldEdge = V3(-13, 0, 38);
   // eğitim açıklığı
   L.pts.clearing = V3(46, 0, -12);
-  for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + 0.4; b.add('cyl6', COL.trunk, 46 + Math.cos(a) * 6.5, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5, 0.5, 2.2, 0.5, Math.PI / 2, a, 0); }
+  for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + 0.4; b.add('cylS', COL.trunk, 46 + Math.cos(a) * 6.5, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5, 0.5, 2.2, 0.5, Math.PI / 2, a, 0); b.add('cylS', '#c8a878', 46 + Math.cos(a) * 6.5 + Math.cos(a + 1.57) * 1.11, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5 + Math.sin(a + 1.57) * 1.11, 0.46, 0.02, 0.46, Math.PI / 2, a, 0, 0); }
   rock(L, 52, -7, 1.3); rock(L, 41, -18, 1.1);
   // tepe ve büyük ağaç
   tree(L, -33, -39, 'oak', 1.6); L.pts.hillTop = V3(-31, 0, -35); rock(L, -36, -34, 0.9); flowers(L, -29, -37, 10);
@@ -216,6 +218,19 @@ function buildVillage(o = {}) {
   for (let i = 0; i < 220; i++) { const x = rnd(-105, 115), z = rnd(-150, 110); const dc = Math.hypot(x, z); if (dc < 28 || occ(x, z)) continue; if (dc < 55 && rng() < 0.55) continue; tree(L, x, z, W ? pick(['pine', 'pine', 'oak', 'dead']) : pick(['oak', 'oak', 'pine', 'birch']), rnd(0.9, 1.5)); }
   for (let i = 0; i < 60; i++) { const z = rnd(-60, 60), x = riverX(z) + (rng() < 0.5 ? -1 : 1) * rnd(5.5, 9); if (Math.abs(z) < 4 || occ(x + 50, z + 200)) continue; if (rng() < 0.5) bush(L, x, z, rnd(0.7, 1.2)); else rock(L, x, z, rnd(0.4, 0.9)); }
   for (let i = 0; i < 90; i++) { const x = rnd(-55, 60), z = rnd(-62, 60); if (occ(x, z) && distToPath(x, z, VILLAGE_PATHS) < 2.6) continue; if (rng() < 0.4) bush(L, x, z, rnd(0.5, 1)); else if (rng() < 0.5) flowers(L, x, z, 5); else grassTufts(L, x, z, 6); }
+  // çimen, çiçek, kamış
+  if (!W) {
+    const gp = [], fl = [...L.flowerSpots], rd = [];
+    for (let i = 0; i < 16000 && gp.length < 11000; i++) {
+      const x = rnd(-62, 66), z = rnd(-70, 66); const pd = distToPath(x, z, VILLAGE_PATHS);
+      if (pd < 2.0 || Math.abs(x - riverX(z)) < 4.6 || fieldIn(x, z) || Math.hypot(x, z) < 8 || L.occupied(x, z, 0.5) || (z < -66)) continue;
+      const n = fbm(x * 0.06, z * 0.06); gp.push([x, z, mixHex('#e8ffd0', '#b8d890', n), pd < 3 ? 0.7 : rnd(0.85, 1.3)]);
+      if (rng() < 0.035) fl.push([x + rnd(-0.5, 0.5), z + rnd(-0.5, 0.5), pick(['#ffe060', '#ff7a7a', '#ffffff', '#c890ff', '#ffa040', '#80b0ff'])]);
+    }
+    for (let i = 0; i < 260; i++) { const z = rnd(-70, 66), side = rng() < 0.5 ? -1 : 1, x = riverX(z) + side * rnd(3.7, 4.9); if (Math.abs(z) < 2.5) continue; rd.push([x, z, '#ffffff', rnd(0.8, 1.2)]); }
+    vegetation(L, 'grass', gp); vegetation(L, 'flower', fl.map(f => [f[0], f[1], f[2], 1])); vegetation(L, 'reed', rd);
+    for (let i = 0; i < 70; i++) { const z = rnd(-66, 64), side = rng() < 0.5 ? -1 : 1, x = riverX(z) + side * rnd(3.4, 4.4); if (Math.abs(z) < 3) continue; rock(L, x, z, rnd(0.25, 0.6), pick(['#8a8a84', '#9a968a', '#7a7a74'])); }
+  }
   // meşaleler
   if (lit) { torch(L, 3.2, 2.5, true); torch(L, -12.5, 6, true); torch(L, 8.5, 14.5, true); torch(L, -2.5, -12, false); torch(L, riverX(0) - 6.2, 2.3, false); }
   L.pts.square = V3(0, 0, 4); L.pts.bridge = V3(riverX(0), 0, 0);
@@ -228,7 +243,15 @@ function buildEros(o = {}) {
   const L = new Level('eros'); seed(77);
   L.hf = (x, z) => 0; L.th = (x, z) => { const d = Math.max(Math.abs(x) - 26, Math.abs(z) - 30); return d > 0 ? d * 0.12 + fbm(x * 0.05, z * 0.05) * 2 : 0; };
   L.bounds = { x0: -24, x1: 24, z0: -24, z1: 34 };
-  terrain(L, -80, -90, 80, 70, 2, (x, z) => { if (Math.abs(x) < 26 && z > -28 && z < 36) { const t = Math.floor(x * 1.2) + Math.floor(z * 1.6); return t % 3 === 0 ? '#9a9286' : t % 3 === 1 ? '#8a8276' : '#a29a8c'; } return '#6a7a48'; });
+  terrain(L, -80, -90, 80, 70, 0.9, (x, z) => {
+    if (Math.abs(x) < 26 && z > -28 && z < 36) {
+      const cx = Math.floor(x / 0.9), cz = Math.floor(z / 0.9), h = hash2(cx * 1.3, cz * 0.7), r = Math.hypot(x, z - 3);
+      if (r > 6 && r < 7.2) return '#8a8070';
+      if (Math.abs(x) < 1.6 && z > -16) return h > 0.5 ? '#c4b8a0' : '#b8ac94';
+      return h > 0.66 ? '#b0a690' : h > 0.33 ? '#a09684' : '#bcb29c';
+    }
+    const n = fbm(x * 0.06, z * 0.06); return n > 0.5 ? COL.grass2 : COL.grass;
+  });
   const b = L.b;
   // lonca binası (kuzey)
   { const x = 0, z = -21; b.begin(x, 0, z, 0);
@@ -250,6 +273,13 @@ function buildEros(o = {}) {
   for (const [x, z, ry] of ring) townHouse(L, x, z, ry, { lit: o.night, awning: rng() < 0.5 ? pick(['#a33a2a', '#2a5a8a', '#3a7a3a']) : null, floors: rng() < 0.3 ? 3 : 2 });
   for (let i = 0; i < 26; i++) { const a = rnd(0, TAU), r = rnd(34, 55); townHouse(L, Math.cos(a) * r, Math.sin(a) * r - 5, -a + Math.PI / 2, { floors: rng() < 0.4 ? 3 : 2 }); }
   fountain(L, 0, 3);
+  // bayrak dizileri (çapraz)
+  const bunting = (x1, z1, x2, z2, y) => { const n = 18; for (let i = 0; i <= n; i++) { const t = i / n, x = lerp(x1, x2, t), z = lerp(z1, z2, t), yy = y - Math.sin(t * Math.PI) * 1.4; if (i < n) b.add('box', '#3a3026', x, yy, z, 0.03, 0.03, Math.hypot(x2 - x1, z2 - z1) / n + 0.05, 0, Math.atan2(x2 - x1, z2 - z1), 0, 0); if (i % 1 === 0 && i > 0 && i < n) b.add('wedge', pick(['#c83a2a', '#e8c040', '#2a6aa8', '#f4ecd8', '#3a8a4a']), x, yy - 0.36, z, 0.36, 0.34, 0.02, Math.PI, Math.atan2(x2 - x1, z2 - z1) + Math.PI / 2, 0, 0); } };
+  bunting(-17, -4, 17, 10, 6.8); bunting(-17, 10, 17, -4, 6.6); bunting(-17, 20, 17, 20, 6.4);
+  // saksılar ve banklar
+  for (const [x, z] of [[-4.5, -12], [4.5, -12], [-9, 0], [9, 0], [-9, 8], [9, 8]]) { b.add('cylS', '#8a6a50', x, 0.3, z, 0.8, 0.6, 0.8); b.add('blob2', '#5a9a3a', x, 0.8, z, 0.9, 0.6, 0.9); for (let i = 0; i < 4; i++) b.add('sphS', pick(['#e85a5a', '#f0d040', '#ffffff']), x + rnd(-0.3, 0.3), 1.05, z + rnd(-0.3, 0.3), 0.14, 0.12, 0.14); L.addCircle(x, z, 0.45); }
+  bench(L, -6, 6.5, Math.PI); bench(L, 6, 6.5, Math.PI); bench(L, -6, -0.5, 0); bench(L, 6, -0.5, 0);
+  { const gp = []; for (let i = 0; i < 3500; i++) { const x = rnd(-75, 75), z = rnd(-85, 65); if (Math.abs(x) < 27 && z > -29 && z < 37) continue; if (L.occupied(x, z, 0.6)) continue; gp.push([x, z, mixHex('#e8ffd0', '#b8d890', rng()), rnd(0.8, 1.2)]); } vegetation(L, 'grass', gp); }
   stall(L, -11, 10, 0.4, '#a33a2a'); stall(L, 11, 12, -0.5, '#2a5a8a'); stall(L, -12, -5, 1.2, '#7a5a2a'); stall(L, 12, -3, -1.3, '#3a6a3a');
   for (const [x, z] of [[-6, 20], [6, 22], [-15, 24], [15, 26]]) { barrel(L, x, z); crate(L, x + 1.2, z + 0.4, 0.8, 0.4); }
   lampPost(L, -7, -8, !!o.night); lampPost(L, 7, -8, !!o.night); lampPost(L, -8, 16, false); lampPost(L, 8, 16, false);

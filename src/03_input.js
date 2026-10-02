@@ -6,7 +6,7 @@ const Input = {
     const layer = document.getElementById('touch');
     const stick = document.getElementById('stick'), knob = document.getElementById('knob');
     this.stickEl = stick; this.knobEl = knob;
-    const R = () => Math.min(70, innerWidth * 0.08 + 20);
+    const R = () => Math.min(70, innerWidth * 0.08 + 20) * (G.settings.uiScale || 1);
     layer.addEventListener('pointerdown', e => {
       e.preventDefault();
       if (e.clientX < innerWidth * 0.45 && this.stickId === null) {
@@ -23,7 +23,7 @@ const Input = {
         let dx = e.clientX - this.stickO.x, dy = e.clientY - this.stickO.y; const r = R();
         const l = Math.hypot(dx, dy); if (l > r) { dx *= r / l; dy *= r / l; }
         this.tmove = { x: dx / r, y: -dy / r };
-        knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        const ui = G.settings.uiScale || 1; knob.style.transform = `translate(calc(-50% + ${dx / ui}px), calc(-50% + ${dy / ui}px))`;
       } else if (e.pointerId === this.lookId) {
         this.look.x += e.clientX - this.lookLast.x; this.look.y += e.clientY - this.lookLast.y;
         this.lookLast = { x: e.clientX, y: e.clientY };

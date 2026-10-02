@@ -103,15 +103,24 @@ class Player extends Actor {
     let x = fx * m.y + rx * m.x, z = fz * m.y + rz * m.x; const l = Math.hypot(x, z) || 1;
     return { mag, x: x / l, z: z / l };
   }
-  findTarget(dirX, dirZ, maxD = 3.6) {
-    let best = null, bs = 1e9;
-    for (const e of G.enemies) { if (!e.alive || e.untargetable) continue; const dx = e.pos.x - this.pos.x, dz = e.pos.z - this.pos.z, d = Math.hypot(dx, dz); if (d > maxD + e.radius) continue; const a = Math.abs(angDiff(Math.atan2(dirX, dirZ), Math.atan2(dx, dz))); const sc = d + a * 1.6; if (a < 1.9 && sc < bs) { bs = sc; best = e; } }
+  findTarget(dirX, dirZ, maxD = 3.4) {
+    // hedef yardımı: bakılan yöne 35° içindeki en yakın düşman; yoksa çok yakındaki (60°)
+    let best = null, bs = 1e9; const ya = Math.atan2(dirX, dirZ);
+    for (const e of G.enemies) {
+      if (!e.alive || e.untargetable) continue;
+      const dx = e.pos.x - this.pos.x, dz = e.pos.z - this.pos.z, d = Math.hypot(dx, dz), a = Math.abs(angDiff(ya, Math.atan2(dx, dz)));
+      const ok = (a < 0.62 && d < maxD + e.radius) || (a < 1.05 && d < 1.9 + e.radius);
+      if (!ok) continue; const sc = a * 2.2 + d * 0.45; if (sc < bs) { bs = sc; best = e; }
+    }
     return best;
   }
   startAttack(def, kind) {
-    const id = this.inputDir(); let dx = id.mag ? id.x : Math.sin(this.facing), dz = id.mag ? id.z : Math.cos(this.facing);
+    const id = this.inputDir(); const SL = G.settings.shiftLock;
+    let dx, dz;
+    if (SL) { dx = -Math.sin(Cam.yaw); dz = -Math.cos(Cam.yaw); if (id.mag > 0.5) { dx = id.x; dz = id.z; } }
+    else { dx = id.mag ? id.x : Math.sin(this.facing); dz = id.mag ? id.z : Math.cos(this.facing); }
     const t = this.findTarget(dx, dz);
-    if (t) { this.faceNow(t); } else if (id.mag) { this.facing = this.wantFacing = Math.atan2(dx, dz); }
+    if (t) { this.faceNow(t); } else { this.facing = this.wantFacing = Math.atan2(dx, dz); }
     this.atk = { def, t: 0, hitDone: false, kind, target: t };
     this.model.play(def.anim, ACTIONS[def.anim].dur / def.dur);
     this.state = kind; this.stateT = 0; Audio.sfx('whoosh', def.heavy ? 1.2 : 0.8);
@@ -135,6 +144,7 @@ class Player extends Actor {
       let lx = Math.sin(this.facing), lz = Math.cos(this.facing);
       if (A.target && A.target.alive && distXZ(this.pos, A.target.pos) < 0.95 + A.target.radius) lx = lz = 0;
       this.vel.x = lx * lungeK; this.vel.z = lz * lungeK;
+      if (A.target && A.target.alive && !A.hitDone) this.wantFacing = Math.atan2(A.target.pos.x - this.pos.x, A.target.pos.z - this.pos.z);
       if (!A.hitDone && A.t >= d.hit) { A.hitDone = true; this.resolveHit(d); }
       if (ctl && Input.take('attack') && this.state === 'attack' && A.t > d.dur * 0.25) this.queued = true;
       if (ctl && Input.take('dodge') && A.t > d.hit + 0.02) { this.tryDodge(); }
@@ -160,6 +170,7 @@ class Player extends Actor {
       if (this.state === 'move') { this.vel.x = damp(this.vel.x, dx * want, 12, dt); this.vel.z = damp(this.vel.z, dz * want, 12, dt); }
     }
     if (this.state === 'hitstun' || this.state === 'knock') { this.vel.x = damp(this.vel.x, 0, 8, dt); this.vel.z = damp(this.vel.z, 0, 8, dt); }
+    if (G.settings.shiftLock && ctl && !G.inCine && (this.state === 'move' || this.state === 'hitstun') && !this.noShiftFace) { this.wantFacing = Cam.yaw + Math.PI; }
     if (this.weakWalk) { this.wobT = (this.wobT || 0) + dt; const w = Math.sin(this.wobT * 1.7) * 0.5 + Math.sin(this.wobT * 0.6) * 0.5; if (this.moving) { this.vel.x += Math.cos(this.facing) * w * 0.5; this.vel.z -= Math.sin(this.facing) * w * 0.5; } }
     this.integrate(dt);
     if (this.model.stanceName === 'fight' && !G.combat) this.model.setStance(null);
@@ -178,7 +189,7 @@ class Player extends Actor {
       if (!e.alive || e.untargetable) continue;
       const dx = e.pos.x - this.pos.x, dz = e.pos.z - this.pos.z, dist = Math.hypot(dx, dz);
       if (dist > d.range + e.radius) continue;
-      const a = Math.abs(angDiff(this.facing, Math.atan2(dx, dz))); if (a > d.arc / 2 + 0.25 && dist > 0.6) continue;
+      const a = Math.abs(angDiff(this.facing, Math.atan2(dx, dz))); if (a > d.arc / 2 + 0.38 && dist > 0.6) continue;
       let dmg = d.dmg * (this.dmgMul || 1); if (this.perfectBonus > 0) { dmg *= 1.6; this.perfectBonus = 0; }
       e.takeHit(dmg, this, { knock: d.knock, heavy: d.heavy, dir: V3(dx / (dist || 1), 0, dz / (dist || 1)) });
       any = true;
@@ -232,13 +243,16 @@ class Wanderer extends NPC {
 }
 
 function separateActors() {
+  if (G.inCine) return;
   const A = G.actors;
+  const idle = a => !a.isPlayer && !a.path && !a.follow && !a.active && a.speed < 0.15;
   for (let i = 0; i < A.length; i++) for (let j = i + 1; j < A.length; j++) {
     const a = A[i], b = A[j]; if (!a.solid || !b.solid || !a.alive || !b.alive || !a.visible || !b.visible) continue;
     const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z, m = a.radius + b.radius; if (Math.abs(dx) > m || Math.abs(dz) > m) continue;
     const d = Math.hypot(dx, dz); if (d >= m || d < 1e-4) continue;
     const push = (m - d) / d; const wa = a.isPlayer && a.state !== 'move' ? 0.2 : a.heavyBody ? 0.1 : 0.5, wb = b.heavyBody ? 0.1 : 1 - wa;
-    if (a.pinned) { b.pos.x += dx * push; b.pos.z += dz * push; continue; } if (b.pinned) { a.pos.x -= dx * push; a.pos.z -= dz * push; continue; }
+    const ap = a.pinned || idle(a), bp = b.pinned || idle(b); if (ap && bp) continue;
+    if (ap) { b.pos.x += dx * push; b.pos.z += dz * push; continue; } if (bp) { a.pos.x -= dx * push; a.pos.z -= dz * push; continue; }
     a.pos.x -= dx * push * wa; a.pos.z -= dz * push * wa; b.pos.x += dx * push * wb; b.pos.z += dz * push * wb;
   }
 }

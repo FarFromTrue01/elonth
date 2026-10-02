@@ -18,9 +18,16 @@ function wedgeGeo() {
   g.computeVertexNormals();
   return g;
 }
+// Aynı konumdaki köşeleri birleştir (yumuşak normal için)
+function mergeVertsSimple(g) {
+  if (g.index) return g;
+  const p = g.attributes.position, map = new Map(), idx = [], pos = [];
+  for (let i = 0; i < p.count; i++) { const k = p.getX(i).toFixed(4) + ',' + p.getY(i).toFixed(4) + ',' + p.getZ(i).toFixed(4); let j = map.get(k); if (j === undefined) { j = pos.length / 3; map.set(k, j); pos.push(p.getX(i), p.getY(i), p.getZ(i)); } idx.push(j); }
+  const ng = new T.BufferGeometry(); ng.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); ng.setIndex(idx); return ng;
+}
 function prim(type) {
   if (PRIM[type]) return PRIM[type];
-  let g;
+  let g, smoothN = false;
   switch (type) {
     case 'box': g = new T.BoxGeometry(1, 1, 1); break;
     case 'boxb': g = new T.BoxGeometry(1, 1, 1); g.translate(0, 0.5, 0); break; // taban sıfırda
@@ -47,10 +54,23 @@ function prim(type) {
     case 'wedge': g = wedgeGeo(); break;
     case 'plane': g = new T.PlaneGeometry(1, 1); break;
     case 'torus': g = new T.TorusGeometry(0.5, 0.06, 4, 16); break;
+    // yumuşak gölgeli (smooth) türler
+    case 'sphS': g = new T.SphereGeometry(0.5, 14, 10); smoothN = true; break;
+    case 'cylS': g = new T.CylinderGeometry(0.5, 0.5, 1, 14); smoothN = true; break;
+    case 'cylS8': g = new T.CylinderGeometry(0.5, 0.5, 1, 8); smoothN = true; break;
+    case 'trunk': g = new T.CylinderGeometry(0.32, 0.5, 1, 8, 3); { const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i), a = Math.atan2(p.getX(i), p.getZ(i)); const k = 1 + 0.08 * Math.sin(a * 3 + y * 4); p.setX(i, p.getX(i) * k + Math.sin(y * 2.5) * 0.05); p.setZ(i, p.getZ(i) * k); } } smoothN = true; break;
+    case 'coneS': g = new T.ConeGeometry(0.5, 1, 12, 2); smoothN = true; break;
+    case 'pineL': g = new T.ConeGeometry(0.5, 1, 10, 2); { const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i); if (y < -0.45) { const a = Math.atan2(p.getX(i), p.getZ(i)); const k = 1 + 0.12 * Math.sin(a * 5); p.setX(i, p.getX(i) * k); p.setZ(i, p.getZ(i) * k); p.setY(i, y - 0.08 * (1 + Math.sin(a * 5))); } } } smoothN = true; break;
+    case 'blob1': case 'blob2': case 'blob3': case 'blob4': {
+      g = new T.IcosahedronGeometry(0.5, 2); const sd = { blob1: 1.3, blob2: 4.7, blob3: 9.1, blob4: 13.3 }[type];
+      const p = g.attributes.position, v = new T.Vector3(); const map = new Map();
+      for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const k = v.x.toFixed(3) + v.y.toFixed(3) + v.z.toFixed(3); let f = map.get(k); if (f === undefined) { f = 1 + 0.16 * Math.sin(v.x * 9 + sd) * Math.cos(v.z * 8 - sd) + 0.08 * Math.sin(v.y * 13 + sd * 2); map.set(k, f); } v.multiplyScalar(f); if (v.y < -0.2) v.y = -0.2 + (v.y + 0.2) * 0.6; p.setXYZ(i, v.x, v.y, v.z); }
+      g = T.BufferGeometryUtils ? g : g; g = mergeVertsSimple(g); smoothN = true; break;
+    }
     default: throw new Error('prim ' + type);
   }
-  if (g.index) g = g.toNonIndexed();
-  g.computeVertexNormals();
+  if (smoothN) { g.computeVertexNormals(); if (g.index) g = g.toNonIndexed(); }
+  else { if (g.index) g = g.toNonIndexed(); g.computeVertexNormals(); }
   g.deleteAttribute('uv');
   g.computeBoundingSphere();
   PRIM[type] = g;
@@ -122,7 +142,7 @@ class Builder {
 
 const MAT = {};
 function initMaterials() {
-  MAT.static = new T.MeshLambertMaterial({ vertexColors: true });
+  MAT.static = new T.MeshToonMaterial({ vertexColors: true, gradientMap: TOON.gradSoft });
   MAT.glow = new T.MeshBasicMaterial({ vertexColors: true, fog: true });
   MAT.water = new T.MeshLambertMaterial({ color: '#3d7a8c', transparent: true, opacity: 0.82, emissive: '#0d2a33' });
 }

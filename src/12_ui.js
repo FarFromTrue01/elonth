@@ -9,8 +9,12 @@ const UI = {
     $('#system').addEventListener('pointerdown', e => { e.preventDefault(); this.sysAdvance && this.sysAdvance(); });
     $('#skip').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Story.skip(); });
     $('#pausebtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Game.pause(true); });
+    $('#lockbtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); G.settings.shiftLock = !G.settings.shiftLock; this.syncLock(); Save.store(); Audio.sfx('ui'); UI.toast(G.settings.shiftLock ? 'Shift lock açık: karakter kameranın baktığı yöne döner' : 'Shift lock kapalı', 1800); });
+    this.syncLock(); this.applyScale();
     this.hpbars = $('#hpbars'); this.ebars = new Map();
   },
+  syncLock() { $('#lockbtn').classList.toggle('on', !!G.settings.shiftLock); },
+  applyScale() { document.documentElement.style.setProperty('--ui', String(G.settings.uiScale || 1.25)); },
   show(sel, on) { const e = typeof sel === 'string' ? $(sel) : sel; e.hidden = !on; },
   hud(on) { this.show('#hud', on); },
   combat(on, opts = {}) { this.show('#bars', on); this.show('#actions', on); $('#heavylbl').textContent = opts.heavy || 'Tekme'; },

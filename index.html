@@ -14,7 +14,7 @@
   --f-display: 'Cormorant SC', 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --f-body: 'Alegreya Sans', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
   --f-sys: 'Chakra Petch', 'Rajdhani', 'Segoe UI', system-ui, monospace;
-  color-scheme: dark;
+  color-scheme: dark; --ui: 1.25;
 }
 html, body { height: 100%; margin: 0; background: var(--ink); color: var(--parch); overflow: hidden; overscroll-behavior: none; }
 body { font-family: var(--f-body); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; touch-action: none; }
@@ -191,6 +191,31 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
   #objective { max-width: 60vw; } #obj-text { font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01s !important; transition-duration: .01s !important; } }
+
+/* Arayüz ölçeği ve shift lock */
+#actions { transform: scale(var(--ui)); transform-origin: right bottom; }
+#interact { transform: scale(var(--ui)); transform-origin: right bottom; }
+#bars { transform: scale(var(--ui)); transform-origin: left bottom; }
+#objective { transform: scale(var(--ui)); transform-origin: left top; }
+#counter, #bossbar { transform: translateX(-50%) scale(var(--ui)); transform-origin: center top; }
+#pausebtn { transform: scale(var(--ui)); transform-origin: right top; }
+#stick { transform: scale(var(--ui)); }
+#dialog .dtext { font-size: calc(clamp(18px, 2.2vw, 23px) * (0.6 + 0.4 * var(--ui))); }
+#lockbtn { position: absolute; right: calc((16px + 58px * var(--ui)) + env(safe-area-inset-right, 0px)); top: calc(14px + env(safe-area-inset-top, 0px)); width: 46px; height: 46px; border-radius: 50%; background: var(--panel); border: 1px solid var(--gold2); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 12; transform: scale(var(--ui)); transform-origin: right top; color: var(--muted); }
+#lockbtn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; }
+#lockbtn svg rect { fill: none; stroke: currentColor; stroke-width: 2.2; }
+#lockbtn svg .dot { fill: currentColor; stroke: none; }
+#lockbtn span { font-size: 8px; letter-spacing: .1em; text-transform: uppercase; margin-top: -1px; }
+#lockbtn.on { color: #1a1408; background: var(--gold); border-color: #f0d48a; box-shadow: 0 0 14px rgba(202,166,94,.6); }
+#crosshair { position: absolute; left: calc(50% + 0px); top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,240,210,.75); box-shadow: 0 0 0 1px rgba(0,0,0,.5); pointer-events: none; }
+
+#loading { background: radial-gradient(ellipse at 50% 60%, #1c1710 0%, #0e0c09 70%); transition: opacity .45s; opacity: 1; }
+#loading.out { opacity: 0; }
+.ld-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 24px; text-align: center; max-width: 640px; }
+.ld-chap { font-family: var(--f-display); font-size: 14px; letter-spacing: .4em; color: var(--gold); text-transform: uppercase; }
+.ld-title { font-family: var(--f-display); font-size: clamp(34px, 5vw, 56px); color: var(--parch); letter-spacing: .05em; font-weight: 600; }
+.ld-row { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+.ld-tip { margin-top: 18px; font-size: 17px; font-style: italic; color: var(--muted); line-height: 1.5; border-top: 1px solid rgba(202,166,94,.25); padding-top: 14px; }
 </style></head><body>
 <div id="app">
   <div id="view"></div>
@@ -209,6 +234,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
     <div id="bossbar" hidden><div class="bname"></div><div class="bbar"><em></em><i></i></div></div>
     <div id="marker" hidden><div class="arrow"></div><span id="marker-d"></span></div>
     <div id="hpbars"></div>
+    <button id="lockbtn" type="button" aria-label="Shift lock"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke-width="2.2"/><circle cx="12" cy="15.5" r="1.6" class="dot"/></svg><span>Kilit</span></button>
     <button id="pausebtn" type="button" aria-label="Duraklat"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
     <div id="actions" hidden>
       <button class="act big" data-btn="attack" type="button" aria-label="Saldır"><svg viewBox="0 0 48 48"><path d="M14 22c0-3 2-5 5-5h2v-3c0-2 1.5-3 3-3s3 1 3 3v3h1c3 0 6 2 6 5v8c0 6-4 10-10 10h-1c-5 0-9-4-9-9z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M19 17v6M24 17v6M29 18v5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><span>Saldır</span></button>
@@ -254,7 +280,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
       <div class="pz-help"><b>Kontroller</b> Sol taraf: hareket · Sağ taraf: kamerayı çevir · Diyalog: ekrana dokun</div>
     </div>
   </div>
-  <div id="loading" hidden><div class="ld-mark"></div><div class="ld-text">Yükleniyor</div></div>
+  <div id="loading" hidden><div class="ld-inner"><div class="ld-chap" id="ld-chap"></div><div class="ld-title" id="ld-title"></div><div class="ld-row"><div class="ld-mark"></div><div class="ld-text">Yükleniyor</div></div><div class="ld-tip" id="ld-tip"></div></div></div>
   <div id="rotate" hidden><div>Daha iyi bir deneyim için tableti yatay çevir.</div><button type="button" id="rotate-ok">Yine de devam et</button></div>
   <div id="err" hidden></div>
 </div>
@@ -310,7 +336,7 @@ const G = {
   t: 0, dt: 0, rawDt: 0, timeScale: 1, slowmo: 0, hitstop: 0, paused: false,
   renderer: null, scene: null, camera: null, level: null, player: null,
   actors: [], allies: [], enemies: [], npcs: [],
-  settings: { sens: 1, music: 0.7, sfx: 0.9, quality: 'high', invertY: false, textSpeed: 1 },
+  settings: { sens: 1, music: 0.7, sfx: 0.9, quality: 'high', invertY: false, textSpeed: 1, shiftLock: true, uiScale: 1.25 },
   inScript: false, controlEnabled: true, combat: false,
 };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -337,9 +363,16 @@ function wedgeGeo() {
   g.computeVertexNormals();
   return g;
 }
+// Aynı konumdaki köşeleri birleştir (yumuşak normal için)
+function mergeVertsSimple(g) {
+  if (g.index) return g;
+  const p = g.attributes.position, map = new Map(), idx = [], pos = [];
+  for (let i = 0; i < p.count; i++) { const k = p.getX(i).toFixed(4) + ',' + p.getY(i).toFixed(4) + ',' + p.getZ(i).toFixed(4); let j = map.get(k); if (j === undefined) { j = pos.length / 3; map.set(k, j); pos.push(p.getX(i), p.getY(i), p.getZ(i)); } idx.push(j); }
+  const ng = new T.BufferGeometry(); ng.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); ng.setIndex(idx); return ng;
+}
 function prim(type) {
   if (PRIM[type]) return PRIM[type];
-  let g;
+  let g, smoothN = false;
   switch (type) {
     case 'box': g = new T.BoxGeometry(1, 1, 1); break;
     case 'boxb': g = new T.BoxGeometry(1, 1, 1); g.translate(0, 0.5, 0); break; // taban sıfırda
@@ -366,10 +399,23 @@ function prim(type) {
     case 'wedge': g = wedgeGeo(); break;
     case 'plane': g = new T.PlaneGeometry(1, 1); break;
     case 'torus': g = new T.TorusGeometry(0.5, 0.06, 4, 16); break;
+    // yumuşak gölgeli (smooth) türler
+    case 'sphS': g = new T.SphereGeometry(0.5, 14, 10); smoothN = true; break;
+    case 'cylS': g = new T.CylinderGeometry(0.5, 0.5, 1, 14); smoothN = true; break;
+    case 'cylS8': g = new T.CylinderGeometry(0.5, 0.5, 1, 8); smoothN = true; break;
+    case 'trunk': g = new T.CylinderGeometry(0.32, 0.5, 1, 8, 3); { const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i), a = Math.atan2(p.getX(i), p.getZ(i)); const k = 1 + 0.08 * Math.sin(a * 3 + y * 4); p.setX(i, p.getX(i) * k + Math.sin(y * 2.5) * 0.05); p.setZ(i, p.getZ(i) * k); } } smoothN = true; break;
+    case 'coneS': g = new T.ConeGeometry(0.5, 1, 12, 2); smoothN = true; break;
+    case 'pineL': g = new T.ConeGeometry(0.5, 1, 10, 2); { const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i); if (y < -0.45) { const a = Math.atan2(p.getX(i), p.getZ(i)); const k = 1 + 0.12 * Math.sin(a * 5); p.setX(i, p.getX(i) * k); p.setZ(i, p.getZ(i) * k); p.setY(i, y - 0.08 * (1 + Math.sin(a * 5))); } } } smoothN = true; break;
+    case 'blob1': case 'blob2': case 'blob3': case 'blob4': {
+      g = new T.IcosahedronGeometry(0.5, 2); const sd = { blob1: 1.3, blob2: 4.7, blob3: 9.1, blob4: 13.3 }[type];
+      const p = g.attributes.position, v = new T.Vector3(); const map = new Map();
+      for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const k = v.x.toFixed(3) + v.y.toFixed(3) + v.z.toFixed(3); let f = map.get(k); if (f === undefined) { f = 1 + 0.16 * Math.sin(v.x * 9 + sd) * Math.cos(v.z * 8 - sd) + 0.08 * Math.sin(v.y * 13 + sd * 2); map.set(k, f); } v.multiplyScalar(f); if (v.y < -0.2) v.y = -0.2 + (v.y + 0.2) * 0.6; p.setXYZ(i, v.x, v.y, v.z); }
+      g = T.BufferGeometryUtils ? g : g; g = mergeVertsSimple(g); smoothN = true; break;
+    }
     default: throw new Error('prim ' + type);
   }
-  if (g.index) g = g.toNonIndexed();
-  g.computeVertexNormals();
+  if (smoothN) { g.computeVertexNormals(); if (g.index) g = g.toNonIndexed(); }
+  else { if (g.index) g = g.toNonIndexed(); g.computeVertexNormals(); }
   g.deleteAttribute('uv');
   g.computeBoundingSphere();
   PRIM[type] = g;
@@ -441,7 +487,7 @@ class Builder {
 
 const MAT = {};
 function initMaterials() {
-  MAT.static = new T.MeshLambertMaterial({ vertexColors: true });
+  MAT.static = new T.MeshToonMaterial({ vertexColors: true, gradientMap: TOON.gradSoft });
   MAT.glow = new T.MeshBasicMaterial({ vertexColors: true, fog: true });
   MAT.water = new T.MeshLambertMaterial({ color: '#3d7a8c', transparent: true, opacity: 0.82, emissive: '#0d2a33' });
 }
@@ -493,6 +539,14 @@ class Env {
     this.moon = new T.Mesh(new T.SphereGeometry(9, 16, 12), new T.MeshBasicMaterial({ color: '#f1efe2', fog: false }));
     this.moon.renderOrder = -8; scene.add(this.moon);
     this.focus = new T.Vector3();
+    // uzak dağlar ve bulutlar
+    this.far = new T.Group(); this.far.renderOrder = -5; scene.add(this.far);
+    { const b = new Builder(0); seed(1234);
+      for (let ring = 0; ring < 2; ring++) for (let i = 0; i < 46; i++) { const a = i / 46 * TAU + ring * 0.07 + rnd(-0.03, 0.03), r = ring ? 440 : 360; const h = rnd(50, 120) * (ring ? 1.25 : 1), w = rnd(70, 130); b.add(pick(['coneS', 'blob1', 'blob3']), ring ? '#c8d0dc' : '#9aa6b6', Math.cos(a) * r, -10, Math.sin(a) * r, w, h * (rng() < 0.5 ? 1 : 0.7), w * 0.8, 0, rnd(0, 3), 0, 0.05); }
+      this.mtnMat = new T.MeshBasicMaterial({ vertexColors: true, fog: false }); const m = b.build(this.mtnMat, { cast: false, receive: false }); this.far.add(m); }
+    { const b = new Builder(0); seed(4321);
+      for (let i = 0; i < 26; i++) { const a = rnd(0, TAU), r = rnd(240, 360), y = rnd(70, 135), n = rndi(4, 8); for (let k = 0; k < n; k++) { const s = rnd(14, 30); b.add('sphS', k % 3 ? '#ffffff' : '#e6ecf4', Math.cos(a) * r + rnd(-30, 30), y + rnd(-4, 8), Math.sin(a) * r + rnd(-18, 18), s * 1.6, s * 0.75, s * 1.2, 0, 0, 0, 0.04); } }
+      this.cloudMat = new T.MeshBasicMaterial({ vertexColors: true, fog: false, transparent: true, opacity: 0.95, depthWrite: false }); this.clouds = b.build(this.cloudMat, { cast: false, receive: false }); this.far.add(this.clouds); }
     this.rain = null; this.snow = null; this.weather = 'none'; this.lightning = 0; this.lightTimer = 6; this.flashFn = null;
     this.preset = null;
   }
@@ -509,8 +563,13 @@ class Env {
     this.scene.fog.color.set(p.hor); this.scene.fog.near = p.fogNear; this.scene.fog.far = p.fogFar;
     this.stars.material.opacity = p.stars; this.stars.visible = p.stars > 0;
     this.moon.visible = !!p.moon;
-    this.sky.visible = !opts.noSky;
+    this.sky.visible = !opts.noSky; this.far.visible = !opts.noSky;
+    const dark = p.stars >= 0.9 || name === 'storm';
+    this.mtnMat.color.set(mixHex(p.hor, p.mtn || '#7a8aa0', dark ? 0.3 : 0.45)); if (dark) this.mtnMat.color.multiplyScalar(0.55);
+    this.cloudMat.color.set(p.cloud || (name === 'dusk' || name === 'winterdusk' ? '#ffc8b0' : dark ? '#3a4660' : '#ffffff')); this.cloudMat.opacity = name === 'storm' ? 0 : dark ? 0.55 : 0.95;
+    if (typeof syncWaterFog === 'function') syncWaterFog(this.scene.fog);
     this.setWeather(opts.weather || 'none');
+    TOON.syncFog(this.scene.fog);
   }
   setWeather(w) {
     this.weather = w;
@@ -533,7 +592,7 @@ class Env {
   }
   flash(v = 1) { this.lightning = Math.max(this.lightning, v); }
   update(dt, cam) {
-    this.sky.position.copy(cam.position); this.stars.position.copy(cam.position);
+    this.sky.position.copy(cam.position); this.stars.position.copy(cam.position); this.far.position.set(cam.position.x, 0, cam.position.z); this.clouds.rotation.y += dt * 0.004;
     if (this.moon.visible) this.moon.position.copy(cam.position).addScaledVector(this.sunDir, 380);
     const f = this.focus;
     this.sun.position.copy(f).addScaledVector(this.sunDir, 70);
@@ -581,7 +640,7 @@ const Input = {
     const layer = document.getElementById('touch');
     const stick = document.getElementById('stick'), knob = document.getElementById('knob');
     this.stickEl = stick; this.knobEl = knob;
-    const R = () => Math.min(70, innerWidth * 0.08 + 20);
+    const R = () => Math.min(70, innerWidth * 0.08 + 20) * (G.settings.uiScale || 1);
     layer.addEventListener('pointerdown', e => {
       e.preventDefault();
       if (e.clientX < innerWidth * 0.45 && this.stickId === null) {
@@ -598,7 +657,7 @@ const Input = {
         let dx = e.clientX - this.stickO.x, dy = e.clientY - this.stickO.y; const r = R();
         const l = Math.hypot(dx, dy); if (l > r) { dx *= r / l; dy *= r / l; }
         this.tmove = { x: dx / r, y: -dy / r };
-        knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        const ui = G.settings.uiScale || 1; knob.style.transform = `translate(calc(-50% + ${dx / ui}px), calc(-50% + ${dy / ui}px))`;
       } else if (e.pointerId === this.lookId) {
         this.look.x += e.clientX - this.lookLast.x; this.look.y += e.clientY - this.lookLast.y;
         this.lookLast = { x: e.clientX, y: e.clientY };
@@ -767,8 +826,163 @@ const TRACKS = {
 };
 
 
+// ==== 04b_toon.js ====
+// ---------- Anime görünüm: toon malzeme, kontur, yüz dokusu, yuvarlak geometri ----------
+const TOON = {
+  grad: null, outline: null,
+  init() {
+    const d = new Uint8Array([105, 105, 105, 255, 178, 178, 178, 255, 236, 236, 236, 255, 255, 255, 255, 255]);
+    const t = new T.DataTexture(d, 4, 1, T.RGBAFormat); t.minFilter = T.NearestFilter; t.magFilter = T.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
+    this.grad = t;
+    const d2 = new Uint8Array([150, 150, 150, 255, 205, 205, 205, 255, 245, 245, 245, 255, 255, 255, 255, 255]);
+    const t2 = new T.DataTexture(d2, 4, 1, T.RGBAFormat); t2.minFilter = T.NearestFilter; t2.magFilter = T.NearestFilter; t2.generateMipmaps = false; t2.needsUpdate = true;
+    this.gradSoft = t2;
+    this.outline = new T.ShaderMaterial({
+      uniforms: { thick: { value: 0.0105 }, color: { value: new T.Color('#1d1512') }, fogC: { value: new T.Color('#888') }, fogN: { value: 30 }, fogF: { value: 200 } },
+      vertexShader: `uniform float thick; varying float vD;
+        void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vec3 n = normalize(mat3(modelMatrix) * normal);
+          float d = distance(wp.xyz, cameraPosition); wp.xyz += n * thick * clamp(d * 0.16, 0.55, 3.5);
+          vec4 mv = viewMatrix * wp; vD = -mv.z; gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `uniform vec3 color; uniform vec3 fogC; uniform float fogN; uniform float fogF; varying float vD;
+        void main(){ float f = smoothstep(fogN, fogF, vD); gl_FragColor = vec4(mix(color, fogC, f), 1.0); }`,
+      side: T.BackSide,
+    });
+  },
+  syncFog(fog) { const u = this.outline.uniforms; u.fogC.value.copy(fog.color); u.fogN.value = fog.near; u.fogF.value = fog.far; },
+  mat(hex, o = {}) { return new T.MeshToonMaterial(Object.assign({ color: hex, gradientMap: this.grad }, o)); },
+};
+
+// Döndürülmüş profil (lathe): [[yarıçap, y], ...] aşağıdan yukarıya
+function latheGeo(pts, segs = 14, phiStart = 0, phiLen = TAU) {
+  const g = new T.LatheGeometry(pts.map(p => new T.Vector2(Math.max(0.0005, p[0]), p[1])), segs, phiStart, phiLen);
+  g.computeVertexNormals(); return g;
+}
+// Konik kapsül: üst yarıçap r1 (y=0), alt yarıçap r2 (y=-len)
+function capsGeo(r1, r2, len, segs = 10) {
+  const pts = [];
+  for (let i = 0; i <= 4; i++) { const a = -Math.PI / 2 + i / 4 * Math.PI / 2; pts.push([r2 * Math.cos(a), -len + r2 * Math.sin(a) * 0.9]); }
+  for (let i = 0; i <= 4; i++) { const a = i / 4 * Math.PI / 2; pts.push([r1 * Math.cos(a), r1 * Math.sin(a) * 0.9]); }
+  return latheGeo(pts, segs);
+}
+function sphGeo(ws = 12, hs = 9) { return new T.SphereGeometry(0.5, ws, hs); }
+// Anime kafa: alt yarı çeneye doğru daralır
+function deformHead(g, chin = 0.36) {
+  const p = g.attributes.position, v = new T.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    if (v.y < 0) { const t = -v.y / 0.5; v.x *= 1 - chin * Math.pow(t, 1.4); v.z *= 1 - 0.12 * t; v.z += 0.05 * t * Math.max(0, v.z / 0.5 + 0.2); v.y *= 1 + 0.1 * t; }
+    else { const t = v.y / 0.5; v.z *= 1 + 0.04 * t; }
+    if (v.z < 0) v.z *= 1.04;
+    p.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals(); return g;
+}
+// Birden çok geometriyi (dönüşümleriyle) tek geometride birleştir
+function mergeParts(list) {
+  let n = 0; const prep = [];
+  for (const { geo, m } of list) { const g = geo.index ? geo.toNonIndexed() : geo; prep.push([g, m]); n += g.attributes.position.count; }
+  const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3); let o = 0; const v = new T.Vector3(), nm = new T.Matrix3();
+  for (const [g, m] of prep) {
+    nm.getNormalMatrix(m); const P = g.attributes.position, N = g.attributes.normal;
+    for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(m); pos.set([v.x, v.y, v.z], o * 3); v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor.set([v.x, v.y, v.z], o * 3); o++; }
+  }
+  const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('normal', new T.BufferAttribute(nor, 3)); g.computeBoundingSphere(); return g;
+}
+const _mq = new T.Quaternion(), _up = new T.Vector3(0, 1, 0);
+function mtx(px, py, pz, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) { return mkMatrix(px, py, pz, rx, ry, rz, sx, sy, sz); }
+// +y ekseni dir'e bakacak şekilde, from noktasından başlayan parça matrisi
+function alongMatrix(from, dir, len, sx, sz, twist = 0) {
+  const d = dir.clone().normalize(); _mq.setFromUnitVectors(_up, d);
+  if (twist) _mq.multiply(new T.Quaternion().setFromAxisAngle(_up, twist));
+  return new T.Matrix4().compose(from.clone().addScaledVector(d, len / 2), _mq, new T.Vector3(sx, len, sz));
+}
+
+// ---- Yüz dokusu ----
+const FACE_W = 256, FACE_H = 256;
+function drawFace(g, f, expr = 'neutral', eyes = 'open', mouth = 'closed') {
+  const W = FACE_W, H = FACE_H;
+  g.fillStyle = f.skin; g.fillRect(0, 0, W, H);
+  const fem = f.female, ch = f.child || 0;
+  const ink = f.ink || '#20140f';
+  // yanak allığı
+  if (fem || ch > 0.5 || f.blush) { for (const s of [-1, 1]) { const gr = g.createRadialGradient(128 + s * 66, 178, 2, 128 + s * 66, 178, 24); gr.addColorStop(0, 'rgba(240,120,120,0.30)'); gr.addColorStop(1, 'rgba(240,120,120,0)'); g.fillStyle = gr; g.fillRect(128 + s * 66 - 26, 152, 52, 52); } }
+  const ew = (fem ? 74 : 64) * (1 + ch * 0.06), eh = (fem ? 76 : 54) * (1 + ch * 0.18), ey = 138, ex = 64;
+  const iris = new T.Color(f.eyes || '#3a2a20');
+  const col = (c, k) => { const t = c.clone().multiplyScalar(k); return '#' + t.getHexString(); };
+  for (const s of [-1, 1]) {
+    const cx = 128 + s * ex;
+    // kaş
+    let bIn = 0, bOut = 0;
+    if (expr === 'angry') { bIn = 9; bOut = -5; } else if (expr === 'sad' || expr === 'pain') { bIn = -9; bOut = 4; } else if (expr === 'surprised') { bIn = -8; bOut = -8; } else if (expr === 'smile') { bIn = -2; bOut = -2; }
+    if (f.stern) { bIn += 4; bOut -= 2; }
+    const by = ey - eh * 0.6 - 8;
+    g.strokeStyle = f.brow || ink; g.lineCap = 'round'; g.lineWidth = fem ? 3.5 : 6;
+    g.beginPath(); g.moveTo(cx - s * ew * 0.42, by + bIn); g.quadraticCurveTo(cx, by - 5 + (bIn + bOut) / 2, cx + s * ew * 0.55, by + 3 + bOut); g.stroke();
+    if (eyes === 'closed' || expr === 'pain' || (expr === 'smile' && eyes === 'happy')) {
+      g.strokeStyle = ink; g.lineWidth = fem ? 4 : 4.5;
+      g.beginPath();
+      if (expr === 'smile' || eyes === 'happy') { g.moveTo(cx - ew * 0.45, ey + 4); g.quadraticCurveTo(cx, ey - 12, cx + ew * 0.45, ey + 4); }
+      else if (expr === 'pain') { g.moveTo(cx - s * ew * 0.45, ey - 6); g.lineTo(cx + s * ew * 0.1, ey + 2); g.lineTo(cx + s * ew * 0.45, ey - 2); }
+      else { g.moveTo(cx - ew * 0.48, ey + 2); g.quadraticCurveTo(cx, ey + 10, cx + ew * 0.48, ey + 2); }
+      g.stroke();
+      if (fem) { g.lineWidth = 2.5; g.beginPath(); g.moveTo(cx + s * ew * 0.46, ey + 2); g.lineTo(cx + s * ew * 0.62, ey - 4); g.stroke(); }
+      continue;
+    }
+    const open = expr === 'surprised' ? 1.12 : expr === 'angry' ? 0.82 : 1;
+    const top = ey - eh * 0.5 * open, bot = ey + eh * 0.5 * open;
+    // göz akı
+    g.fillStyle = '#fbf8f2';
+    g.beginPath(); g.moveTo(cx - ew * 0.5, ey + 2);
+    g.bezierCurveTo(cx - ew * 0.45, top + (expr === 'angry' ? (s > 0 ? 8 : 2) : 0), cx + ew * 0.35, top - 2, cx + ew * 0.5, ey - 2);
+    g.bezierCurveTo(cx + ew * 0.45, bot, cx - ew * 0.35, bot + 2, cx - ew * 0.5, ey + 2); g.fill();
+    // iris
+    const ir = ew * (fem ? 0.32 : 0.29), irh = eh * 0.44 * open;
+    const icx = cx + s * 1.5, icy = ey + 1;
+    const ig = g.createLinearGradient(0, icy - irh, 0, icy + irh); ig.addColorStop(0, col(iris, 0.35)); ig.addColorStop(0.55, col(iris, 0.95)); ig.addColorStop(1, col(iris, 1.45));
+    g.fillStyle = ig; g.beginPath(); g.ellipse(icx, icy, ir, irh, 0, 0, TAU); g.fill();
+    g.strokeStyle = col(iris, 0.3); g.lineWidth = 1.5; g.stroke();
+    g.fillStyle = '#120c0a'; g.beginPath(); g.ellipse(icx, icy + 1, ir * 0.45, irh * 0.5, 0, 0, TAU); g.fill();
+    // parıltılar
+    g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(icx - ir * 0.38, icy - irh * 0.42, ir * 0.3, irh * 0.24, -0.4, 0, TAU); g.fill();
+    g.beginPath(); g.arc(icx + ir * 0.4, icy + irh * 0.45, ir * 0.14, 0, TAU); g.fill();
+    // üst kirpik çizgisi
+    g.strokeStyle = ink; g.lineWidth = fem ? 6 : 5; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(cx - ew * 0.52, ey + 3); g.bezierCurveTo(cx - ew * 0.45, top - 1, cx + ew * 0.35, top - 4, cx + ew * 0.55, ey - 1); g.stroke();
+    if (fem) { g.lineWidth = 3; for (let k = 0; k < 3; k++) { const ox = cx + s * ew * (0.42 + k * 0.05), oy = top + 4 + k * 5; g.beginPath(); g.moveTo(ox, oy); g.lineTo(ox + s * 9, oy - 7 + k * 2); g.stroke(); } }
+    else { g.lineWidth = 3; g.beginPath(); g.moveTo(cx + s * ew * 0.48, ey); g.lineTo(cx + s * ew * 0.6, ey - 4); g.stroke(); }
+    // alt göz kapağı
+    g.strokeStyle = 'rgba(40,20,15,0.55)'; g.lineWidth = 1.8; g.beginPath(); g.moveTo(cx + s * ew * 0.05, bot + 1); g.quadraticCurveTo(cx + s * ew * 0.35, bot, cx + s * ew * 0.48, ey + 5); g.stroke();
+  }
+  // burun
+  g.strokeStyle = col(new T.Color(f.skin), 0.68); g.lineWidth = 2.2; g.beginPath(); g.moveTo(130, 166); g.lineTo(126, 175); g.stroke();
+  // sakal gölgesi
+  if (f.beard) { g.fillStyle = f.beard; g.globalAlpha = 0.85; g.beginPath(); g.ellipse(128, 236, 74, 40, 0, Math.PI, TAU); g.rect(54, 236, 148, 30); g.fill(); g.globalAlpha = 1; }
+  if (f.mustache) { g.fillStyle = f.mustache; g.beginPath(); g.ellipse(118, 193, 14, 5, 0.2, 0, TAU); g.ellipse(138, 193, 14, 5, -0.2, 0, TAU); g.fill(); }
+  // ağız
+  const my = 203, lip = fem ? '#b0484a' : col(new T.Color(f.skin), 0.45);
+  g.strokeStyle = fem ? '#8a3036' : '#5a2a22'; g.lineWidth = 2.6; g.lineCap = 'round';
+  if (mouth === 'open' || expr === 'surprised') {
+    const mw = expr === 'surprised' ? 9 : 11, mh = expr === 'surprised' ? 11 : 7;
+    g.fillStyle = '#5a1a1e'; g.beginPath(); g.ellipse(128, my + 2, mw, mh, 0, 0, TAU); g.fill();
+    g.fillStyle = '#d0606a'; g.beginPath(); g.ellipse(128, my + 2 + mh * 0.45, mw * 0.6, mh * 0.4, 0, 0, TAU); g.fill();
+  } else if (expr === 'smile') { g.beginPath(); g.moveTo(116, my - 2); g.quadraticCurveTo(128, my + 8, 140, my - 2); g.stroke(); }
+  else if (expr === 'sad' || expr === 'pain') { g.beginPath(); g.moveTo(118, my + 4); g.quadraticCurveTo(128, my - 3, 138, my + 4); g.stroke(); }
+  else if (expr === 'angry') { g.beginPath(); g.moveTo(117, my + 3); g.lineTo(128, my); g.lineTo(139, my + 3); g.stroke(); }
+  else { g.beginPath(); g.moveTo(120, my); g.quadraticCurveTo(128, my + 2, 136, my); g.stroke(); }
+  if (fem && mouth !== 'open' && expr !== 'surprised') { g.fillStyle = 'rgba(190,80,90,0.35)'; g.beginPath(); g.ellipse(128, my + 4, 6, 2.5, 0, 0, TAU); g.fill(); }
+  // gözyaşı
+  if (f.tears) { g.fillStyle = 'rgba(160,210,255,0.85)'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(128 + s * 50, 168, 3, 9, 0, 0, TAU); g.fill(); } }
+}
+function faceTexture(f, expr, eyes, mouth) {
+  const c = document.createElement('canvas'); c.width = FACE_W; c.height = FACE_H;
+  drawFace(c.getContext('2d'), f, expr, eyes, mouth);
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+
+
 // ==== 05_humanoid.js ====
 // ---------- Low-poly insan modeli ve prosedürel animasyon ----------
+const _v3a = new T.Vector3();
 const SKIN = { pale: '#efd2b5', light: '#e2bb94', tan: '#c8946a', brown: '#9a6642', dark: '#6e4529' };
 const POSE_KEYS = ['lift', 'roll', 'rollZ', 'bob', 'hipY', 'spX', 'spY', 'spZ', 'hdX', 'hdY', 'hdZ', 'shLx', 'shLy', 'shLz', 'elL', 'shRx', 'shRy', 'shRz', 'elR', 'lgLx', 'lgLz', 'knL', 'lgRx', 'lgRz', 'knR'];
 function blankPose() { const p = {}; for (const k of POSE_KEYS) p[k] = 0; return p; }
@@ -816,6 +1030,7 @@ const STANCES = {
   support: { full: false, p: { shRz: -1.1, elR: -1.4, shRx: -0.2 } },
   supportL: { full: false, p: { shLz: 1.1, elL: -1.4, shLx: -0.2 } },
   lantern: { full: false, p: { shRx: -0.9, elR: -0.6 } },
+  carry: { full: false, p: { shLx: -0.85, shRx: -0.85, shLz: -0.15, shRz: 0.15, elL: -1.25, elR: -1.25 } },
   cry: { full: false, p: { shLx: -1.9, shRx: -1.9, shLz: -0.45, shRz: 0.45, elL: -2.4, elR: -2.4, hdX: 0.45, spX: 0.25 } },
   think: { full: false, p: { shRx: -1.1, shRz: 0.3, elR: -2.3, shLx: -0.5, shLz: -0.3, elL: -1.6, hdX: 0.1, hdZ: 0.12 } },
   sit: { full: true, p: { lift: -0.48, lgLx: -1.55, knL: 1.55, lgRx: -1.5, knR: 1.6, lgLz: 0.06, lgRz: -0.06, shLx: -0.45, shRx: -0.45, elL: -0.6, elR: -0.6 } },
@@ -830,176 +1045,309 @@ const STANCES = {
   lieFace: { full: true, p: { roll: 1.5708, lift: -0.42, shLz: 0.4, shRz: -0.4, hdY: 0.6 } },
 };
 
+
 class Humanoid {
   constructor(o) {
-    this.o = o = Object.assign({ scale: 1, female: false, child: 0, skin: SKIN.light, hair: '#3a2a1c', hairStyle: 'short', eyes: '#1c1612', shirt: '#7a6a55', sleeves: 'short', pants: '#4b4033', shoes: '#3a2b20', extras: [] }, o);
-    this.mats = {}; this.allMats = [];
+    this.o = o = Object.assign({ scale: 1, female: false, child: 0, skin: SKIN.light, hair: '#3a2a1c', hairStyle: 'short', eyes: '#4a3424', shirt: '#7a6a55', sleeves: 'short', pants: '#4b4033', shoes: '#3a2b20', extras: [] }, o);
+    this.mats = {}; this.allMats = []; this.parts = []; this.meshes = []; this.outlines = [];
     const root = this.root = new T.Group();
     const pivot = this.pivot = new T.Group(); pivot.position.y = 0.55; root.add(pivot);
     const body = this.body = new T.Group(); body.position.y = -0.55; pivot.add(body);
-    const ch = o.child, hk = 1 + 0.3 * ch, lk = 1 - 0.07 * ch, fem = o.female;
-    const wk = (fem ? 0.88 : 1) * (o.wide || 1);
+    const ch = o.child, fem = o.female, wd = o.wide || 1;
+    const hk = 1 + 0.3 * ch, lk = 1 - 0.07 * ch;
     const D = this.D = {
-      legU: 0.43 * lk, legL: 0.41 * lk, foot: 0.07, torso: 0.55 * (1 - 0.04 * ch),
-      chestW: (fem ? 0.36 : 0.43) * wk, chestD: 0.23 * (o.wide || 1), waistW: (fem ? 0.29 : 0.34) * wk,
-      headH: 0.25 * hk, headW: 0.205 * hk, headD: 0.225 * hk, armU: 0.29 * lk, armL: 0.26 * lk,
-      armT: (fem ? 0.085 : 0.1) * (o.wide || 1), legT: (fem ? 0.125 : 0.14) * (o.wide || 1),
+      legU: 0.44 * lk, legL: 0.43 * lk, foot: 0.06, torso: 0.53 * (1 - 0.05 * ch),
+      chestHalf: (fem ? 0.158 : 0.2) * wd * (1 - 0.1 * ch), waistHalf: (fem ? 0.118 : 0.15) * wd * (1 - 0.06 * ch), hipHalf: (fem ? 0.172 : 0.158) * wd * (1 - 0.08 * ch), depth: 0.64,
+      headH: 0.265 * hk, headW: 0.212 * hk, headD: 0.232 * hk,
+      armU: 0.29 * lk, armL: 0.26 * lk, armT: (fem ? 0.074 : 0.092) * wd * (1 - 0.1 * ch), legT: (fem ? 0.128 : 0.138) * wd * (1 - 0.08 * ch),
     };
-    D.hipH = D.legU + D.legL + D.foot;
-    D.height = D.hipH + 0.06 + D.torso + 0.06 + D.headH;
-    const P = (parent, type, color, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) => {
-      const m = new T.Mesh(prim(type), this.mat(color)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.set(rx, ry, rz);
-      m.castShadow = true; m.receiveShadow = false; parent.add(m); return m;
-    };
-    this.P = P;
+    D.hipH = D.legU + D.legL + D.foot; D.height = D.hipH + 0.06 + D.torso + 0.07 + D.headH;
+    D.chestW = D.chestHalf * 2; D.waistW = D.waistHalf * 2; D.chestD = D.chestHalf * 2 * D.depth;
     const hips = this.hips = new T.Group(); hips.position.y = D.hipH; body.add(hips);
-    const pantsTop = o.robe ? o.shirt : o.pants;
-    P(hips, 'box', pantsTop, 0, 0.02, 0, D.waistW + 0.03, 0.17, D.chestD * 0.92);
-    const spine = this.spine = new T.Group(); spine.position.y = 0.07; hips.add(spine);
-    P(spine, 'box', o.shirt, 0, D.torso * 0.24, 0, D.waistW, D.torso * 0.5, D.chestD * 0.9);
-    P(spine, 'box', o.shirt, 0, D.torso * 0.68, 0, D.chestW, D.torso * 0.58, D.chestD);
-    if (fem && ch < 0.5) P(spine, 'box', o.shirt, 0, D.torso * 0.66, D.chestD * 0.42, D.chestW * 0.8, D.torso * 0.22, 0.08);
+    const spine = this.spine = new T.Group(); spine.position.y = 0.06; hips.add(spine);
     const neck = this.neck = new T.Group(); neck.position.y = D.torso; spine.add(neck);
-    P(neck, 'box', o.skin, 0, 0.04, 0, 0.09 + 0.02 * ch, 0.1, 0.09);
     const head = this.head = new T.Group(); head.position.y = 0.07; neck.add(head);
-    P(head, 'box', o.skin, 0, D.headH / 2, 0, D.headW, D.headH, D.headD);
-    // yüz
-    const fz = D.headD / 2 + 0.004;
-    this.eyes = [];
-    for (const sx of [-1, 1]) {
-      const e = P(head, 'box', '#f4efe6', sx * D.headW * 0.23, D.headH * 0.5, fz - 0.002, 0.05 * hk, 0.035 * hk, 0.01);
-      const pu = P(head, 'box', o.eyes, sx * D.headW * 0.22, D.headH * 0.5, fz + 0.004, 0.026 * hk, 0.034 * hk, 0.01);
-      this.eyes.push(e, pu);
-      P(head, 'box', shade(o.hair, 0.9), sx * D.headW * 0.24, D.headH * 0.64, fz + 0.002, 0.06 * hk, 0.014, 0.012, 0, 0, sx * (o.browTilt || 0.08));
-    }
-    P(head, 'box', shade(o.skin, 0.88), 0, D.headH * 0.38, fz + 0.01, 0.03, 0.05, 0.03);
-    this.mouth = P(head, 'box', '#7a3b33', 0, D.headH * 0.2, fz, 0.06, 0.012, 0.01);
-    P(head, 'box', o.skin, D.headW / 2 + 0.01, D.headH * 0.48, 0, 0.025, 0.06, 0.05);
-    P(head, 'box', o.skin, -D.headW / 2 - 0.01, D.headH * 0.48, 0, 0.025, 0.06, 0.05);
-    this.addHair(o.hairStyle, o.hair);
+    // --- gövde
+    const sx = (1 - 0.08 * ch) * wd, sy = D.torso / 0.53;
+    const pelvisP = fem ? [[0.02, -0.15], [0.115, -0.13], [0.168, -0.07], [0.176, 0.0], [0.15, 0.06], [0.122, 0.11]] : [[0.02, -0.15], [0.105, -0.13], [0.152, -0.07], [0.16, 0.0], [0.155, 0.06], [0.15, 0.11]];
+    this.add(hips, latheGeo(pelvisP, 16), o.robe ? o.shirt : o.pants, mtx(0, 0, 0, sx, 1, D.depth));
+    const chestP = fem ? [[0.12, -0.04], [0.118, 0.06], [0.126, 0.17], [0.148, 0.29], [0.158, 0.38], [0.15, 0.45], [0.124, 0.505], [0.07, 0.545], [0.03, 0.56]]
+      : [[0.15, -0.04], [0.152, 0.06], [0.166, 0.18], [0.19, 0.3], [0.204, 0.4], [0.2, 0.46], [0.172, 0.51], [0.1, 0.548], [0.04, 0.56]];
+    this.add(spine, latheGeo(chestP, 16), o.shirt, mtx(0, 0, 0, sx, sy, D.depth));
+    if (fem && ch < 0.5) for (const s of [-1, 1]) this.add(spine, sphGeo(10, 8), o.shirt, mtx(s * 0.052 * sx, D.torso * 0.67, D.chestHalf * D.depth * 0.6, 0.1 * sx, 0.085, 0.075, 0.25));
+    // boyun ve kafa
+    const nr = (fem ? 0.036 : 0.044) * (1 + 0.15 * ch);
+    this.add(neck, capsGeo(nr, nr * 1.15, 0.11), o.skin, mtx(0, 0.09, -0.005));
+    const W = D.headW, H = D.headH, Dd = D.headD; this.hc = V3(0, H * 0.5, 0.008);
+    this.add(head, deformHead(sphGeo(24, 18), fem ? 0.4 : 0.34), o.skin, mtx(this.hc.x, this.hc.y, this.hc.z, W, H, Dd));
+    for (const s of [-1, 1]) this.add(head, sphGeo(8, 6), o.skin, mtx(s * W * 0.49, H * 0.46, -0.004, 0.035, 0.065, 0.045, 0, s * 0.3));
+    // yüz yaması (doku)
+    const fg = new T.SphereGeometry(0.5 * 1.012, 20, 16, Math.PI / 2 - 0.873, 1.746, 0.96, 1.4); deformHead(fg, fem ? 0.4 : 0.34);
+    this.faceF = { skin: o.skin, eyes: o.eyes, female: fem, child: ch, brow: shade(o.hair, 0.55), stern: o.stern, beard: o.faceBeard, mustache: o.faceMustache, blush: o.blush };
+    this.faceTex = {}; this.expr = o.expr || 'neutral'; this.faceState = '';
+    this.faceMat = TOON.mat('#ffffff', { map: this.faceTexFor('neutral', 'open', 'closed'), gradientMap: TOON.gradSoft }); this.allMats.push(this.faceMat);
+    const face = new T.Mesh(fg, this.faceMat); face.position.copy(this.hc); face.scale.set(W, H, Dd); face.castShadow = false; face.userData.noBake = true; head.add(face); this.face = face;
+    this.buildHair(o.hairStyle, o.hair);
     // kollar
     const sleeveC = o.sleeves === 'none' ? o.skin : o.shirt;
     const arm = (side) => {
-      const sh = new T.Group(); sh.position.set(side * (D.chestW / 2 + D.armT * 0.45), D.torso * 0.92, 0); spine.add(sh);
-      P(sh, 'box', sleeveC, 0, -D.armU / 2 + 0.02, 0, D.armT * 1.05, D.armU + 0.04, D.armT * 1.05);
+      const sh = new T.Group(); sh.position.set(side * (D.chestHalf * sx * 0.9 + D.armT * 0.2), D.torso * 0.9, 0); spine.add(sh);
+      const t = D.armT;
+      this.add(sh, sphGeo(10, 8), sleeveC, mtx(side * 0.004, -0.012, 0, t * 1.12, t * 1.05, t * 1.08));
+      this.add(sh, capsGeo(t * 0.5, t * 0.43, D.armU), o.skin, mtx(0, 0, 0));
+      if (o.sleeves !== 'none') this.add(sh, capsGeo(t * 0.58, t * 0.52, D.armU * (o.sleeves === 'long' ? 1.0 : 0.58)), o.shirt, mtx(0, 0, 0));
       const el = new T.Group(); el.position.y = -D.armU; sh.add(el);
-      P(el, 'box', o.sleeves === 'long' ? o.shirt : o.skin, 0, -D.armL / 2, 0, D.armT * 0.92, D.armL, D.armT * 0.92);
+      this.add(el, capsGeo(t * 0.44, t * 0.35, D.armL), o.sleeves === 'long' ? o.shirt : o.skin, mtx(0, 0, 0));
+      if (o.sleeves === 'long') this.add(el, capsGeo(t * 0.47, t * 0.45, 0.03), shade(o.shirt, 0.8), mtx(0, -D.armL + 0.03, 0));
       const hand = new T.Group(); hand.position.y = -D.armL; el.add(hand);
-      P(hand, 'box', o.gloves || o.skin, 0, -0.045, 0.005, D.armT * 0.9, 0.09, D.armT * 1.05);
+      const hc = o.gloves || o.skin;
+      this.add(hand, sphGeo(10, 8), hc, mtx(0, -0.045, 0.004, t * 0.82, 0.1, t * 0.52));
+      this.add(hand, capsGeo(0.012, 0.01, 0.04), hc, mtx(-side * t * 0.38, -0.02, 0.018, 1, 1, 1, -0.3, 0, side * 0.5));
       return [sh, el, hand];
     };
     [this.shL, this.elL, this.handL] = arm(1);
     [this.shR, this.elR, this.handR] = arm(-1);
     // bacaklar
     const leg = (side) => {
-      const hp = new T.Group(); hp.position.set(side * D.waistW * 0.26, 0, 0); hips.add(hp);
-      P(hp, 'box', o.pants, 0, -D.legU / 2, 0, D.legT, D.legU + 0.02, D.legT * 1.05);
+      const t = D.legT;
+      const hp = new T.Group(); hp.position.set(side * D.hipHalf * sx * 0.52, 0, 0); hips.add(hp);
+      this.add(hp, capsGeo(t * 0.56, t * 0.42, D.legU), o.pants, mtx(0, 0, 0));
       const kn = new T.Group(); kn.position.y = -D.legU; hp.add(kn);
-      P(kn, 'box', o.boots ? o.shoes : o.pants, 0, -D.legL / 2, 0, D.legT * 0.88, D.legL, D.legT * 0.9);
-      P(kn, 'box', o.shoes, 0, -D.legL - D.foot / 2 + 0.005, 0.035, D.legT * 0.95, D.foot, 0.22 * lk);
+      this.add(kn, capsGeo(t * 0.43, t * 0.3, D.legL), o.bareLegs ? o.skin : o.pants, mtx(0, 0, 0));
+      if (o.boots) this.add(kn, capsGeo(t * 0.47, t * 0.37, D.legL * 0.62), o.shoes, mtx(0, -D.legL * 0.36, 0));
+      this.add(kn, sphGeo(10, 8), o.shoes, mtx(0, -D.legL - 0.022, 0.045, t * 0.72, 0.07, 0.21));
       return [hp, kn];
     };
     [this.lgL, this.knL] = leg(1);
     [this.lgR, this.knR] = leg(-1);
+    this.building = true;
     for (const ex of o.extras) this.addExtra(ex);
+    this.building = false;
+    this.finalize();
     root.scale.setScalar(o.scale);
     this.pose = blankPose(); this.base = blankPose(); this.act = null; this.stance = null; this.stanceW = 0; this.stanceName = null;
     this.phase = 0; this.speed = 0; this.runSpeed = 4.5; this.blinkT = frand(1, 4); this.lookTarget = null; this.lookYaw = 0; this.lookPitch = 0;
-    this.talking = false; this.flashT = 0; this.capeSwing = 0; this.weapon = null; this.idleSeed = Math.random() * 10;
+    this.talking = false; this.flashT = 0; this.capeSwing = 0; this.weapon = null; this.idleSeed = Math.random() * 10; this.talkT = 0;
     this.breathe = 1;
   }
-  mat(hex) {
-    if (!this.mats[hex]) { const m = new T.MeshLambertMaterial({ color: hex }); this.mats[hex] = m; this.allMats.push(m); }
-    return this.mats[hex];
+  // malzeme anahtarı: renk, '|2' çift yüz (kontursuz)
+  mat(key) {
+    if (!this.mats[key]) {
+      const [hex, flag] = key.split('|');
+      const soft = hex === this.o.skin;
+      const m = TOON.mat(hex, flag === '2' ? { side: T.DoubleSide } : (flag === 'm' || soft) ? { gradientMap: TOON.gradSoft } : {});
+      this.mats[key] = m; this.allMats.push(m);
+    }
+    return this.mats[key];
   }
-  addHair(style, c) {
-    const D = this.D, h = this.head, P = this.P, W = D.headW, H = D.headH, Dd = D.headD;
-    if (style === 'bald') return;
-    const cap = () => { P(h, 'box', c, 0, H * 0.9, -0.005, W * 1.08, H * 0.28, Dd * 1.08); P(h, 'box', c, 0, H * 0.6, -Dd * 0.47, W * 1.08, H * 0.62, Dd * 0.18); P(h, 'box', c, W * 0.5, H * 0.68, -Dd * 0.12, 0.03, H * 0.38, Dd * 0.75); P(h, 'box', c, -W * 0.5, H * 0.68, -Dd * 0.12, 0.03, H * 0.38, Dd * 0.75); };
-    cap();
+  add(group, geo, key, m) { this.parts.push({ group, geo, key, m }); }
+  finalize() {
+    const buckets = new Map();
+    for (const p of this.parts) { const k = p.group.uuid + '#' + p.key; if (!buckets.has(k)) buckets.set(k, { group: p.group, key: p.key, list: [] }); buckets.get(k).list.push({ geo: p.geo, m: p.m }); }
+    for (const [, b] of buckets) {
+      const g = mergeParts(b.list);
+      const mesh = new T.Mesh(g, this.mat(b.key)); mesh.castShadow = true; b.group.add(mesh); this.meshes.push(mesh);
+      if (!b.key.endsWith('|2')) { const ol = new T.Mesh(g, TOON.outline); ol.userData.noBake = true; ol.userData.outline = true; b.group.add(ol); this.outlines.push(ol); }
+    }
+    for (const p of this.parts) p.geo.dispose();
+    this.parts = [];
+  }
+  faceTexFor(expr, eyes, mouth) {
+    const k = expr + '|' + eyes + '|' + mouth;
+    if (!this.faceTex[k]) this.faceTex[k] = faceTexture(this.faceF, expr, eyes, mouth);
+    return this.faceTex[k];
+  }
+  setExpression(e) { this.expr = e || 'neutral'; }
+  // --- saç ---
+  buildHair(style, color) {
+    const D = this.D, h = this.head, W = D.headW, H = D.headH, Dd = D.headD, c = this.hc, o = this.o;
+    const deg = Math.PI / 180;
+    const S = (th, ph, k = 1.0) => V3(Math.sin(th * deg) * Math.sin(ph * deg) * W / 2 * k, c.y + Math.cos(th * deg) * H / 2 * k, c.z + Math.sin(th * deg) * Math.cos(ph * deg) * Dd / 2 * k);
+    const N = (th, ph) => V3(Math.sin(th * deg) * Math.sin(ph * deg) / W, Math.cos(th * deg) / H, Math.sin(th * deg) * Math.cos(ph * deg) / Dd).normalize();
+    const key = color, cone = () => new T.ConeGeometry(0.5, 1, 6), flat = () => new T.ConeGeometry(0.5, 1, 4), frus = (a) => new T.CylinderGeometry(0.5 * a, 0.5, 1, 7);
+    const spike = (th, ph, dir, len, w, grp = h) => { this.add(grp, cone(), key, alongMatrix(S(th, ph, 0.96), dir, len, w, w * 0.72)); };
+    const clump = (th, ph, dir, len, w) => { this.add(h, flat(), key, alongMatrix(S(th, ph, 1.0), dir, len, w, w * 0.32, Math.PI / 4)); };
+    const lock = (from, dirs, lens, w, grp = h) => {
+      let p = from.clone(), ww = w;
+      dirs.forEach((d, i) => { const last = i === dirs.length - 1; const dn = d.clone().normalize(); this.add(grp, last ? cone() : frus(0.82), key, alongMatrix(p, dn, lens[i] * 1.06, ww, ww * 0.75)); p.addScaledVector(dn, lens[i]); ww *= 0.82; });
+      return p;
+    };
+    const cap = (k0 = 1.075, thMax = 0.37) => { const k = k0 + 0.02;
+      this.add(h, new T.SphereGeometry(0.5, 20, 12, 0, TAU, 0, Math.PI * thMax), key, mtx(c.x, c.y, c.z, W * k, H * k, Dd * k));
+      this.add(h, new T.SphereGeometry(0.5, 16, 12, Math.PI * 1.5 - 1.35, 2.7, Math.PI * 0.25, Math.PI * 0.47), key, mtx(c.x, c.y, c.z - 0.004, W * k, H * k, Dd * k));
+      for (const s of [-1, 1]) this.add(h, new T.SphereGeometry(0.5, 10, 10, s > 0 ? 0 : Math.PI, Math.PI, Math.PI * 0.25, Math.PI * 0.32), key, mtx(c.x, c.y, c.z - 0.01, W * k * 1.01, H * k, Dd * k * 0.9));
+    };
+    const down = V3(0, -1, 0);
+    const bangs = (n, spread, th, len, w, fwd = 0.32, sweep = 0) => { n = Math.max(3, Math.round(n * 0.7)); for (let i = 0; i < n; i++) { const ph = -spread + (2 * spread) * (n === 1 ? 0.5 : i / (n - 1)); const L = len * rnd(0.9, 1.1); const dir = N(th, ph).multiplyScalar(0.3).add(V3(Math.sin(ph * deg) * 0.18 + sweep, -1, fwd)); clump(th - 4, ph, dir, L, w * 2.0 * rnd(0.9, 1.1)); } };
+    const sideLocks = (len, w, th = 72, ph = 66, segs = 2) => { for (const s of [-1, 1]) { const from = S(th, s * ph, 0.98); const dirs = segs === 2 ? [V3(s * 0.12, -1, 0.12), V3(s * 0.05, -1, 0.06)] : [V3(s * 0.1, -1, 0.1)]; lock(from, dirs, segs === 2 ? [len * 0.45, len * 0.55] : [len], w); } };
+    const backSpikes = (len, w, from = 80, to = 280, step = 25, th = 88) => { for (let ph = from; ph <= to; ph += step) { const dir = N(th, ph).multiplyScalar(0.55).add(V3(0, -0.75, 0)); spike(th + rnd(-6, 6), ph, dir, len * rnd(0.85, 1.15), w); } };
     switch (style) {
-      case 'short': P(h, 'box', c, 0, H * 0.84, Dd * 0.45, W * 1.0, H * 0.12, 0.05); break;
-      case 'messy':
-        P(h, 'box', c, -W * 0.18, H * 0.82, Dd * 0.46, W * 0.5, H * 0.18, 0.05, 0.2, 0, 0.15);
-        P(h, 'box', c, W * 0.2, H * 0.8, Dd * 0.46, W * 0.45, H * 0.2, 0.05, 0.25, 0, -0.2);
-        for (let i = 0; i < 5; i++) P(h, 'box', c, (i - 2) * W * 0.2, H * 1.04, (i % 2 - 0.4) * Dd * 0.3, W * 0.22, H * 0.16, Dd * 0.3, rnd(-0.4, 0.4), rnd(-0.5, 0.5), rnd(-0.4, 0.4));
-        break;
-      case 'long': P(h, 'box', c, 0, H * 0.22, -Dd * 0.42, W * 1.12, H * 1.1, Dd * 0.22); P(h, 'box', c, W * 0.5, H * 0.35, -Dd * 0.05, 0.05, H * 0.8, Dd * 0.6); P(h, 'box', c, -W * 0.5, H * 0.35, -Dd * 0.05, 0.05, H * 0.8, Dd * 0.6); P(h, 'box', c, 0, H * 0.84, Dd * 0.45, W * 1.0, H * 0.14, 0.05); break;
-      case 'ponytail': P(h, 'box', c, 0, H * 0.84, Dd * 0.45, W * 1.0, H * 0.12, 0.05); P(h, 'box', c, 0, H * 0.75, -Dd * 0.6, 0.07, 0.07, 0.07); { const pt = new T.Group(); pt.position.set(0, H * 0.75, -Dd * 0.62); h.add(pt); P(pt, 'box', c, 0, -H * 0.5, -0.02, 0.08, H * 1.0, 0.07); this.tail = pt; } break;
-      case 'bun': P(h, 'box', c, 0, H * 0.84, Dd * 0.45, W * 1.0, H * 0.12, 0.05); P(h, 'ico0', c, 0, H * 1.0, -Dd * 0.45, 0.13, 0.12, 0.12); break;
-      case 'bob': P(h, 'box', c, 0, H * 0.42, -Dd * 0.42, W * 1.12, H * 0.7, Dd * 0.22); P(h, 'box', c, W * 0.52, H * 0.45, -0.01, 0.05, H * 0.62, Dd * 0.8); P(h, 'box', c, -W * 0.52, H * 0.45, -0.01, 0.05, H * 0.62, Dd * 0.8); P(h, 'box', c, 0, H * 0.82, Dd * 0.46, W * 1.02, H * 0.18, 0.05); break;
-      case 'braid': P(h, 'box', c, 0, H * 0.84, Dd * 0.45, W * 1.0, H * 0.12, 0.05); { const pt = new T.Group(); pt.position.set(0, H * 0.4, -Dd * 0.55); h.add(pt); for (let i = 0; i < 5; i++) P(pt, 'box', c, 0, -i * 0.07, -0.01, 0.065 - i * 0.004, 0.075, 0.065, 0, i % 2 ? 0.4 : -0.4, 0); this.tail = pt; } break;
-      case 'curly': for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; P(h, 'ico0', c, Math.cos(a) * W * 0.42, H * (0.95 + 0.05 * Math.sin(a * 3)), Math.sin(a) * Dd * 0.42 - 0.02, 0.12, 0.1, 0.12); } P(h, 'box', c, 0, H * 0.84, Dd * 0.45, W * 0.9, H * 0.14, 0.06); break;
-      case 'slick': P(h, 'box', c, 0, H * 0.98, 0, W * 1.1, H * 0.12, Dd * 1.1, 0, 0, 0.06); P(h, 'box', c, W * 0.15, H * 0.9, Dd * 0.47, W * 0.8, H * 0.1, 0.04, 0, 0, 0.15); break;
-      case 'spiky': for (let i = 0; i < 7; i++) P(h, 'cone4', c, (i - 3) * W * 0.15, H * 1.05, rnd(-0.06, 0.04), 0.09, 0.14, 0.09, rnd(-0.6, 0.2), 0, (i - 3) * 0.15); break;
-      case 'tied': P(h, 'box', c, 0, H * 0.84, Dd * 0.45, W * 1.0, H * 0.12, 0.05); P(h, 'box', c, 0, H * 0.55, -Dd * 0.62, 0.11, 0.11, 0.08); break;
+      case 'bald': return;
+      case 'baldRing': for (let ph = 70; ph <= 290; ph += 22) this.add(h, sphGeo(8, 6), key, mtx(...S(92, ph, 1.0).toArray(), H * 0.22, H * 0.2, H * 0.18)); return;
+      case 'messy': case 'spiky': {
+        cap(1.07, 0.36);
+        bangs(7, 46, 40, H * 0.4, H * 0.19, 0.34);
+        for (let i = 0; i < 10; i++) { const ph = i * 36 + rnd(-10, 10), th = rnd(14, 34); const dir = N(th, ph).add(V3(0, style === 'spiky' ? 0.7 : 0.15, -0.45)); spike(th, ph, dir, H * rnd(0.26, 0.36), H * 0.24); }
+        backSpikes(H * 0.42, H * 0.24, 75, 285, 21);
+        for (const s of [-1, 1]) spike(78, s * 74, V3(s * 0.15, -1, 0.15), H * 0.42, H * 0.14);
+        return;
+      }
+      case 'short': {
+        cap(1.06, 0.38);
+        bangs(5, 40, 38, H * 0.3, H * 0.2, 0.4, 0.35);
+        backSpikes(H * 0.26, H * 0.22, 80, 280, 25, 86);
+        for (const s of [-1, 1]) spike(76, s * 76, V3(0, -1, 0.1), H * 0.26, H * 0.14);
+        return;
+      }
+      case 'curly': {
+        cap(1.06, 0.4);
+        for (let th = 8; th <= 92; th += 14) { const n = Math.max(1, Math.round(Math.sin(th * deg) * 13)); for (let i = 0; i < n; i++) { const ph = i / n * 360 + th * 3; const pw = ((ph % 360) + 360) % 360; if ((pw < 50 || pw > 310) && th > 46) continue; this.add(h, sphGeo(8, 6), key, mtx(...S(th, ph, 1.04).toArray(), H * 0.2, H * 0.18, H * 0.2, rnd(0, 3), rnd(0, 3))); } }
+        for (let i = 0; i < 5; i++) { const ph = -40 + i * 20; this.add(h, sphGeo(8, 6), key, mtx(...S(50, ph, 1.05).toArray(), H * 0.19, H * 0.17, H * 0.15)); }
+        return;
+      }
+      case 'slick': {
+        cap(1.08, 0.4);
+        for (let i = 0; i < 5; i++) { const ph = -34 + i * 17; spike(36, ph, V3(Math.sin(ph * deg) * 0.2, 0.55, -1), H * 0.55, H * 0.24); }
+        spike(40, -38, V3(1, -0.25, 0.45), H * 0.5, H * 0.17);
+        backSpikes(H * 0.22, H * 0.24, 110, 250, 28, 92);
+        return;
+      }
+      case 'long': case 'bob': {
+        cap(1.07, 0.38);
+        bangs(9, 50, 40, H * (style === 'bob' ? 0.37 : 0.39), H * 0.15, 0.26);
+        const L = style === 'bob' ? H * 0.9 : H * (o.hairLen || 2.3);
+        const panel = new T.CylinderGeometry(W * 0.58, W * (style === 'bob' ? 0.62 : 0.74), L, 18, 1, true, Math.PI - 1.45, 2.9);
+        this.add(h, panel, key + '|2', mtx(0, c.y - L / 2 + H * 0.05, c.z - 0.012, 1, 1, Dd / W * 0.98));
+        for (let i = 0; i < 9; i++) { const a = Math.PI - 1.35 + i * 2.7 / 8; const from = V3(Math.sin(a) * W * 0.66, c.y - L + H * 0.12, c.z + Math.cos(a) * W * 0.66 * Dd / W); this.add(h, cone(), key, alongMatrix(from, V3(Math.sin(a) * 0.15, -1, Math.cos(a) * 0.1), H * 0.32, H * 0.2, H * 0.12)); }
+        this.add(h, new T.CylinderGeometry(W * 0.57, W * 0.6, H * 0.5, 16, 1, true, Math.PI - 1.6, 3.2), key, mtx(0, c.y - H * 0.18, c.z - 0.008, 1, 1, Dd / W));
+        sideLocks(style === 'bob' ? H * 0.75 : H * 1.35, H * 0.17, 70, 64);
+        return;
+      }
+      case 'ponytail': case 'tied': {
+        cap(1.07, 0.38);
+        bangs(7, 44, 40, H * 0.38, H * 0.17, 0.3, style === 'ponytail' ? -0.25 : 0);
+        sideLocks(H * 0.55, H * 0.13, 74, 68, 1);
+        const tie = S(style === 'ponytail' ? 62 : 80, 180, 1.06);
+        this.add(h, sphGeo(8, 6), shade(color, 0.6), mtx(...tie.toArray(), H * 0.16, H * 0.16, H * 0.16));
+        const pt = new T.Group(); pt.position.copy(tie); h.add(pt); this.tail = pt;
+        const z = V3(0, 0, 0);
+        const lens = style === 'ponytail' ? [H * 0.35, H * 0.7, H * 0.6, H * 0.45] : [H * 0.3, H * 0.45, H * 0.35];
+        const dirs = style === 'ponytail' ? [V3(0, 0.25, -1), V3(0, -1, -0.45), V3(0, -1, -0.1), V3(0, -1, 0.05)] : [V3(0, -0.3, -1), V3(0, -1, -0.4), V3(0, -1, -0.1)];
+        for (const off of [-1, 0, 1]) lock(V3(off * H * 0.06, 0, 0), dirs.map(d => d.clone().add(V3(off * 0.08, 0, 0))), lens, H * (off ? 0.2 : 0.28), pt);
+        return;
+      }
+      case 'braid': {
+        cap(1.07, 0.38);
+        bangs(7, 44, 40, H * 0.38, H * 0.16, 0.3);
+        sideLocks(H * 0.5, H * 0.13, 74, 66, 1);
+        const pt = new T.Group(); pt.position.copy(S(108, 180, 0.98)); h.add(pt); this.tail = pt;
+        const n = o.braidLen || 8;
+        for (let i = 0; i < n; i++) { const s = H * (0.26 - i * 0.012); this.add(pt, sphGeo(9, 7), key, mtx((i % 2 ? 1 : -1) * H * 0.03, -i * H * 0.17, -0.02 - i * 0.004, s, s * 1.2, s * 0.9)); }
+        this.add(pt, sphGeo(8, 6), shade(color, 0.55), mtx(0, -n * H * 0.17 + H * 0.06, -0.05, H * 0.12, H * 0.08, H * 0.12));
+        this.add(pt, cone(), key, alongMatrix(V3(0, -n * H * 0.17 + H * 0.04, -0.05), down, H * 0.28, H * 0.18, H * 0.14));
+        return;
+      }
+      case 'bun': {
+        cap(1.07, 0.4);
+        bangs(5, 42, 40, H * 0.32, H * 0.16, 0.32, 0.3);
+        for (const s of [-1, 1]) spike(76, s * 70, V3(s * 0.1, -1, 0.15), H * 0.55, H * 0.1);
+        this.add(h, sphGeo(12, 10), key, mtx(...S(58, 180, 1.18).toArray(), H * 0.4, H * 0.36, H * 0.36));
+        this.add(h, new T.TorusGeometry(0.5, 0.12, 6, 14), shade(color, 0.55), mtx(...S(64, 180, 1.06).toArray(), H * 0.34, H * 0.34, H * 0.34, 0.7));
+        return;
+      }
     }
   }
+  // --- ekler ---
   addExtra(ex) {
-    const D = this.D, P = this.P, o = this.o;
+    const D = this.D, o = this.o;
     const type = typeof ex === 'string' ? ex : ex.t; const c = ex.c || '#555';
+    const sx = (1 - 0.08 * o.child) * (o.wide || 1), dep = D.depth;
+    const skirt = (top, L, hem, phi0 = 0, phiL = TAU, ruff = 0.05) => {
+      const g = latheGeo([[hem, -L], [hem * 0.96, -L * 0.7], [(top + hem) / 2 * 0.98, -L * 0.42], [top * 1.04, -0.02], [top * 0.98, 0.04]], 22, phi0, phiL);
+      const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i); if (y < -L * 0.5) { const x = p.getX(i), z = p.getZ(i), a = Math.atan2(x, z), k = 1 + ruff * Math.sin(a * 9) * ((-y - L * 0.5) / (L * 0.5)); p.setX(i, x * k); p.setZ(i, z * k); } }
+      g.computeVertexNormals(); return g;
+    };
     switch (type) {
-      case 'dress': { const L = ex.len || (D.legU + D.legL * 0.75); P(this.hips, 'tcyl8', c, 0, -L / 2 + 0.08, 0, D.waistW * 2.1, L, D.chestD * 2.1); break; }
-      case 'robe': { const L = D.hipH; P(this.hips, 'tcyl8', c, 0, -L / 2 + 0.06, 0, D.waistW * 2.3, L, D.chestD * 2.3); break; }
-      case 'skirtShort': { const L = D.legU * 0.7; P(this.hips, 'tcyl8', c, 0, -L / 2 + 0.06, 0, D.waistW * 1.9, L, D.chestD * 1.9); break; }
-      case 'coat': { const L = D.legU * 0.85; P(this.hips, 'tcyl8', c, 0, -L / 2 + 0.05, -0.01, D.waistW * 1.9, L, D.chestD * 1.8); break; }
-      case 'apron': P(this.hips, 'box', c, 0, -0.18, D.chestD * 0.5, D.waistW * 0.9, 0.42, 0.02); P(this.spine, 'box', c, 0, D.torso * 0.5, D.chestD * 0.52, D.waistW * 0.8, D.torso * 0.5, 0.02); break;
-      case 'vest': P(this.spine, 'box', c, 0, D.torso * 0.62, 0, D.chestW + 0.025, D.torso * 0.72, D.chestD + 0.025); break;
-      case 'belt': P(this.hips, 'box', c, 0, 0.1, 0, D.waistW + 0.05, 0.05, D.chestD * 0.98); P(this.hips, 'box', ex.buckle || '#c9a85a', 0, 0.1, D.chestD * 0.5, 0.05, 0.05, 0.02); break;
-      case 'trim': P(this.spine, 'box', c, 0, D.torso * 0.68, D.chestD / 2 + 0.006, 0.03, D.torso * 0.58, 0.01); P(this.spine, 'box', c, 0, D.torso * 0.97, 0, D.chestW + 0.01, 0.03, D.chestD + 0.01); break;
+      case 'dress': { const L = ex.len || (D.legU + D.legL * 0.78); this.add(this.hips, skirt(D.hipHalf * sx * 1.02, L, D.hipHalf * 1.75 + L * 0.12), c + '|2', mtx(0, 0.1, 0, 1, 1, 0.82)); break; }
+      case 'robe': { const L = D.hipH + 0.05; this.add(this.hips, skirt(D.hipHalf * sx * 1.05, L, D.hipHalf * 1.9 + 0.08, 0, TAU, 0.03), c + '|2', mtx(0, 0.1, 0, 1, 1, 0.85)); break; }
+      case 'skirtShort': { const L = D.legU * 0.62; this.add(this.hips, skirt(D.hipHalf * sx * 1.02, L, D.hipHalf * 1.6, 0, TAU, 0.07), c + '|2', mtx(0, 0.1, 0, 1, 1, 0.82)); break; }
+      case 'coat': { const L = D.legU * 0.9; this.add(this.hips, skirt(D.hipHalf * sx * 1.05, L, D.hipHalf * 1.55, 0.32, TAU - 0.64, 0.02), c + '|2', mtx(0, 0.1, 0, 1, 1, 0.85)); break; }
+      case 'apron': { const L = D.legU * 0.9; this.add(this.hips, skirt(D.hipHalf * sx * 1.12, L, D.hipHalf * 1.35, -0.75, 1.5, 0.02), c + '|2', mtx(0, 0.08, 0.01, 1, 1, 0.9)); this.add(this.spine, latheGeo([[0.16, 0.0], [0.17, 0.12], [0.15, 0.3]], 10, -0.5, 1.0), c + '|2', mtx(0, 0.02, 0.006, sx, D.torso / 0.53, dep * 1.18)); break; }
+      case 'vest': { const P = (o.female ? [[0.125, -0.02], [0.13, 0.17], [0.152, 0.29], [0.162, 0.38], [0.155, 0.45], [0.128, 0.5]] : [[0.158, -0.02], [0.17, 0.18], [0.194, 0.3], [0.208, 0.4], [0.204, 0.46], [0.176, 0.51]]); this.add(this.spine, latheGeo(P, 16, 0.3, TAU - 0.6), c + '|2', mtx(0, 0, 0, sx * 1.04, D.torso / 0.53, dep * 1.06)); break; }
+      case 'belt': { const r = D.waistHalf * sx * 1.12; this.add(this.hips, latheGeo([[r, 0.07], [r * 1.02, 0.1], [r, 0.13]], 16), c, mtx(0, 0, 0, 1, 1, dep * 1.03)); this.add(this.hips, sphGeo(6, 4), ex.buckle || '#c9a85a', mtx(0, 0.1, r * dep * 1.03, 0.045, 0.04, 0.02)); break; }
+      case 'trim': { this.add(this.spine, capsGeo(0.012, 0.012, D.torso * 0.5), c, mtx(0, D.torso * 0.96, D.chestHalf * dep * 0.98 * sx)); this.add(this.spine, new T.TorusGeometry(0.5, 0.08, 6, 18), c, mtx(0, D.torso * 0.97, 0, D.chestHalf * 1.15 * sx, D.chestHalf * 1.15 * dep, 0.25, Math.PI / 2)); break; }
       case 'armor': {
-        const m = c, t = ex.trim || '#c9a85a';
-        P(this.spine, 'box', m, 0, D.torso * 0.68, 0, D.chestW + 0.04, D.torso * 0.6, D.chestD + 0.05);
-        P(this.spine, 'box', shade(m, 0.85), 0, D.torso * 0.3, 0, D.waistW + 0.04, D.torso * 0.3, D.chestD * 0.95);
-        P(this.spine, 'box', t, 0, D.torso * 0.68, D.chestD / 2 + 0.03, 0.04, D.torso * 0.5, 0.01);
-        for (const [sh, s] of [[this.shL, 1], [this.shR, -1]]) P(sh, 'box', m, s * 0.02, 0.0, 0, D.armT * 1.7, 0.1, D.armT * 1.8, 0, 0, s * 0.3);
-        for (const kn of [this.knL, this.knR]) P(kn, 'box', m, 0, -D.legL * 0.45, 0.01, D.legT * 1.05, D.legL * 0.7, D.legT * 1.1);
+        const m = c + '|m', t = ex.trim || '#c9a85a';
+        const P = o.female ? [[0.128, 0.0], [0.135, 0.17], [0.158, 0.29], [0.17, 0.38], [0.162, 0.45], [0.134, 0.51], [0.08, 0.54]] : [[0.162, 0.0], [0.175, 0.18], [0.2, 0.3], [0.215, 0.4], [0.21, 0.46], [0.18, 0.51], [0.1, 0.545]];
+        this.add(this.spine, latheGeo(P, 16), m, mtx(0, 0, 0, sx * 1.05, D.torso / 0.53, dep * 1.1));
+        this.add(this.spine, capsGeo(0.016, 0.016, D.torso * 0.42), t, mtx(0, D.torso * 0.92, D.chestHalf * dep * 1.12 * sx));
+        for (const [sh, s] of [[this.shL, 1], [this.shR, -1]]) { this.add(sh, new T.SphereGeometry(0.5, 12, 8, 0, TAU, 0, Math.PI * 0.55), m, mtx(s * 0.01, 0.0, 0, D.armT * 2.1, D.armT * 1.5, D.armT * 2.0, 0, 0, s * -0.35)); this.add(sh, new T.TorusGeometry(0.5, 0.06, 5, 14), t, mtx(s * 0.01, -0.035, 0, D.armT * 2.0, D.armT * 2.0, D.armT * 1.6, Math.PI / 2, 0, s * -0.35)); }
+        for (const kn of [this.knL, this.knR]) this.add(kn, capsGeo(D.legT * 0.48, D.legT * 0.4, D.legL * 0.62), m, mtx(0, -D.legL * 0.08, 0.004));
+        for (const el of [this.elL, this.elR]) this.add(el, capsGeo(D.armT * 0.5, D.armT * 0.46, D.armL * 0.6), m, mtx(0, -D.armL * 0.38, 0));
         break;
       }
       case 'cape': {
-        const cp = this.cape = new T.Group(); cp.position.set(0, D.torso * 0.95, -D.chestD / 2 - 0.02); this.spine.add(cp);
-        const L = ex.len || (D.torso + D.hipH * 0.75);
-        P(cp, 'box', c, 0, -L / 2, -0.01, D.chestW * 1.15, L, 0.025);
-        if (ex.collar) P(this.spine, 'box', ex.collar, 0, D.torso * 0.96, 0, D.chestW + 0.05, 0.07, D.chestD + 0.06);
+        const cp = this.cape = new T.Group(); cp.position.set(0, D.torso * 0.93, -D.chestHalf * dep * 0.55); this.spine.add(cp);
+        const L = ex.len || (D.torso + D.hipH * 0.78); const rT = D.chestHalf * sx * 1.12, rB = rT * 1.65;
+        const g = new T.CylinderGeometry(rT, rB, L, 12, 3, true, Math.PI - 1.25, 2.5); g.translate(0, -L / 2, 0);
+        const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i); const k = 1 + 0.04 * Math.sin(Math.atan2(p.getX(i), p.getZ(i)) * 7) * (-y / L); p.setX(i, p.getX(i) * k); p.setZ(i, p.getZ(i) * k * 0.55 + 0.02); }
+        g.computeVertexNormals(); this.add(cp, g, c + '|2', mtx(0, 0, 0));
+        if (ex.collar) this.add(this.spine, new T.TorusGeometry(0.5, 0.16, 6, 16), ex.collar, mtx(0, D.torso * 0.97, 0, D.chestHalf * 1.25 * sx, D.chestHalf * 1.25 * dep, 0.3, Math.PI / 2));
         break;
       }
-      case 'hood': P(this.head, 'box', c, 0, D.headH * 0.6, -0.02, D.headW * 1.3, D.headH * 1.3, D.headD * 1.3); P(this.head, 'box', shade(c, 0.6), 0, D.headH * 0.55, D.headD * 0.62, D.headW * 1.05, D.headH * 0.95, 0.01); break;
-      case 'hoodDown': P(this.spine, 'box', c, 0, D.torso * 0.98, -D.chestD * 0.5, D.chestW * 0.8, 0.12, 0.12); break;
-      case 'hat': P(this.head, 'cyl12', c, 0, D.headH * 0.95, 0, D.headW * 2.2, 0.03, D.headD * 2.1); P(this.head, 'cone8', c, 0, D.headH * 1.12, 0, D.headW * 1.15, 0.22, D.headD * 1.15); break;
-      case 'cap': P(this.head, 'box', c, 0, D.headH * 0.98, 0, D.headW * 1.12, 0.07, D.headD * 1.12); P(this.head, 'box', c, 0, D.headH * 0.94, D.headD * 0.62, D.headW * 0.8, 0.02, 0.1); break;
-      case 'scarf': P(this.neck, 'box', c, 0, 0.03, 0, 0.18, 0.08, 0.17); P(this.spine, 'box', c, 0.06, D.torso * 0.75, D.chestD * 0.52, 0.06, D.torso * 0.35, 0.03); break;
-      case 'beard': P(this.head, 'box', c, 0, D.headH * 0.13, D.headD * 0.42, D.headW * 0.85, D.headH * 0.32, 0.07); P(this.head, 'box', c, 0, D.headH * 0.27, D.headD * 0.5, D.headW * 0.5, 0.03, 0.03); break;
-      case 'mustache': P(this.head, 'box', c, 0, D.headH * 0.27, D.headD * 0.51, D.headW * 0.5, 0.025, 0.03); break;
-      case 'satchel': P(this.hips, 'box', c, -D.waistW * 0.6, -0.05, 0.02, 0.06, 0.18, 0.16); P(this.spine, 'box', shade(c, 0.8), 0, D.torso * 0.6, D.chestD * 0.52, 0.03, D.torso * 0.9, 0.01, 0, 0, 0.75); break;
-      case 'sheath': P(this.hips, 'box', '#3b2a1e', D.waistW * 0.62, -0.25, -0.02, 0.05, 0.75, 0.08, 0.15, 0, 0.12); P(this.hips, 'box', '#c9a85a', D.waistW * 0.6, 0.12, 0.02, 0.06, 0.12, 0.06, 0.15, 0, 0.12); break;
-      case 'quiver': P(this.spine, 'cyl8', c, -0.08, D.torso * 0.6, -D.chestD * 0.62, 0.1, 0.45, 0.1, 0, 0, 0.35); for (let i = 0; i < 3; i++) P(this.spine, 'box', '#e8e0cc', -0.15 + i * 0.03, D.torso * 0.6 + 0.3, -D.chestD * 0.62, 0.02, 0.12, 0.02, 0, 0, 0.35); break;
-      case 'bowBack': { const g = new T.Group(); g.position.set(0.04, D.torso * 0.55, -D.chestD * 0.6); g.rotation.z = -0.4; this.spine.add(g); for (let i = -3; i <= 3; i++) P(g, 'box', c, Math.abs(i) * Math.abs(i) * 0.012, i * 0.11, 0, 0.03, 0.12, 0.03, 0, 0, -i * 0.12); P(g, 'box', '#ddd', 0.11, 0, 0, 0.005, 0.7, 0.005); break; }
-      case 'circlet': P(this.head, 'box', c, 0, D.headH * 0.78, 0, D.headW * 1.12, 0.025, D.headD * 1.12); P(this.head, 'octa', '#7fd0ff', 0, D.headH * 0.8, D.headD * 0.57, 0.04, 0.05, 0.02); break;
-      case 'necklace': P(this.spine, 'box', c, 0, D.torso * 0.86, D.chestD * 0.52, 0.04, 0.05, 0.02); break;
-      case 'bandage': P(this.head, 'box', c, 0, D.headH * 0.72, 0, D.headW * 1.1, 0.04, D.headD * 1.1); break;
-      case 'sash': P(this.spine, 'box', c, 0, D.torso * 0.55, 0, D.chestW + 0.02, 0.06, D.chestD + 0.02, 0, 0, 0.6); break;
+      case 'hood': { const H = D.headH, W = D.headW; this.add(this.head, new T.SphereGeometry(0.5, 16, 12, Math.PI * 1.5 - 1.9, 3.8, 0, Math.PI * 0.75), c + '|2', mtx(this.hc.x, this.hc.y + 0.01, this.hc.z - 0.01, W * 1.38, H * 1.32, D.headD * 1.35)); break; }
+      case 'hoodDown': this.add(this.spine, new T.TorusGeometry(0.5, 0.22, 7, 16), c, mtx(0, D.torso * 0.98, -0.03, D.chestHalf * 1.4, D.chestHalf * 1.2 * dep * 1.3, 0.5, Math.PI / 2 + 0.25)); break;
+      case 'hat': { const H = D.headH, W = D.headW; this.add(this.head, latheGeo([[0.02, 0.12], [0.3, 0.1], [0.36, 0.0], [0.62, -0.02], [0.66, -0.05], [0.6, -0.05], [0.3, -0.02], [0.02, -0.02]], 18), c, mtx(0, this.hc.y + H * 0.4, this.hc.z, W * 1.05, H * 1.1, D.headD * 1.05)); break; }
+      case 'cap': { const H = D.headH, W = D.headW; this.add(this.head, new T.SphereGeometry(0.5, 14, 8, 0, TAU, 0, Math.PI * 0.42), c, mtx(this.hc.x, this.hc.y + 0.004, this.hc.z, W * 1.14, H * 1.12, D.headD * 1.14)); this.add(this.head, sphGeo(10, 4), c, mtx(0, this.hc.y + H * 0.3, this.hc.z + D.headD * 0.55, W * 0.8, 0.02, D.headD * 0.42)); break; }
+      case 'scarf': this.add(this.neck, new T.TorusGeometry(0.5, 0.2, 7, 16), c, mtx(0, 0.03, 0, 0.13, 0.13, 0.32, Math.PI / 2)); this.add(this.spine, capsGeo(0.035, 0.03, D.torso * 0.35), c, mtx(0.05, D.torso * 0.94, D.chestHalf * dep * 0.95, 1, 1, 0.6)); break;
+      case 'beard': { const H = D.headH, W = D.headW; this.add(this.head, sphGeo(14, 10), c, mtx(0, this.hc.y - H * 0.43, this.hc.z + D.headD * 0.1, W * 0.78, H * 0.32, D.headD * 0.8)); this.faceF.mustache = c; this.faceF.beard = c; this.faceTex = {}; this.faceMat.map = this.faceTexFor('neutral', 'open', 'closed'); break; }
+      case 'mustache': this.faceF.mustache = c; this.faceTex = {}; this.faceMat.map = this.faceTexFor('neutral', 'open', 'closed'); break;
+      case 'satchel': this.add(this.hips, sphGeo(8, 6), c, mtx(-D.hipHalf * 1.05, -0.06, 0.03, 0.07, 0.17, 0.16)); this.add(this.spine, capsGeo(0.014, 0.014, D.torso * 0.95), shade(c, 0.8), mtx(D.chestHalf * 0.75, D.torso * 0.95, D.chestHalf * dep * 1.05, 1, 1, 1, 0, 0, 0.62)); break;
+      case 'sheath': this.add(this.hips, capsGeo(0.03, 0.022, 0.72), '#3b2a1e', mtx(D.hipHalf * 1.1, 0.12, -0.02, 1, 1, 1.4, 0.18, 0, 0.12)); this.add(this.hips, sphGeo(6, 4), '#c9a85a', mtx(D.hipHalf * 1.08, 0.15, -0.015, 0.09, 0.035, 0.04, 0.18, 0, 0.12)); break;
+      case 'quiver': this.add(this.spine, capsGeo(0.055, 0.045, 0.42), c, mtx(-0.07, D.torso * 0.92, -D.chestHalf * dep * 1.1, 1, 1, 1, 0, 0, 0.35)); for (let i = 0; i < 3; i++) this.add(this.spine, capsGeo(0.01, 0.01, 0.1), '#e8e0cc', mtx(-0.1 + i * 0.03 + 0.03, D.torso * 0.92 + 0.12, -D.chestHalf * dep * 1.1, 1, 1, 1, 0, 0, 0.35)); break;
+      case 'bowBack': { const g = new T.TorusGeometry(0.42, 0.018, 5, 20, Math.PI * 0.85); this.add(this.spine, g, c, mtx(0.04, D.torso * 0.55, -D.chestHalf * dep * 1.25, 1, 1, 1, 0, Math.PI / 2, Math.PI / 2 - 0.4)); break; }
+      case 'circlet': this.add(this.head, new T.TorusGeometry(0.5, 0.05, 5, 22), c, mtx(0, this.hc.y + D.headH * 0.24, this.hc.z, D.headW * 1.12, D.headD * 1.14, 0.3, Math.PI / 2 - 0.12)); this.add(this.head, new T.OctahedronGeometry(0.5), '#7fd0ff', mtx(0, this.hc.y + D.headH * 0.26, this.hc.z + D.headD * 0.57, 0.035, 0.05, 0.02)); break;
+      case 'necklace': this.add(this.spine, new T.TorusGeometry(0.5, 0.03, 4, 18), c, mtx(0, D.torso * 0.9, 0.02, D.chestHalf * 1.0, D.chestHalf * dep * 1.1, 0.5, Math.PI / 2 - 0.35)); this.add(this.spine, new T.OctahedronGeometry(0.5), '#7fd0ff', mtx(0, D.torso * 0.78, D.chestHalf * dep * 1.02, 0.03, 0.04, 0.02)); break;
+      case 'bandage': this.add(this.head, new T.TorusGeometry(0.5, 0.07, 5, 22), c, mtx(0, this.hc.y + D.headH * 0.18, this.hc.z, D.headW * 1.12, D.headD * 1.14, 0.35, Math.PI / 2 - 0.1)); break;
+      case 'sash': this.add(this.spine, new T.TorusGeometry(0.5, 0.05, 5, 20), c, mtx(0, D.torso * 0.55, 0, D.chestHalf * 2.15 * sx, D.chestHalf * 2.05 * dep, 0.6, Math.PI / 2, 0, 0.6)); break;
     }
+    if (!this.building && this.parts.length) this.finalize();
   }
   setWeapon(type) {
     if (this.weapon) { this.handR.remove(this.weapon); this.weapon = null; }
     if (!type) return;
     const g = new T.Group(); g.position.set(0, -0.06, 0.02);
-    const add = (t, c, x, y, z, sx, sy, sz, rx = 0) => { const m = new T.Mesh(prim(t), this.mat(c)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.x = rx; m.castShadow = true; g.add(m); return m; };
-    if (type === 'stick') { add('cyl5', '#7a5434', 0, 0, 0.32, 0.05, 0.95, 0.05, Math.PI / 2); add('box', '#6a4a2e', 0.02, 0, 0.62, 0.03, 0.05, 0.08); }
-    if (type === 'sword') { add('box', '#d8dde3', 0, 0, 0.52, 0.025, 0.06, 0.82); add('box', '#c9a85a', 0, 0, 0.1, 0.2, 0.04, 0.04); add('box', '#4a3020', 0, 0, 0.0, 0.035, 0.035, 0.16); }
-    if (type === 'woodsword') { add('box', '#a77b4e', 0, 0, 0.42, 0.03, 0.06, 0.66); add('box', '#6a4a2e', 0, 0, 0.08, 0.16, 0.04, 0.04); }
-    if (type === 'staff') { add('cyl6', '#4a3424', 0, 0.55, 0, 0.05, 1.7, 0.05); const gm = add('octa', '#9fe0ff', 0, 1.45, 0, 0.12, 0.18, 0.12); gm.material = new T.MeshBasicMaterial({ color: '#bff0ff' }); }
-    if (type === 'lantern') { add('box', '#3a3026', 0, -0.12, 0, 0.12, 0.16, 0.12); const l = add('box', '#ffd27a', 0, -0.12, 0, 0.09, 0.12, 0.09); l.material = new T.MeshBasicMaterial({ color: '#ffcf70' }); add('box', '#3a3026', 0, -0.02, 0, 0.02, 0.06, 0.02); }
-    if (type === 'bucket') { add('cyl8', '#6a5038', 0, -0.2, 0, 0.22, 0.24, 0.22); }
-    if (type === 'pitchfork') { add('cyl5', '#7a5434', 0, 0.3, 0, 0.045, 1.6, 0.045); for (let i = -1; i <= 1; i++) add('box', '#8a8d90', i * 0.05, 1.15, 0, 0.015, 0.25, 0.015); }
-    if (type === 'bowl') { add('cyl8', '#8a6a48', 0, -0.06, 0.06, 0.18, 0.07, 0.18); }
-    if (type === 'book') { add('box', '#6b2b2b', 0, -0.05, 0.05, 0.16, 0.04, 0.22); }
-    if (type === 'bread') { add('box', '#c8955a', 0, -0.05, 0.06, 0.13, 0.11, 0.3); add('box', '#a8743e', 0, 0.0, 0.06, 0.1, 0.03, 0.26); }
-    if (type === 'jar') { add('cyl8', '#b8c8a8', 0, -0.06, 0.04, 0.09, 0.11, 0.09); add('cyl8', '#6a5038', 0, 0.0, 0.04, 0.1, 0.03, 0.1); }
-    if (type === 'pouch') { add('sph8', '#7a5a3a', 0, -0.07, 0.05, 0.13, 0.12, 0.13); }
-    if (type === 'apple') { add('sph8', '#c83a2a', 0, -0.05, 0.05, 0.08, 0.08, 0.08); }
-    if (type === 'cup') { add('cyl8', '#9a8a70', 0, -0.05, 0.03, 0.08, 0.1, 0.08); }
+    const add = (geo, c, m) => { const k = c; const mesh = new T.Mesh(geo, this.mat(k)); mesh.applyMatrix4(m); mesh.castShadow = true; g.add(mesh); const ol = new T.Mesh(geo, TOON.outline); ol.applyMatrix4(m); g.add(ol); return mesh; };
+    const B = () => new T.BoxGeometry(1, 1, 1), C = (n = 8) => new T.CylinderGeometry(0.5, 0.5, 1, n), Sp = () => sphGeo(10, 8);
+    if (type === 'stick') { add(C(6), '#7a5434', mtx(0, 0, 0.32, 0.05, 0.95, 0.05, Math.PI / 2)); }
+    if (type === 'sword') { add(B(), '#d8dde3', mtx(0, 0, 0.52, 0.025, 0.06, 0.82)); add(B(), '#c9a85a', mtx(0, 0, 0.1, 0.2, 0.04, 0.04)); add(C(), '#4a3020', mtx(0, 0, 0, 0.035, 0.16, 0.035, Math.PI / 2)); }
+    if (type === 'woodsword') { add(B(), '#a77b4e', mtx(0, 0, 0.42, 0.03, 0.06, 0.66)); add(B(), '#6a4a2e', mtx(0, 0, 0.08, 0.16, 0.04, 0.04)); }
+    if (type === 'staff') { add(C(6), '#4a3424', mtx(0, 0.55, 0, 0.045, 1.7, 0.045)); const gm = new T.Mesh(new T.OctahedronGeometry(0.5), new T.MeshBasicMaterial({ color: '#bff0ff' })); gm.scale.set(0.12, 0.18, 0.12); gm.position.set(0, 1.45, 0); g.add(gm); }
+    if (type === 'lantern') { add(B(), '#3a3026', mtx(0, -0.12, 0, 0.12, 0.16, 0.12)); const l = new T.Mesh(new T.BoxGeometry(0.09, 0.12, 0.09), new T.MeshBasicMaterial({ color: '#ffcf70' })); l.position.set(0, -0.12, 0); g.add(l); }
+    if (type === 'bucket') { add(C(10), '#6a5038', mtx(0, -0.2, 0, 0.22, 0.24, 0.22)); }
+    if (type === 'pitchfork') { add(C(5), '#7a5434', mtx(0, 0.3, 0, 0.04, 1.6, 0.04)); for (let i = -1; i <= 1; i++) add(C(4), '#8a8d90', mtx(i * 0.05, 1.15, 0, 0.015, 0.25, 0.015)); }
+    if (type === 'bowl') { add(C(10), '#8a6a48', mtx(0, -0.06, 0.06, 0.18, 0.07, 0.18)); }
+    if (type === 'book') { add(B(), '#6b2b2b', mtx(0, -0.05, 0.05, 0.16, 0.04, 0.22)); }
+    if (type === 'cup') { add(C(10), '#9a8a70', mtx(0, -0.05, 0.03, 0.08, 0.1, 0.08)); }
+    if (type === 'bread') { add(Sp(), '#c8955a', mtx(0, -0.05, 0.06, 0.14, 0.11, 0.3)); }
+    if (type === 'jar') { add(C(10), '#b8c8a8', mtx(0, -0.06, 0.04, 0.09, 0.11, 0.09)); add(C(10), '#6a5038', mtx(0, 0.0, 0.04, 0.1, 0.03, 0.1)); }
+    if (type === 'pouch') { add(Sp(), '#7a5a3a', mtx(0, -0.07, 0.05, 0.13, 0.12, 0.13)); }
+    if (type === 'apple') { add(Sp(), '#c83a2a', mtx(0, -0.05, 0.05, 0.08, 0.08, 0.08)); }
+    if (type === 'sheaf') { add(C(8), '#d8b45a', mtx(0, 0.0, 0.18, 0.22, 0.75, 0.22, 0.4)); add(C(8), '#8a6a30', mtx(0, 0.0, 0.18, 0.24, 0.06, 0.24, 0.4)); }
+    if (type === 'charm') { add(new T.TorusGeometry(0.5, 0.15, 5, 12), '#a07848', mtx(0, -0.06, 0.05, 0.07, 0.07, 0.07)); }
     this.weapon = g; this.handR.add(g);
+  }
+  updateFace(dt) {
+    this.blinkT -= dt;
+    const blink = this.closedEyes || (this.blinkT < 0.12 && this.blinkT > 0);
+    if (this.blinkT < 0) this.blinkT = frand(2, 5);
+    let mouth = 'closed';
+    if (this.talking) { this.talkT += dt; mouth = Math.floor(this.talkT * 9) % 2 ? 'open' : 'closed'; }
+    const eyes = blink ? 'closed' : 'open';
+    const k = this.expr + '|' + eyes + '|' + mouth;
+    if (k !== this.faceState) { this.faceState = k; this.faceMat.map = this.faceTexFor(this.expr, eyes, mouth); }
+    // uzakta kontur kapalı
+    if (G.camera && (this._olT = (this._olT || 0) + dt) > 0.4) { this._olT = 0; const far = G.camera.position.distanceTo(this.root.getWorldPosition(_v3a)) > 34; for (const ol of this.outlines) ol.visible = !far; }
   }
   setStance(name, instant) { if (name === this.stanceName) return; this.prevStance = this.stance; this.prevW = this.stanceW; this.stance = name ? STANCES[name] : null; this.stanceName = name; this.stanceW = instant ? 1 : 0; if (instant) this.prevW = 0; }
   setUpper(name) { this.upperSt = name; this.upperW = 0; }
@@ -1063,11 +1411,7 @@ class Humanoid {
     P.hdY += this.lookYaw * 0.75; P.spY += this.lookYaw * 0.25; P.hdX += this.lookPitch;
     this.apply(P, dt, speed);
     // göz kırpma, konuşma
-    this.blinkT -= dt;
-    const blink = this.closedEyes || (this.blinkT < 0.12 && this.blinkT > 0);
-    if (this.blinkT < 0) this.blinkT = frand(2, 5);
-    for (const e of this.eyes) e.scale.y = blink ? 0.008 : (e === this.eyes[0] || e === this.eyes[2] ? 0.035 : 0.034) * (1 + 0.3 * this.o.child);
-    this.mouth.scale.y = this.talking ? 0.012 + Math.abs(Math.sin(G.t * 16)) * 0.03 : 0.012;
+    this.updateFace(dt);
     if (this.flashT > 0) { this.flashT -= dt; if (this.flashT <= 0) for (const m of this.allMats) m.emissive.set('#000000'); }
   }
   apply(P, dt, speed) {
@@ -1084,7 +1428,7 @@ class Humanoid {
     if (this.cape) { this.capeSwing = damp(this.capeSwing, -Math.min(speed, 5) * 0.12 - 0.04, 4, dt); this.cape.rotation.x = this.capeSwing + Math.sin(G.t * 2.3) * 0.03 - P.spX * 0.8; }
     if (this.tail) this.tail.rotation.x = -Math.min(speed, 5) * 0.08 + Math.sin(G.t * 3) * 0.05 - P.hdX;
   }
-  dispose() { for (const m of this.allMats) m.dispose(); }
+  dispose() { for (const m of this.allMats) m.dispose(); for (const k in this.faceTex) this.faceTex[k].dispose(); for (const m of this.meshes) m.geometry.dispose(); }
 }
 
 // Kalabalıklar için statik pişirme
@@ -1095,7 +1439,7 @@ function bakeHumanoid(b, opts, stance, x, y, z, ry, extraPose) {
   if (extraPose) { Object.assign(h.pose, extraPose); h.apply(h.pose, 0, 0); }
   h.root.position.set(x, y, z); h.root.rotation.y = ry;
   h.root.updateMatrixWorld(true);
-  h.root.traverse(m => { if (m.isMesh) b.addGeo(m.geometry, '#' + m.material.color.getHexString(), m.matrixWorld, 0.03); });
+  h.root.traverse(m => { if (m.isMesh && !m.userData.noBake && m.material.color) b.addGeo(m.geometry, '#' + m.material.color.getHexString(), m.matrixWorld, 0.03); });
   h.dispose();
 }
 
@@ -1125,16 +1469,17 @@ function randomNoble(female, opts = {}) {
 // ==== 06_props.js ====
 // ---------- Seviye sınıfı, çarpışma ve dekor parçaları ----------
 const COL = {
-  stone: '#8a8478', stoneD: '#6e695f', stoneL: '#a8a294', wall: '#d6c6a2', wall2: '#cbb58c', wall3: '#c2ae8a', beam: '#4e3624', beamL: '#6a4a30',
-  thatch: '#b08b4c', thatch2: '#9c7a40', tile: '#8a4636', tile2: '#6e3a30', slate: '#4b5262', wood: '#7a5638', woodD: '#5a3e28', woodL: '#9a7450',
-  grass: '#6b8c40', grass2: '#5c7d36', grassD: '#4d6a2e', dirt: '#9a7c56', dirtD: '#7e6446', leaf: '#4f7a34', leaf2: '#5e8a3a', leaf3: '#3f6a2c', pine: '#2f5a36', pine2: '#3a6a40',
-  trunk: '#5e4430', wheat: '#c9a650', wheat2: '#b8933e', hay: '#c8a85a', rock: '#8c877c', rock2: '#77736a', snow: '#eef2f6', snow2: '#dfe5ec', iron: '#4a4c50', gold: '#c9a85a', elonth: '#2f5a3a', elonth2: '#1f4a2c', cloth: '#a33a2a',
+  stone: '#9a9284', stoneD: '#77705f', stoneL: '#b8b1a0', wall: '#e8dcbf', wall2: '#e0cfa8', wall3: '#d9c69c', beam: '#5a3b26', beamL: '#7a5232',
+  thatch: '#c4964e', thatch2: '#b08440', thatchD: '#8a6430', tile: '#b0543c', tile2: '#8e4434', slate: '#56627a', wood: '#8a6240', woodD: '#5e4028', woodL: '#a87e52',
+  grass: '#7aa646', grass2: '#6a9a3c', grassD: '#5a8a34', grassL: '#94b858', dirt: '#b08a5e', dirtD: '#94744c', leaf: '#5f9a3a', leaf2: '#74ae44', leaf3: '#4c8432', leafL: '#9cc65a', pine: '#2f6a46', pine2: '#3c7c52',
+  trunk: '#6a4a32', wheat: '#e0b85a', wheat2: '#d0a446', hay: '#d8b462', rock: '#9d998e', rock2: '#86827a', snow: '#f4f7fb', snow2: '#e4eaf2', iron: '#4a4c52', gold: '#d4b062', elonth: '#2f6a42', elonth2: '#1f4a2c', cloth: '#b84a32',
 };
 class Level {
   constructor(id) {
     this.id = id; this.group = new T.Group(); this.b = new Builder(40); this.gb = new Builder(0); this.gb.jit = 0;
+    this.gb.stack = this.b.stack; // aynı dönüşüm yığını
     this.boxes = []; this.circles = []; this.anims = []; this.pts = {}; this.hf = null; this.bounds = null; this.camBox = null;
-    this.lights = []; this.winter = false; this.dyn = []; this.interact = [];
+    this.lights = []; this.winter = false; this.dyn = []; this.interact = []; this.smoke = []; this.flowerSpots = [];
   }
   h(x, z) { return this.hf ? this.hf(x, z) : 0; }
   addBox(x, z, hw, hd, ry = 0) { this.boxes.push({ x, z, hw, hd, c: Math.cos(ry), s: Math.sin(ry) }); }
@@ -1156,10 +1501,8 @@ class Level {
       let lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c;
       const qx = clamp(lx, -b.hw, b.hw), qz = clamp(lz, -b.hd, b.hd);
       const ex = lx - qx, ez = lz - qz, d2 = ex * ex + ez * ez;
-      if (d2 === 0) { // içeride
-        const px = b.hw - Math.abs(lx), pz = b.hd - Math.abs(lz);
-        if (px < pz) lx = Math.sign(lx || 1) * (b.hw + r); else lz = Math.sign(lz || 1) * (b.hd + r);
-      } else if (d2 < r * r) { const d = Math.sqrt(d2); lx = qx + ex / d * r; lz = qz + ez / d * r; } else continue;
+      if (d2 === 0) { const px = b.hw - Math.abs(lx), pz = b.hd - Math.abs(lz); if (px < pz) lx = Math.sign(lx || 1) * (b.hw + r); else lz = Math.sign(lz || 1) * (b.hd + r); }
+      else if (d2 < r * r) { const d = Math.sqrt(d2); lx = qx + ex / d * r; lz = qz + ez / d * r; } else continue;
       p.x = b.x + lx * b.c + lz * b.s; p.z = b.z - lx * b.s + lz * b.c;
     }
     if (this.bounds) { const B = this.bounds; p.x = clamp(p.x, B.x0 + r, B.x1 - r); p.z = clamp(p.z, B.z0 + r, B.z1 - r); }
@@ -1170,249 +1513,353 @@ class Level {
     for (const b of this.boxes) { const dx = x - b.x, dz = z - b.z; if (Math.abs(dx) > b.hw + b.hd + 1 && Math.abs(dz) > b.hw + b.hd + 1) continue; const lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c; if (Math.abs(lx) < b.hw + pad && Math.abs(lz) < b.hd + pad && b.hw > 0.6 && b.hd > 0.6) return true; }
     return false;
   }
+  occupied(x, z, pad = 0.4) { if (this.blocked(x, z, pad)) return true; for (const c of this.circles) if (Math.hypot(x - c.x, z - c.z) < c.r + pad) return true; return false; }
   update(dt) { for (const a of this.anims) a(dt); }
-  dispose() {
-    this.group.traverse(o => { if (o.isMesh || o.isPoints || o.isLine) { if (!Object.values(PRIM).includes(o.geometry)) o.geometry.dispose(); } });
-  }
+  dispose() { this.group.traverse(o => { if (o.isMesh || o.isPoints || o.isLine) { if (!Object.values(PRIM).includes(o.geometry) && !o.userData.shared) o.geometry.dispose(); } }); }
 }
 
-// Arazi: düz gölgeli üçgen ızgara, köşe renkleri fonksiyondan
+// ---- Arazi: yumuşak gölgeli, köşe renkli ızgara ----
 function terrain(L, x0, z0, x1, z1, step, colorFn) {
-  const nx = Math.ceil((x1 - x0) / step), nz = Math.ceil((z1 - z0) / step);
-  const N = nx * nz * 6; const pos = new Float32Array(N * 3), col = new Float32Array(N * 3), nor = new Float32Array(N * 3);
-  let o = 0; const c = new T.Color(); const a = new T.Vector3(), b = new T.Vector3(), cc = new T.Vector3(), n = new T.Vector3(), e1 = new T.Vector3(), e2 = new T.Vector3();
+  const nx = Math.ceil((x1 - x0) / step) + 1, nz = Math.ceil((z1 - z0) / step) + 1;
+  const pos = new Float32Array(nx * nz * 3), col = new Float32Array(nx * nz * 3); const c = new T.Color();
   const H = (x, z) => (L.th ? L.th(x, z) : L.h(x, z));
-  const tri = (p1, p2, p3) => {
-    a.set(...p1); b.set(...p2); cc.set(...p3); e1.subVectors(b, a); e2.subVectors(cc, a); n.crossVectors(e1, e2).normalize();
-    const mx = (p1[0] + p2[0] + p3[0]) / 3, mz = (p1[2] + p2[2] + p3[2]) / 3, my = (p1[1] + p2[1] + p3[1]) / 3;
-    c.set(colorFn(mx, mz, my, n.y)); const j = 1 + (hash2(mx * 1.3, mz * 1.7) - 0.5) * 0.08; c.multiplyScalar(j);
-    for (const p of [p1, p2, p3]) { pos[o * 3] = p[0]; pos[o * 3 + 1] = p[1]; pos[o * 3 + 2] = p[2]; nor[o * 3] = n.x; nor[o * 3 + 1] = n.y; nor[o * 3 + 2] = n.z; col[o * 3] = c.r; col[o * 3 + 1] = c.g; col[o * 3 + 2] = c.b; o++; }
-  };
-  for (let i = 0; i < nx; i++) for (let k = 0; k < nz; k++) {
-    const xa = x0 + i * step, xb = xa + step, za = z0 + k * step, zb = za + step;
-    const jx = (x, z) => x + (hash2(x * 0.7, z * 0.3) - 0.5) * step * 0.3, jz = (x, z) => z + (hash2(x * 0.2, z * 0.9) - 0.5) * step * 0.3;
-    const P = (x, z) => { const X = jx(x, z), Z = jz(x, z); return [X, H(X, Z), Z]; };
-    const A = P(xa, za), B = P(xb, za), C = P(xa, zb), D = P(xb, zb);
-    if ((i + k) % 2) { tri(A, C, B); tri(B, C, D); } else { tri(A, C, D); tri(A, D, B); }
+  for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) {
+    const x = x0 + i * step + (hash2(i * 0.7, k * 0.3) - 0.5) * step * 0.25, z = z0 + k * step + (hash2(i * 0.2, k * 0.9) - 0.5) * step * 0.25, y = H(x, z), o = (k * nx + i) * 3;
+    pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;
+    const ny = 1 - Math.min(1, Math.abs(H(x + 0.6, z) - y) + Math.abs(H(x, z + 0.6) - y)) * 0.6;
+    c.set(colorFn(x, z, y, ny)); const j = 1 + (fbm(x * 0.15, z * 0.15) - 0.45) * 0.16; c.multiplyScalar(j);
+    col[o] = c.r; col[o + 1] = c.g; col[o + 2] = c.b;
   }
-  const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('normal', new T.BufferAttribute(nor, 3)); g.setAttribute('color', new T.BufferAttribute(col, 3));
-  g.computeBoundingSphere();
+  const idx = [];
+  for (let k = 0; k < nz - 1; k++) for (let i = 0; i < nx - 1; i++) { const a = k * nx + i, b = a + 1, cc = a + nx, d = cc + 1; if ((i + k) % 2) idx.push(a, cc, b, b, cc, d); else idx.push(a, cc, d, a, d, b); }
+  const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('color', new T.BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere();
   const m = new T.Mesh(g, MAT.static); m.receiveShadow = true; m.matrixAutoUpdate = false; L.group.add(m); return m;
 }
 
-// --- Yapılar ---
-function peasantHouse(L, x, z, ry, o = {}) {
-  const b = L.b, w = o.w || rnd(4.2, 5.6), d = o.d || rnd(3.6, 4.4), h = o.h || rnd(2.3, 2.7), y = o.y !== undefined ? o.y : L.h(x, z) - 0.05;
-  const wall = o.wall || pick([COL.wall, COL.wall2, COL.wall3]), roof = o.roof || pick([COL.thatch, COL.thatch2, '#a88a52']);
-  b.begin(x, y, z, ry);
-  b.box(COL.stone, 0, -0.4, 0, w + 0.25, 0.55, d + 0.25);
-  b.box(wall, 0, 0.1, 0, w, h, d);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(COL.beam, sx * w / 2, 0.1, sz * d / 2, 0.2, h, 0.2);
-  b.box(COL.beam, 0, h * 0.55, d / 2 + 0.02, w, 0.12, 0.06); b.box(COL.beam, 0, h * 0.55, -d / 2 - 0.02, w, 0.12, 0.06);
-  b.box(COL.beam, 0, h + 0.05, 0, w + 0.15, 0.16, d + 0.15);
-  const rh = o.rh || 1.7, snowy = L.winter;
-  b.add('roof', roof, 0, h + 0.15, 0, d + 1.1, rh, w + 0.9, 0, Math.PI / 2, 0);
-  if (snowy) b.add('roof', COL.snow, 0, h + 0.36, 0, d + 0.9, rh * 0.9, w + 0.95, 0, Math.PI / 2, 0, 0.02);
-  // gable uçları
-  for (const sx of [-1, 1]) b.add('roof', wall, sx * (w / 2 - 0.02), h + 0.12, 0, d - 0.1, rh * 0.85, 0.06, 0, Math.PI / 2, 0);
-  const doorX = o.doorX !== undefined ? o.doorX : -w * 0.2;
-  b.box(COL.woodD, doorX, 0.1, d / 2 + 0.03, 0.95, 1.85, 0.08);
-  b.box(COL.beam, doorX, 1.92, d / 2 + 0.05, 1.15, 0.14, 0.1);
-  b.box(COL.stone, doorX, -0.15, d / 2 + 0.35, 1.1, 0.25, 0.6);
-  const lit = o.lit;
-  for (const wx of o.windows || [w * 0.25]) {
-    if (lit) L.gb.box('#ffc46b', wx, 1.0, d / 2 + 0.03, 0.62, 0.6, 0.04); else b.box('#2a2420', wx, 1.0, d / 2 + 0.03, 0.62, 0.6, 0.04);
-    b.box(COL.beamL, wx - 0.48, 0.95, d / 2 + 0.08, 0.32, 0.7, 0.05, 0, 0, 0); b.box(COL.beamL, wx + 0.48, 0.95, d / 2 + 0.08, 0.32, 0.7, 0.05);
-    b.box(COL.beam, wx, 0.95, d / 2 + 0.06, 0.75, 0.06, 0.06);
+// ---- Rüzgârla sallanan instanced bitki örtüsü ----
+const WIND = { time: { value: 0 } };
+function windMaterial(opts = {}) {
+  const m = new T.MeshToonMaterial(Object.assign({ gradientMap: TOON.gradSoft, vertexColors: true, side: T.DoubleSide }, opts));
+  m.onBeforeCompile = sh => {
+    sh.uniforms.time = WIND.time;
+    sh.vertexShader = 'uniform float time;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      #ifdef USE_INSTANCING
+      vec4 iw = instanceMatrix * vec4(0.0,0.0,0.0,1.0);
+      #else
+      vec4 iw = vec4(0.0);
+      #endif
+      float hh = max(transformed.y, 0.0);
+      float sw = sin(time * 1.7 + iw.x * 0.45 + iw.z * 0.38) * 0.10 + sin(time * 3.3 + iw.x * 1.3 - iw.z) * 0.035;
+      transformed.x += sw * hh * hh * 2.4; transformed.z += sw * hh * hh * 1.3;`);
+  };
+  return m;
+}
+const VEG = {};
+function vegGeo(type) {
+  if (VEG[type]) return VEG[type];
+  const pos = [], col = [], nor = []; const C = new T.Color();
+  const tri = (a, b, c, ca, cb, cc) => { pos.push(...a, ...b, ...c); for (const cx of [ca, cb, cc]) { C.set(cx); col.push(C.r, C.g, C.b); } nor.push(0, 1, 0, 0, 1, 0, 0, 1, 0); };
+  if (type === 'grass') {
+    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + i * 0.7, r = 0.05 + (i % 3) * 0.04, h = 0.32 + (i % 3) * 0.1, w = 0.035; const bx = Math.cos(a) * r, bz = Math.sin(a) * r, lx = Math.cos(a + 1.57) * w, lz = Math.sin(a + 1.57) * w, tx = bx * 1.8, tz = bz * 1.8;
+      tri([bx - lx, 0, bz - lz], [bx + lx, 0, bz + lz], [tx, h, tz], '#4f7f2c', '#4f7f2c', '#b8d870'); }
+  } else if (type === 'wheat') {
+    for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + 0.4, r = 0.06, bx = Math.cos(a) * r, bz = Math.sin(a) * r, lx = Math.cos(a + 1.57) * 0.02, lz = Math.sin(a + 1.57) * 0.02, h = 0.85 + i * 0.07;
+      tri([bx - lx, 0, bz - lz], [bx + lx, 0, bz + lz], [bx * 1.4, h, bz * 1.4], '#9a8a3a', '#9a8a3a', '#d8b858');
+      const hx = bx * 1.4, hz = bz * 1.4; tri([hx - 0.035, h - 0.05, hz], [hx + 0.035, h - 0.05, hz], [hx, h + 0.16, hz], '#e8c468', '#e8c468', '#f4dc8a'); tri([hx, h - 0.05, hz - 0.035], [hx, h - 0.05, hz + 0.035], [hx, h + 0.16, hz], '#d8b058', '#d8b058', '#f0d27a'); }
+  } else if (type === 'flower') {
+    tri([-0.012, 0, 0], [0.012, 0, 0], [0, 0.22, 0], '#4a7a2a', '#4a7a2a', '#6a9a3a');
+    for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; tri([0, 0.22, 0], [Math.cos(a) * 0.06, 0.24, Math.sin(a) * 0.06], [Math.cos(a + 0.9) * 0.06, 0.24, Math.sin(a + 0.9) * 0.06], '#ffe070', '#ffffff', '#ffffff'); }
+  } else if (type === 'reed') {
+    for (let i = 0; i < 4; i++) { const a = i * 1.7, bx = Math.cos(a) * 0.08, bz = Math.sin(a) * 0.08, h = 0.9 + i * 0.15; tri([bx - 0.02, 0, bz], [bx + 0.02, 0, bz], [bx * 1.5, h, bz * 1.5], '#4a6a2a', '#4a6a2a', '#8aa04a'); tri([bx * 1.45 - 0.025, h - 0.25, bz * 1.45], [bx * 1.45 + 0.025, h - 0.25, bz * 1.45], [bx * 1.5, h + 0.02, bz * 1.5], '#6a4a2a', '#6a4a2a', '#8a6a3a'); }
   }
-  if (lit) L.gb.box('#ffb860', -w * 0.25, 1.0, -d / 2 - 0.03, 0.55, 0.55, 0.04);
-  if (o.chimney !== false) { b.box(COL.stone, w * 0.3, h * 0.6, -d * 0.18, 0.55, h * 0.4 + rh + 0.4, 0.55); if (snowy) b.box(COL.snow, w * 0.3, h + rh + 0.2, -d * 0.18, 0.6, 0.1, 0.6, 0, 0, 0); }
-  // yan duvar dekoru
-  if (rng() < 0.6) { b.box(COL.woodL, w / 2 + 0.25, -0.15, d * 0.2, 0.4, 0.8, 1.2); b.box(COL.woodD, w / 2 + 0.25, 0.65, d * 0.2, 0.42, 0.05, 1.22); }
+  const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new T.Float32BufferAttribute(col, 3)); g.setAttribute('normal', new T.Float32BufferAttribute(nor, 3)); g.computeBoundingSphere();
+  VEG[type] = g; return g;
+}
+// pts: [[x, z, tintHex?, scale?], ...]
+function vegetation(L, type, pts, o = {}) {
+  if (!pts.length) return null;
+  const mesh = new T.InstancedMesh(vegGeo(type), windMaterial(), pts.length); mesh.userData.shared = true;
+  const m = new T.Matrix4(), q = new T.Quaternion(), s = new T.Vector3(), p = new T.Vector3(), e = new T.Euler(), c = new T.Color();
+  pts.forEach((pt, i) => { const sc = (pt[3] || 1) * frand(0.75, 1.25); p.set(pt[0], L.h(pt[0], pt[1]) - 0.02, pt[1]); e.set(0, frand(0, TAU), 0); q.setFromEuler(e); s.set(sc, sc * frand(0.85, 1.2), sc); m.compose(p, q, s); mesh.setMatrixAt(i, m); c.set(pt[2] || '#ffffff'); mesh.setColorAt(i, c); });
+  mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  mesh.receiveShadow = true; mesh.castShadow = false; mesh.frustumCulled = false; L.add(mesh); return mesh;
+}
+
+// ---- Su ----
+function waterMaterial(o = {}) {
+  const v3 = h => { const c = hexRGB(h); return new T.Vector3(c.r, c.g, c.b); };
+  const m = new T.ShaderMaterial({
+    uniforms: { time: WIND.time, deep: { value: v3(o.deep || '#2f6f86') }, shallow: { value: v3(o.shallow || '#57a7b4') }, foam: { value: v3('#e8f6f8') }, fogC: { value: new T.Vector3(1, 1, 1) }, fogN: { value: 50 }, fogF: { value: 200 }, opacity: { value: o.opacity || 0.9 }, ice: { value: o.ice ? 1 : 0 } },
+    vertexShader: `uniform float time; varying vec3 vW; void main(){ vec4 w = modelMatrix*vec4(position,1.0); w.y += (sin(w.x*0.7+time*1.3)*0.025 + cos(w.z*0.9+time*1.1)*0.025); vW = w.xyz; gl_Position = projectionMatrix*viewMatrix*w; }`,
+    fragmentShader: `uniform float time; uniform vec3 deep; uniform vec3 shallow; uniform vec3 foam; uniform vec3 fogC; uniform float fogN; uniform float fogF; uniform float opacity; uniform float ice; varying vec3 vW;
+      void main(){ float s = sin(vW.x*1.6 + time*1.5*(1.0-ice) + sin(vW.z*0.7+time*(1.0-ice))*1.6)*sin(vW.z*2.0 - time*1.1*(1.0-ice));
+        float band = smoothstep(0.78, 0.96, s); vec3 c = mix(deep, shallow, 0.5 + 0.5*sin(vW.x*0.21 + vW.z*0.17)); c = mix(c, foam, band*0.55);
+        vec3 v = normalize(cameraPosition - vW); float fr = pow(1.0 - clamp(v.y, 0.0, 1.0), 3.0); c = mix(c, vec3(0.86,0.94,1.0), fr*0.4);
+        float d = length(cameraPosition - vW); c = mix(c, fogC, smoothstep(fogN, fogF, d)); gl_FragColor = vec4(c, opacity); }`,
+    transparent: true, depthWrite: false,
+  });
+  WATER.push(m); return m;
+}
+const WATER = [];
+function syncWaterFog(fog) { const c = new T.Color(fog.color); const o = { r: 0, g: 0, b: 0 }; c.getRGB(o, T.SRGBColorSpace); for (const m of WATER) { m.uniforms.fogC.value.set(o.r, o.g, o.b); m.uniforms.fogN.value = fog.near; m.uniforms.fogF.value = fog.far; } }
+
+// ---- Yapılar ----
+function peasantHouse(L, x, z, ry, o = {}) {
+  const b = L.b, w = o.w || rnd(4.4, 5.6), d = o.d || rnd(3.7, 4.4), h = o.h || rnd(2.4, 2.75), y = o.y !== undefined ? o.y : L.h(x, z) - 0.05;
+  const wall = o.wall || pick([COL.wall, COL.wall2, COL.wall3, '#eadfc8']), roof = o.roof || pick([COL.thatch, COL.thatch2, '#c9a05a']);
+  const W = L.winter;
+  b.begin(x, y, z, ry);
+  // taş temel (taş sırası)
+  for (let i = -2; i <= 2; i++) for (const [fx, fz, len, rot] of [[0, d / 2 + 0.06, w + 0.3, 0], [0, -d / 2 - 0.06, w + 0.3, 0]]) b.box(pick([COL.stone, COL.stoneD, COL.stoneL]), i * (w + 0.3) / 5, -0.45, fz, (w + 0.3) / 5 - 0.03, 0.62, 0.22);
+  for (let i = -1; i <= 1; i++) for (const fx of [-w / 2 - 0.06, w / 2 + 0.06]) b.box(pick([COL.stone, COL.stoneD, COL.stoneL]), fx, -0.45, i * (d + 0.3) / 3, 0.22, 0.62, (d + 0.3) / 3 - 0.03);
+  b.box(wall, 0, 0.12, 0, w, h, d);
+  b.box(shade(wall, 0.82), 0, 0.12, 0, w + 0.02, 0.22, d + 0.02);
+  // ahşap iskelet
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(COL.beam, sx * w / 2, 0.1, sz * d / 2, 0.22, h + 0.05, 0.22);
+  for (const sz of [-1, 1]) { b.box(COL.beam, 0, h * 0.52, sz * (d / 2 + 0.03), w, 0.13, 0.07); b.box(COL.beam, 0, h + 0.04, sz * (d / 2 + 0.02), w + 0.2, 0.17, 0.1); }
+  for (const sx of [-1, 1]) { b.box(COL.beam, sx * (w / 2 + 0.03), h * 0.52, 0, 0.07, 0.13, d); b.add('box', COL.beam, sx * (w / 2 + 0.035), h * 0.75, -d * 0.22, 0.06, h * 0.55, 0.11, 0.85 * sx, 0, 0); b.add('box', COL.beam, sx * (w / 2 + 0.035), h * 0.75, d * 0.22, 0.06, h * 0.55, 0.11, -0.85 * sx, 0, 0); }
+  for (const sx of [-1, 1]) b.add('box', COL.beam, sx * w * 0.36, h * 0.27, -(d / 2 + 0.035), 0.1, h * 0.5, 0.06, 0, 0, sx * 0.6);
+  // çatı: kalın saz, saçak, mahya
+  const rh = o.rh || 1.8;
+  b.add('roof', shade(roof, 0.72), 0, h + 0.08, 0, d + 1.25, rh * 1.02, w + 1.0, 0, Math.PI / 2, 0, 0.03);
+  b.add('roof', roof, 0, h + 0.2, 0, d + 1.1, rh, w + 0.92, 0, Math.PI / 2, 0, 0.04);
+  for (const sz of [-1, 1]) for (let i = 0; i < 9; i++) b.add('box', shade(roof, rnd(0.8, 1.05)), -w / 2 - 0.4 + i * (w + 0.8) / 8, h + 0.12, sz * (d / 2 + 0.58), (w + 0.9) / 8, 0.12, 0.2, 0.15 * sz, 0, 0, 0.05);
+  b.add('cylS8', shade(roof, 0.65), 0, h + 0.2 + rh, 0, 0.28, w + 1.0, 0.28, 0, 0, Math.PI / 2);
+  if (W) { b.add('roof', COL.snow, 0, h + 0.42, 0, d + 0.95, rh * 0.9, w + 0.98, 0, Math.PI / 2, 0, 0.02); b.add('cylS8', COL.snow, 0, h + 0.33 + rh, 0, 0.3, w + 1.02, 0.3, 0, 0, Math.PI / 2, 0); }
+  for (const sx of [-1, 1]) { b.add('roof', wall, sx * (w / 2 - 0.02), h + 0.14, 0, d - 0.1, rh * 0.86, 0.06, 0, Math.PI / 2, 0); b.add('box', COL.beam, sx * (w / 2 + 0.02), h + rh * 0.4, 0, 0.06, rh * 0.8, 0.12); }
+  // kapı
+  const doorX = o.doorX !== undefined ? o.doorX : -w * 0.2, df = d / 2 + 0.03;
+  b.box(COL.woodD, doorX, 0.12, df, 0.98, 1.88, 0.08);
+  for (let i = -1; i <= 1; i++) b.box(shade(COL.woodD, 0.85), doorX + i * 0.3, 0.14, df + 0.02, 0.03, 1.82, 0.04);
+  for (const hy of [0.5, 1.5]) b.box(COL.iron, doorX - 0.18, hy, df + 0.05, 0.5, 0.06, 0.02);
+  b.box(COL.beam, doorX, 2.0, df + 0.02, 1.2, 0.15, 0.12); b.box(COL.beam, doorX - 0.56, 0.1, df + 0.02, 0.12, 1.95, 0.12); b.box(COL.beam, doorX + 0.56, 0.1, df + 0.02, 0.12, 1.95, 0.12);
+  b.box(COL.stone, doorX, -0.2, df + 0.38, 1.2, 0.3, 0.62); b.box(COL.stoneL, doorX, -0.1, df + 0.75, 1.0, 0.18, 0.4);
+  // pencereler
+  const lit = o.lit;
+  for (const wx of o.windows || [w * 0.24]) {
+    if (lit) L.gb.box('#ffcf7a', wx, 0.98, df, 0.66, 0.62, 0.04); else b.box('#2c2a30', wx, 0.98, df, 0.66, 0.62, 0.04);
+    b.box(COL.beamL, wx, 1.27, df + 0.03, 0.08, 0.06, 0.06); b.box(COL.beamL, wx, 0.98, df + 0.03, 0.05, 0.62, 0.05); b.box(COL.beamL, wx, 1.27, df + 0.03, 0.66, 0.05, 0.05);
+    b.box(COL.beam, wx, 0.9, df + 0.06, 0.82, 0.08, 0.16); b.box(COL.beam, wx, 1.6, df + 0.04, 0.82, 0.08, 0.1);
+    b.box(COL.beamL, wx - 0.52, 0.96, df + 0.08, 0.34, 0.68, 0.05, 0.25); b.box(COL.beamL, wx + 0.52, 0.96, df + 0.08, 0.34, 0.68, 0.05, -0.25);
+    if (!W && rng() < 0.7) { b.box(COL.woodD, wx, 0.72, df + 0.18, 0.78, 0.18, 0.2); for (let i = 0; i < 6; i++) b.add('sphS', pick(['#e85a5a', '#f0d040', '#f4f0e8', '#d070d0', '#ff9a40']), wx - 0.3 + i * 0.12, 0.96, df + 0.2 + rnd(-0.04, 0.04), 0.1, 0.09, 0.1, 0, 0, 0, 0.05); for (let i = 0; i < 4; i++) b.add('sphS', '#5a9a3a', wx - 0.27 + i * 0.18, 0.92, df + 0.2, 0.14, 0.1, 0.12); }
+  }
+  if (lit) L.gb.box('#ffc06a', -w * 0.25, 0.98, -df, 0.6, 0.6, 0.04);
+  // baca + duman
+  if (o.chimney !== false) {
+    const cx = w * 0.3, cz = -d * 0.18, ch = h * 0.55 + rh + 0.55;
+    for (let i = 0; i < 5; i++) b.box(pick([COL.stone, COL.stoneD, COL.stoneL]), cx, h * 0.55 + i * (ch - h * 0.55) / 5, cz, 0.62, (ch - h * 0.55) / 5 + 0.01, 0.62);
+    b.box(COL.stoneD, cx, h * 0.55 + (ch - h * 0.55), cz, 0.74, 0.12, 0.74);
+    if (W) b.box(COL.snow, cx, ch + 0.12, cz, 0.76, 0.08, 0.76, 0, 0, 0);
+    const wp = V3(cx, ch + 0.25, cz).applyMatrix4(b.top); if (o.smoke !== false && rng() < 0.7) L.smoke.push(wp);
+  }
+  // yan süsler: odun yığını / fıçı / alet
+  if (rng() < 0.6) { const sx = rng() < 0.5 ? 1 : -1; for (let r = 0; r < 3; r++) for (let i = 0; i < 4 - r; i++) b.add('cylS8', pick(['#8a6a48', '#9a7a52', '#7a5a3a']), sx * (w / 2 + 0.3), -0.15 + r * 0.2 + 0.1, -d * 0.1 + (i - (3 - r) / 2) * 0.22, 0.2, 0.9, 0.2, Math.PI / 2, 0, 0); b.box(COL.woodD, sx * (w / 2 + 0.3), 0.52, -d * 0.1, 0.5, 0.06, 1.2); }
+  if (rng() < 0.4) { b.add('cylS', COL.wood, -w / 2 + 0.1, 0.3, df + 0.5, 0.55, 0.72, 0.55); b.add('cylS', COL.iron, -w / 2 + 0.1, 0.12, df + 0.5, 0.57, 0.05, 0.57); b.add('cylS', COL.iron, -w / 2 + 0.1, 0.52, df + 0.5, 0.57, 0.05, 0.57); }
+  if (lit) { L.gb.add('box', '#ffcf70', doorX + 0.75, 1.75, df + 0.15, 0.14, 0.2, 0.14); b.box(COL.iron, doorX + 0.75, 1.62, df + 0.15, 0.18, 0.05, 0.18); }
   b.end();
-  L.addBox(x, z, (w + 0.3) / 2, (d + 0.3) / 2, ry);
+  L.addBox(x, z, (w + 0.35) / 2, (d + 0.35) / 2, ry);
   const c = Math.cos(ry), s = Math.sin(ry);
   return { door: V3(x + doorX * c + (d / 2 + 0.9) * s, 0, z - doorX * s + (d / 2 + 0.9) * c), w, d, x, z, ry };
 }
 function townHouse(L, x, z, ry, o = {}) {
   const b = L.b, w = o.w || rnd(5, 7), d = o.d || rnd(5, 6), h1 = 3, h2 = o.floors === 3 ? 5.6 : 2.8, y = L.h(x, z) - 0.05;
-  const plaster = o.wall || pick(['#e2d6bc', '#d8c8a6', '#e6dcc6', '#cfc0a0', '#d9cbb0']), roof = o.roof || pick([COL.tile, COL.tile2, COL.slate, '#7a4232']);
+  const plaster = o.wall || pick(['#f0e6d0', '#e8dcc0', '#f2ead8', '#e4d4b4', '#f0e2c8', '#e8d8d0']), roof = o.roof || pick([COL.tile, COL.tile2, COL.slate, '#a85a40']);
   b.begin(x, y, z, ry);
-  b.box(pick([COL.stone, COL.stoneL, '#968f80']), 0, -0.3, 0, w, h1 + 0.3, d);
-  b.box(plaster, 0, h1, 0, w + 0.4, h2, d + 0.4);
-  // ahşap çatkı
+  for (let i = 0; i < 4; i++) b.box(pick([COL.stone, COL.stoneL, '#a8a090']), 0, -0.3 + i * (h1 + 0.3) / 4, 0, w, (h1 + 0.3) / 4 + 0.01, d);
+  b.box(plaster, 0, h1, 0, w + 0.4, h2, d + 0.4); b.box(shade(plaster, 0.85), 0, h1, 0, w + 0.42, 0.2, d + 0.42);
   const fr = COL.beam;
   b.box(fr, 0, h1, d / 2 + 0.22, w + 0.45, 0.2, 0.08); b.box(fr, 0, h1 + h2 - 0.15, d / 2 + 0.22, w + 0.45, 0.18, 0.08);
   const n = Math.round(w / 1.4);
   for (let i = 0; i <= n; i++) { const px = -w / 2 - 0.2 + i * (w + 0.4) / n; b.box(fr, px, h1, d / 2 + 0.23, 0.14, h2, 0.07); }
   for (let i = 0; i < n; i++) { const px = -w / 2 - 0.2 + (i + 0.5) * (w + 0.4) / n; b.add('box', fr, px, h1 + h2 * 0.5, d / 2 + 0.24, 0.1, h2 * 0.75, 0.05, 0, 0, (i % 2 ? 1 : -1) * 0.55); }
-  for (let i = 0; i < n; i++) { const px = -w / 2 - 0.2 + (i + 0.5) * (w + 0.4) / n; if (o.lit) L.gb.box('#ffc46b', px, h1 + h2 * 0.35, d / 2 + 0.26, 0.55, 0.7, 0.03); else b.box('#3a3a40', px, h1 + h2 * 0.35, d / 2 + 0.26, 0.55, 0.7, 0.03); }
+  for (let i = 0; i < n; i++) { const px = -w / 2 - 0.2 + (i + 0.5) * (w + 0.4) / n; if (o.lit) L.gb.box('#ffcf7a', px, h1 + h2 * 0.32, d / 2 + 0.26, 0.55, 0.72, 0.03); else b.box('#33343c', px, h1 + h2 * 0.32, d / 2 + 0.26, 0.55, 0.72, 0.03); b.box(COL.beamL, px, h1 + h2 * 0.32 - 0.05, d / 2 + 0.32, 0.7, 0.07, 0.14); if (rng() < 0.4 && !L.winter) for (let k = 0; k < 4; k++) b.add('sphS', pick(['#e85a5a', '#f0d040', '#ffffff', '#d070d0']), px - 0.22 + k * 0.15, h1 + h2 * 0.32 + 0.06, d / 2 + 0.36, 0.11, 0.1, 0.1); }
   const rh = o.rh || 3;
+  b.add('roof', shade(roof, 0.75), 0, h1 + h2 - 0.08, 0, d + 1.55, rh * 1.02, w + 0.95, 0, Math.PI / 2, 0);
   b.add('roof', roof, 0, h1 + h2, 0, d + 1.4, rh, w + 0.8, 0, Math.PI / 2, 0);
   for (const sx of [-1, 1]) b.add('roof', plaster, sx * (w / 2 + 0.15), h1 + h2 - 0.02, 0, d + 0.3, rh * 0.92, 0.1, 0, Math.PI / 2, 0);
   if (L.winter) b.add('roof', COL.snow, 0, h1 + h2 + 0.22, 0, d + 1.2, rh * 0.92, w + 0.85, 0, Math.PI / 2, 0, 0.02);
-  // kapı ve vitrin
+  b.add('box', roof, 0, h1 + h2 + rh * 0.55, d * 0.25, 1.1, 1.0, 0.9); b.add('roof', roof, 0, h1 + h2 + rh * 0.55 + 0.5, d * 0.25, 1.4, 0.6, 1.0, 0, 0, 0); if (o.lit) L.gb.box('#ffcf7a', 0, h1 + h2 + rh * 0.55 - 0.25, d * 0.25 + 0.46, 0.5, 0.55, 0.03); else b.box('#33343c', 0, h1 + h2 + rh * 0.55 - 0.25, d * 0.25 + 0.46, 0.5, 0.55, 0.03);
   b.box(COL.woodD, -w * 0.25, -0.05, d / 2 + 0.03, 1.1, 2.2, 0.1); b.add('cyl8', COL.stoneD, -w * 0.25, 2.15, d / 2 + 0.04, 1.1, 0.12, 0.1, Math.PI / 2, 0, 0);
-  b.box('#3a3a40', w * 0.22, 0.8, d / 2 + 0.02, 1.4, 1.1, 0.05); b.box(COL.beam, w * 0.22, 0.75, d / 2 + 0.06, 1.6, 0.08, 0.2);
-  if (o.awning) { for (let i = 0; i < 5; i++) b.add('box', i % 2 ? '#e8dcc0' : o.awning, w * 0.22 - 0.64 + i * 0.32, 2.2, d / 2 + 0.55, 0.32, 0.05, 1.1, -0.35, 0, 0); }
-  if (o.chimney !== false) b.box(COL.stoneD, w * 0.3, h1 + h2, -d * 0.2, 0.6, rh + 0.6, 0.6);
+  b.box('#33343c', w * 0.22, 0.8, d / 2 + 0.02, 1.4, 1.1, 0.05); b.box(COL.beam, w * 0.22, 0.75, d / 2 + 0.06, 1.6, 0.08, 0.2);
+  if (o.awning) { for (let i = 0; i < 6; i++) b.add('box', i % 2 ? '#f0e6d0' : o.awning, w * 0.22 - 0.75 + i * 0.3, 2.2, d / 2 + 0.55, 0.3, 0.05, 1.1, -0.35, 0, 0); }
+  if (o.sign) { b.box(COL.iron, -w * 0.25 + 1.0, 2.6, d / 2 + 0.5, 0.05, 0.05, 0.9); b.box(o.sign, -w * 0.25 + 1.0, 2.15, d / 2 + 0.85, 0.06, 0.5, 0.7); }
+  if (o.chimney !== false) { b.box(COL.stoneD, w * 0.3, h1 + h2, -d * 0.2, 0.6, rh + 0.6, 0.6); if (rng() < 0.5) L.smoke.push(V3(w * 0.3, h1 + h2 + rh + 0.8, -d * 0.2).applyMatrix4(b.top)); }
   b.end();
   L.addBox(x, z, w / 2 + 0.25, d / 2 + 0.25, ry);
 }
 function tree(L, x, z, type = 'oak', s = 1) {
-  const b = L.b, y = L.h(x, z) - 0.1;
+  const b = L.b, y = L.h(x, z) - 0.1, W = L.winter;
   b.begin(x, y, z, rnd(0, TAU), s);
   if (type === 'oak') {
-    b.add('cyl6', COL.trunk, 0, 1.2, 0, 0.45, 2.4, 0.45, 0, 0, 0.04);
-    b.add('box', COL.trunk, 0.35, 2.0, 0, 0.18, 1.1, 0.18, 0, 0, -0.7);
-    if (L.winter) { b.add('box', COL.trunk, -0.3, 2.4, 0.1, 0.14, 1.2, 0.14, 0.3, 0, 0.6); b.add('box', COL.trunk, 0.1, 2.7, -0.3, 0.12, 1.0, 0.12, -0.5, 0, 0); b.add('ico0', COL.snow2, 0, 3.0, 0, 1.4, 0.4, 1.4); }
+    b.add('trunk', COL.trunk, 0, 1.3, 0, 0.62, 2.6, 0.62, 0, 0, 0, 0.06);
+    b.add('trunk', COL.trunk, 0.45, 2.3, 0.1, 0.24, 1.3, 0.24, 0, 0, -0.8); b.add('trunk', COL.trunk, -0.4, 2.5, -0.2, 0.2, 1.2, 0.2, 0.3, 0, 0.7);
+    for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + 0.3; b.add('trunk', shade(COL.trunk, 0.9), Math.cos(a) * 0.32, 0.08, Math.sin(a) * 0.32, 0.22, 0.5, 0.22, Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9); }
+    if (W) { b.add('blob2', COL.snow2, 0, 3.4, 0, 2.2, 0.8, 2.2, 0, 0, 0, 0.03); b.add('trunk', COL.trunk, 0.1, 3.0, -0.4, 0.14, 1.2, 0.14, -0.6, 0, 0.2); }
     else {
-      const cs = [COL.leaf, COL.leaf2, COL.leaf3];
-      b.add('ico0', pick(cs), 0, 3.1, 0, 2.8, 2.3, 2.8, rnd(0, 1), rnd(0, 1), 0, 0.1);
-      b.add('ico0', pick(cs), 0.9, 2.7, 0.4, 1.9, 1.6, 1.9, rnd(0, 1), 0, 0, 0.1);
-      b.add('ico0', pick(cs), -0.8, 2.8, -0.5, 2.0, 1.7, 2.0, 0, rnd(0, 1), 0, 0.1);
-      b.add('ico0', pick(cs), 0.1, 3.9, -0.2, 1.7, 1.4, 1.7, 0, 0, 0, 0.1);
+      const base = pick([COL.leaf, COL.leaf2, COL.leaf3]);
+      const blobs = [[0, 3.5, 0, 3.4, 2.7], [1.15, 3.05, 0.35, 2.2, 1.9], [-1.05, 3.15, -0.45, 2.3, 2.0], [0.2, 4.35, -0.25, 2.2, 1.8], [-0.3, 2.85, 1.0, 1.9, 1.6], [0.5, 2.9, -1.0, 1.9, 1.6]];
+      for (const [bx, by, bz, bs, bh] of blobs) b.add(pick(['blob1', 'blob2', 'blob3', 'blob4']), shade(base, by > 4 ? 1.12 : by < 3 ? 0.86 : 1), bx, by, bz, bs, bh, bs, 0, rnd(0, TAU), 0, 0.05);
     }
   } else if (type === 'pine') {
-    b.add('cyl5', COL.trunk, 0, 0.8, 0, 0.35, 1.6, 0.35);
-    const pc = [COL.pine, COL.pine2];
-    for (let i = 0; i < 3; i++) { b.add('cone6', pick(pc), 0, 1.5 + i * 1.15, 0, 2.6 - i * 0.65, 2.0, 2.6 - i * 0.65, 0, rnd(0, 1), 0, 0.08); if (L.winter) b.add('cone6', COL.snow, 0, 1.75 + i * 1.15, 0, (2.6 - i * 0.65) * 0.75, 1.5, (2.6 - i * 0.65) * 0.75, 0, rnd(0, 1), 0, 0.02); }
+    b.add('trunk', COL.trunk, 0, 1.0, 0, 0.42, 2.0, 0.42);
+    const pc = pick([COL.pine, COL.pine2, '#2a5e40']);
+    for (let i = 0; i < 4; i++) { const sz = 2.9 - i * 0.62; b.add('pineL', shade(pc, 0.85 + i * 0.08), 0, 1.6 + i * 1.05, 0, sz, 1.9, sz, 0, rnd(0, 1), 0, 0.04); if (W) b.add('pineL', COL.snow, 0, 1.85 + i * 1.05, 0, sz * 0.78, 1.45, sz * 0.78, 0, rnd(0, 1), 0, 0.02); }
   } else if (type === 'birch') {
-    b.add('cyl5', '#d8d4c8', 0, 1.6, 0, 0.28, 3.2, 0.28);
-    if (!L.winter) { b.add('ico0', '#7a9a44', 0, 3.4, 0, 1.6, 2.2, 1.6, 0, 0, 0, 0.1); b.add('ico0', '#8aa84c', 0.4, 2.8, 0.2, 1.1, 1.4, 1.1, 0, 0, 0, 0.1); }
+    b.add('trunk', '#e8e4d8', 0, 1.7, 0, 0.32, 3.4, 0.32);
+    for (let i = 0; i < 6; i++) b.add('box', '#3a3430', rnd(-0.05, 0.05), rnd(0.5, 3), 0.15, 0.12, 0.04, 0.06, 0, rnd(0, TAU), 0);
+    if (!W) { b.add('blob1', '#8cba4c', 0, 3.6, 0, 1.8, 2.4, 1.8, 0, 0, 0, 0.06); b.add('blob3', '#9cc858', 0.5, 3.0, 0.3, 1.3, 1.6, 1.3, 0, 0, 0, 0.06); b.add('blob2', '#7aaa44', -0.4, 3.1, -0.3, 1.2, 1.4, 1.2, 0, 0, 0, 0.06); }
   } else if (type === 'dead') {
-    b.add('cyl5', '#4a3a2c', 0, 1.3, 0, 0.35, 2.6, 0.35); b.add('box', '#4a3a2c', 0.4, 2.2, 0, 0.12, 1.4, 0.12, 0, 0, -0.8); b.add('box', '#4a3a2c', -0.3, 2.5, 0.2, 0.1, 1.1, 0.1, 0.4, 0, 0.7);
+    b.add('trunk', '#5a4636', 0, 1.3, 0, 0.42, 2.6, 0.42); b.add('trunk', '#5a4636', 0.45, 2.2, 0, 0.16, 1.4, 0.16, 0, 0, -0.8); b.add('trunk', '#5a4636', -0.35, 2.5, 0.2, 0.13, 1.1, 0.13, 0.4, 0, 0.7);
+    if (W) b.add('blob1', COL.snow, 0, 2.6, 0, 0.6, 0.15, 0.6);
   }
   b.end();
   L.addCircle(x, z, 0.38 * s);
 }
-function bush(L, x, z, s = 1) { const y = L.h(x, z); L.b.add('ico0', L.winter ? COL.snow2 : pick([COL.leaf, COL.leaf2, '#5a7a36']), x, y + 0.35 * s, z, 1.3 * s, 0.9 * s, 1.2 * s, rnd(0, 2), rnd(0, 2), 0, 0.1); }
-function rock(L, x, z, s = 1, col) { const y = L.h(x, z); L.b.add('dode', col || pick([COL.rock, COL.rock2]), x, y + 0.2 * s, z, 1.2 * s, 0.75 * s, 1.0 * s, rnd(0, 3), rnd(0, 3), 0, 0.06); if (s > 0.7) L.addCircle(x, z, 0.55 * s); }
-function flowers(L, x, z, n = 6) { if (L.winter) return; for (let i = 0; i < n; i++) { const fx = x + rnd(-0.8, 0.8), fz = z + rnd(-0.8, 0.8), y = L.h(fx, fz); L.b.add('box', '#4a7a30', fx, y + 0.12, fz, 0.03, 0.24, 0.03, 0, 0, 0, 0); L.b.add('box', pick(['#e8d34a', '#e86a5a', '#f0f0e8', '#b05ad0', '#e89a3a']), fx, y + 0.26, fz, 0.09, 0.07, 0.09, 0, rnd(0, 1), 0, 0); } }
-function grassTufts(L, x, z, n = 5) { if (L.winter) return; for (let i = 0; i < n; i++) { const fx = x + rnd(-1, 1), fz = z + rnd(-1, 1), y = L.h(fx, fz); L.b.add('cone4', pick([COL.grass, COL.grass2, '#7a9a48']), fx, y + 0.15, fz, 0.2, 0.35, 0.2, rnd(-0.3, 0.3), rnd(0, 2), rnd(-0.3, 0.3), 0.1); } }
+function bush(L, x, z, s = 1) {
+  const y = L.h(x, z), c = L.winter ? COL.snow2 : pick([COL.leaf, COL.leaf2, '#6aa040', '#5a9038']);
+  L.b.add(pick(['blob1', 'blob2', 'blob3', 'blob4']), c, x, y + 0.35 * s, z, 1.4 * s, 1.0 * s, 1.3 * s, 0, rnd(0, 3), 0, 0.08);
+  L.b.add(pick(['blob1', 'blob2']), shade(c, 1.1), x + 0.4 * s, y + 0.3 * s, z + 0.2 * s, 0.9 * s, 0.7 * s, 0.8 * s, 0, rnd(0, 3), 0, 0.08);
+  if (!L.winter && rng() < 0.35) for (let i = 0; i < 5; i++) L.b.add('sphS', pick(['#f0f0f0', '#ff8aa0', '#ffd860']), x + rnd(-0.5, 0.5) * s, y + rnd(0.4, 0.75) * s, z + rnd(-0.5, 0.5) * s, 0.09, 0.09, 0.09, 0, 0, 0, 0);
+}
+function rock(L, x, z, s = 1, col) { const y = L.h(x, z); L.b.add(pick(['blob3', 'blob4', 'blob1']), col || pick([COL.rock, COL.rock2, '#a8a498']), x, y + 0.12 * s, z, 1.3 * s, 0.75 * s, 1.0 * s, 0, rnd(0, 3), 0, 0.06); if (L.winter) L.b.add('blob2', COL.snow, x, y + 0.42 * s, z, 1.0 * s, 0.25 * s, 0.8 * s); if (s > 0.7) L.addCircle(x, z, 0.55 * s); }
+function flowers(L, x, z, n = 6) { if (L.winter) return; for (let i = 0; i < n; i++) L.flowerSpots.push([x + rnd(-1, 1), z + rnd(-1, 1), pick(['#ffe060', '#ff7a7a', '#ffffff', '#c890ff', '#ffa040', '#80b0ff'])]); }
+function grassTufts(L, x, z, n = 5) { }
 function fence(L, x1, z1, x2, z2, o = {}) {
-  const b = L.b, dx = x2 - x1, dz = z2 - z1, len = Math.hypot(dx, dz), ry = Math.atan2(dx, dz), n = Math.max(1, Math.round(len / 2));
-  for (let i = 0; i <= n; i++) { const t = i / n, px = x1 + dx * t, pz = z1 + dz * t; b.add('boxb', COL.woodD, px, L.h(px, pz) - 0.1, pz, 0.14, 1.15, 0.14, 0, ry, 0); if (L.winter) b.add('box', COL.snow, px, L.h(px, pz) + 1.08, pz, 0.18, 0.06, 0.18, 0, ry, 0, 0); }
-  const mx = (x1 + x2) / 2, mz = (z1 + z2) / 2, my = L.h(mx, mz);
-  b.add('box', COL.wood, mx, my + 0.45, mz, 0.07, 0.1, len, 0, ry, 0); b.add('box', COL.wood, mx, my + 0.85, mz, 0.07, 0.1, len, 0, ry, 0);
-  if (o.collide !== false) L.addBox(mx, mz, 0.12, len / 2, ry);
+  const b = L.b, dx = x2 - x1, dz = z2 - z1, len = Math.hypot(dx, dz), ry = Math.atan2(dx, dz), n = Math.max(1, Math.round(len / 1.9));
+  for (let i = 0; i <= n; i++) { const t = i / n, px = x1 + dx * t, pz = z1 + dz * t, py = L.h(px, pz); b.add('cylS8', COL.woodD, px, py + 0.5, pz, 0.13, 1.2, 0.13, rnd(-0.04, 0.04), ry, rnd(-0.04, 0.04)); b.add('coneS', COL.woodD, px, py + 1.16, pz, 0.13, 0.14, 0.13); if (L.winter) b.add('sphS', COL.snow, px, py + 1.18, pz, 0.18, 0.08, 0.18, 0, 0, 0, 0); }
+  for (let i = 0; i < n; i++) { const t0 = i / n, t1 = (i + 1) / n, mx = x1 + dx * (t0 + t1) / 2, mz = z1 + dz * (t0 + t1) / 2, my = L.h(mx, mz), sl = len / n; for (const hy of [0.42, 0.82]) b.add('box', pick([COL.wood, COL.woodL]), mx, my + hy, mz, 0.06, 0.09, sl + 0.1, rnd(-0.03, 0.03), ry, 0); if (L.winter) b.add('box', COL.snow, mx, my + 0.88, mz, 0.08, 0.04, sl, 0, ry, 0, 0); }
+  if (o.collide !== false) L.addBox((x1 + x2) / 2, (z1 + z2) / 2, 0.12, len / 2, ry);
 }
 function well(L, x, z) {
   const b = L.b, y = L.h(x, z);
-  b.add('cyl12', COL.stone, x, y + 0.4, z, 1.8, 0.8, 1.8); b.add('cyl12', '#1a2228', x, y + 0.81, z, 1.4, 0.02, 1.4, 0, 0, 0, 0);
-  b.add('box', COL.woodD, x - 0.8, y + 1.3, z, 0.14, 1.8, 0.14); b.add('box', COL.woodD, x + 0.8, y + 1.3, z, 0.14, 1.8, 0.14);
-  b.add('cyl6', COL.wood, x, y + 1.6, z, 0.16, 1.6, 0.16, 0, 0, Math.PI / 2);
-  b.add('roof', COL.thatch2, x, y + 2.15, z, 2.2, 0.8, 1.4, 0, Math.PI / 2, 0); if (L.winter) b.add('roof', COL.snow, x, y + 2.25, z, 2.0, 0.75, 1.42, 0, Math.PI / 2, 0, 0);
-  b.add('cyl8', COL.woodD, x + 0.3, y + 1.1, z, 0.3, 0.32, 0.3);
-  L.addCircle(x, z, 1.0);
+  for (let i = 0; i < 14; i++) { const a = i / 14 * TAU; b.add('box', pick([COL.stone, COL.stoneD, COL.stoneL]), x + Math.cos(a) * 0.82, y + 0.42, z + Math.sin(a) * 0.82, 0.42, 0.85, 0.28, 0, -a + Math.PI / 2, 0, 0.06); }
+  b.add('cylS', '#1a3a44', x, y + 0.7, z, 1.45, 0.02, 1.45, 0, 0, 0, 0);
+  b.add('cylS8', COL.woodD, x - 0.85, y + 1.3, z, 0.14, 1.8, 0.14); b.add('cylS8', COL.woodD, x + 0.85, y + 1.3, z, 0.14, 1.8, 0.14);
+  b.add('cylS8', COL.wood, x, y + 1.6, z, 0.16, 1.7, 0.16, 0, 0, Math.PI / 2); b.add('cylS', '#c8b48a', x, y + 1.6, z, 0.22, 0.4, 0.22, 0, 0, Math.PI / 2);
+  b.add('roof', shade(COL.thatch2, 0.8), x, y + 2.12, z, 2.35, 0.82, 1.5, 0, Math.PI / 2, 0); b.add('roof', COL.thatch2, x, y + 2.18, z, 2.2, 0.8, 1.42, 0, Math.PI / 2, 0); if (L.winter) b.add('roof', COL.snow, x, y + 2.28, z, 2.0, 0.75, 1.44, 0, Math.PI / 2, 0, 0);
+  b.add('cylS', COL.woodD, x + 0.3, y + 1.1, z, 0.28, 0.3, 0.28); b.add('box', COL.iron, x + 0.3, y + 1.4, z, 0.01, 0.3, 0.01);
+  L.addCircle(x, z, 1.05);
 }
-function barrel(L, x, z, s = 1) { const b = L.b, y = L.h(x, z); b.add('cyl8', COL.wood, x, y + 0.45 * s, z, 0.7 * s, 0.9 * s, 0.7 * s); b.add('cyl8', COL.iron, x, y + 0.2 * s, z, 0.72 * s, 0.06, 0.72 * s, 0, 0, 0, 0); b.add('cyl8', COL.iron, x, y + 0.72 * s, z, 0.72 * s, 0.06, 0.72 * s, 0, 0, 0, 0); if (L.winter) b.add('cyl8', COL.snow, x, y + 0.92 * s, z, 0.66 * s, 0.05, 0.66 * s, 0, 0, 0, 0); L.addCircle(x, z, 0.38 * s); }
-function crate(L, x, z, s = 1, ry = 0, y0) { const b = L.b, y = y0 !== undefined ? y0 : L.h(x, z); b.add('boxb', COL.woodL, x, y, z, 0.8 * s, 0.8 * s, 0.8 * s, 0, ry, 0); b.add('boxb', COL.woodD, x, y + 0.35 * s, z, 0.82 * s, 0.1 * s, 0.82 * s, 0, ry, 0); if (y0 === undefined) L.addBox(x, z, 0.42 * s, 0.42 * s, ry); }
-function haystack(L, x, z, s = 1) { const b = L.b, y = L.h(x, z); b.add('cyl8', COL.hay, x, y + 0.6 * s, z, 2.0 * s, 1.2 * s, 2.0 * s, 0, rnd(0, 1), 0); b.add('cone8', L.winter ? COL.snow : COL.hay, x, y + 1.6 * s, z, 2.0 * s, 0.9 * s, 2.0 * s, 0, rnd(0, 1), 0); L.addCircle(x, z, 0.95 * s); }
+function barrel(L, x, z, s = 1) { const b = L.b, y = L.h(x, z); b.add('cylS', COL.wood, x, y + 0.45 * s, z, 0.7 * s, 0.9 * s, 0.7 * s); b.add('cylS', '#a07a50', x, y + 0.45 * s, z, 0.76 * s, 0.4 * s, 0.76 * s); for (const hy of [0.15, 0.75]) b.add('cylS', COL.iron, x, y + hy * s, z, 0.73 * s, 0.06, 0.73 * s, 0, 0, 0, 0); if (L.winter) b.add('cylS', COL.snow, x, y + 0.92 * s, z, 0.66 * s, 0.05, 0.66 * s, 0, 0, 0, 0); L.addCircle(x, z, 0.38 * s); }
+function crate(L, x, z, s = 1, ry = 0, y0) {
+  const b = L.b, y = y0 !== undefined ? y0 : L.h(x, z); b.begin(x, y, z, ry, s);
+  b.box(COL.woodL, 0, 0, 0, 0.78, 0.78, 0.78);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(COL.woodD, sx * 0.38, 0, sz * 0.38, 0.08, 0.8, 0.08);
+  for (const hy of [0, 0.72]) { b.box(COL.woodD, 0, hy, 0.39, 0.8, 0.08, 0.04); b.box(COL.woodD, 0, hy, -0.39, 0.8, 0.08, 0.04); }
+  b.add('box', COL.woodD, 0, 0.4, 0.4, 0.07, 0.95, 0.03, 0, 0, 0.78);
+  b.end(); if (y0 === undefined) L.addBox(x, z, 0.42 * s, 0.42 * s, ry);
+}
+function haystack(L, x, z, s = 1) { const b = L.b, y = L.h(x, z); b.add('cylS', COL.hay, x, y + 0.6 * s, z, 2.0 * s, 1.2 * s, 2.0 * s, 0, rnd(0, 1), 0); b.add('blob2', L.winter ? COL.snow : shade(COL.hay, 1.08), x, y + 1.25 * s, z, 2.1 * s, 1.3 * s, 2.1 * s); b.add('cylS', shade(COL.hay, 0.8), x, y + 0.6 * s, z, 2.05 * s, 0.12, 2.05 * s); L.addCircle(x, z, 0.95 * s); }
 function cart(L, x, z, ry) {
   const b = L.b; b.begin(x, L.h(x, z), z, ry);
-  b.box(COL.wood, 0, 0.55, 0, 1.4, 0.12, 2.4); b.box(COL.woodD, 0.68, 0.65, 0, 0.06, 0.35, 2.4); b.box(COL.woodD, -0.68, 0.65, 0, 0.06, 0.35, 2.4); b.box(COL.woodD, 0, 0.65, -1.18, 1.4, 0.35, 0.06);
-  for (const sx of [-1, 1]) { b.add('cyl12', COL.woodD, sx * 0.8, 0.45, 0.3, 0.9, 0.08, 0.9, 0, 0, Math.PI / 2); b.add('cyl6', COL.iron, sx * 0.85, 0.45, 0.3, 0.15, 0.1, 0.15, 0, 0, Math.PI / 2); }
+  b.box(COL.wood, 0, 0.55, 0, 1.4, 0.12, 2.4); for (let i = -2; i <= 2; i++) b.box(shade(COL.wood, 0.9), i * 0.28, 0.6, 0, 0.02, 0.12, 2.4);
+  b.box(COL.woodD, 0.68, 0.65, 0, 0.06, 0.38, 2.4); b.box(COL.woodD, -0.68, 0.65, 0, 0.06, 0.38, 2.4); b.box(COL.woodD, 0, 0.65, -1.18, 1.4, 0.38, 0.06);
+  for (const sx of [-1, 1]) { b.add('torus', COL.woodD, sx * 0.82, 0.45, 0.3, 0.92, 0.92, 1.6, 0, Math.PI / 2, 0); for (let k = 0; k < 4; k++) b.add('box', COL.woodD, sx * 0.82, 0.45, 0.3, 0.05, 0.85, 0.05, k * Math.PI / 4, 0, 0); b.add('cylS8', COL.iron, sx * 0.85, 0.45, 0.3, 0.15, 0.12, 0.15, 0, 0, Math.PI / 2); }
   b.add('box', COL.woodD, 0.25, 0.5, 1.9, 0.08, 0.08, 1.5); b.add('box', COL.woodD, -0.25, 0.5, 1.9, 0.08, 0.08, 1.5);
-  b.add('box', COL.hay, 0, 0.8, -0.3, 1.2, 0.4, 1.6);
+  b.add('blob1', L.winter ? COL.snow : COL.hay, 0, 0.9, -0.3, 1.25, 0.55, 1.7);
+  for (let i = 0; i < 2; i++) b.add('sphS', '#c8b48a', -0.3 + i * 0.6, 0.9, 0.7, 0.45, 0.4, 0.5);
   b.end(); L.addBox(x, z, 0.8, 1.3, ry);
 }
-function bench(L, x, z, ry) { const b = L.b; b.begin(x, L.h(x, z), z, ry); b.box(COL.wood, 0, 0.42, 0, 1.8, 0.08, 0.45); b.box(COL.woodD, -0.7, 0, 0, 0.1, 0.42, 0.4); b.box(COL.woodD, 0.7, 0, 0, 0.1, 0.42, 0.4); b.end(); L.addBox(x, z, 0.9, 0.25, ry); }
+function bench(L, x, z, ry) { const b = L.b; b.begin(x, L.h(x, z), z, ry); b.box(COL.wood, 0, 0.42, 0, 1.8, 0.08, 0.45); b.box(COL.woodL, 0, 0.42, 0.12, 1.8, 0.085, 0.12); for (const sx of [-0.7, 0.7]) { b.box(COL.woodD, sx, 0, 0.12, 0.1, 0.42, 0.1); b.box(COL.woodD, sx, 0, -0.12, 0.1, 0.42, 0.1); } b.end(); L.addBox(x, z, 0.9, 0.25, ry); }
 function torch(L, x, z, light = false, h = 2.2) {
-  const y = L.h(x, z); L.b.add('box', COL.woodD, x, y + h / 2, z, 0.12, h, 0.12); L.b.add('box', COL.iron, x, y + h, z, 0.25, 0.15, 0.25);
-  L.gb.add('ico0', '#ffb347', x, y + h + 0.2, z, 0.28, 0.4, 0.28, 0, 0, 0, 0);
+  const y = L.h(x, z); L.b.add('cylS8', COL.woodD, x, y + h / 2, z, 0.12, h, 0.12); L.b.add('cylS8', COL.iron, x, y + h, z, 0.25, 0.15, 0.25);
+  L.gb.add('ico0', '#ffb347', x, y + h + 0.2, z, 0.28, 0.4, 0.28, 0, 0, 0, 0); L.gb.add('ico0', '#ffe9a0', x, y + h + 0.18, z, 0.15, 0.22, 0.15, 0, 0, 0, 0);
   if (light) { const l = new T.PointLight('#ffa040', 6, 9, 1.6); l.position.set(x, y + h + 0.5, z); L.light(l); L.anims.push(() => { l.intensity = 5 + Math.sin(G.t * 13 + x) * 0.8 + Math.sin(G.t * 7.3) * 0.6; }); }
 }
 function lampPost(L, x, z, light = false) {
-  const y = L.h(x, z); L.b.add('box', COL.iron, x, y + 1.6, z, 0.12, 3.2, 0.12); L.b.add('box', COL.iron, x + 0.3, y + 3.1, z, 0.7, 0.08, 0.08);
-  L.b.add('box', COL.iron, x + 0.6, y + 2.85, z, 0.3, 0.06, 0.3); L.gb.add('box', '#ffd080', x + 0.6, y + 2.65, z, 0.22, 0.35, 0.22);
+  const y = L.h(x, z); L.b.add('cylS8', COL.iron, x, y + 1.6, z, 0.12, 3.2, 0.12); L.b.add('box', COL.iron, x + 0.3, y + 3.1, z, 0.7, 0.08, 0.08);
+  L.b.add('coneS', COL.iron, x + 0.6, y + 2.92, z, 0.36, 0.2, 0.36); L.gb.add('box', '#ffd080', x + 0.6, y + 2.65, z, 0.22, 0.35, 0.22);
   if (light) { const l = new T.PointLight('#ffc070', 5, 12, 1.5); l.position.set(x + 0.6, y + 2.4, z); L.light(l); }
   L.addCircle(x, z, 0.15);
 }
 function banner(L, x, z, ry, col, h = 4, emblem = COL.gold) {
   const b = L.b, y = L.h(x, z); b.begin(x, y, z, ry);
-  b.box(COL.woodD, 0, 0, 0, 0.12, h, 0.12); b.box(COL.gold, 0, h, 0, 0.16, 0.16, 0.16);
+  b.add('cylS8', COL.woodD, 0, h / 2, 0, 0.12, h, 0.12); b.add('sphS', COL.gold, 0, h + 0.05, 0, 0.18, 0.18, 0.18);
   b.box(COL.woodD, 0, h - 0.25, 0.35, 0.06, 0.06, 0.8);
-  b.add('box', col, 0, h - 1.2, 0.4, 0.04, 1.8, 0.7); b.add('box', emblem, 0, h - 1.0, 0.43, 0.045, 0.4, 0.3);
+  b.add('box', col, 0, h - 1.2, 0.4, 0.04, 1.8, 0.7); b.add('box', shade(col, 0.7), 0, h - 0.33, 0.4, 0.05, 0.08, 0.72); b.add('sphS', emblem, 0, h - 1.0, 0.43, 0.04, 0.38, 0.3);
   b.add('wedge', col, 0, h - 2.6, 0.4, 0.04, 0.5, 0.7, Math.PI, 0, 0);
   b.end();
 }
-function stall(L, x, z, ry, cloth = '#a33a2a') {
+function stall(L, x, z, ry, cloth = '#b84a32') {
   const b = L.b; b.begin(x, L.h(x, z), z, ry);
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(COL.woodD, sx * 1.2, 0, sz * 0.8, 0.12, 2.4, 0.12);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.add('cylS8', COL.woodD, sx * 1.2, 1.2, sz * 0.8, 0.12, 2.4, 0.12);
   b.box(COL.wood, 0, 0.85, 0.5, 2.5, 0.12, 0.8); b.box(COL.woodD, 0, 0, 0.85, 2.4, 0.85, 0.06);
-  for (let i = 0; i < 6; i++) b.add('box', i % 2 ? '#efe6d0' : cloth, -1.25 + 0.21 + i * 0.42, 2.45, 0, 0.42, 0.06, 2.0, 0.18, 0, 0);
-  const goods = ['#c84a3a', '#d8a83a', '#7aa83a', '#e8d8a8', '#a85a2a'];
-  for (let i = 0; i < 8; i++) b.add(pick(['sph8', 'box', 'cyl8']), pick(goods), rnd(-1.0, 1.0), 1.02, rnd(0.25, 0.75), 0.22, 0.18, 0.22);
+  for (let i = 0; i < 6; i++) b.add('box', i % 2 ? '#f4ecd8' : cloth, -1.25 + 0.21 + i * 0.42, 2.45, 0, 0.42, 0.06, 2.0, 0.18, 0, 0);
+  for (let i = 0; i < 6; i++) b.add('wedge', i % 2 ? '#f4ecd8' : cloth, -1.25 + 0.21 + i * 0.42, 2.12, 1.02, 0.42, 0.2, 0.04, Math.PI, 0, 0);
+  const goods = ['#d85a3a', '#e8b83a', '#8ab83a', '#f0e0a8', '#b86a2a', '#c83a5a'];
+  for (let i = 0; i < 12; i++) b.add(pick(['sphS', 'sphS', 'cylS8']), pick(goods), rnd(-1.0, 1.0), 1.0, rnd(0.25, 0.75), 0.2, 0.17, 0.2);
+  b.add('cylS', COL.wood, -0.9, 0.3, 1.3, 0.5, 0.6, 0.5); b.add('blob2', pick(goods), -0.9, 0.62, 1.3, 0.45, 0.2, 0.45);
   b.end(); L.addBox(x, z, 1.35, 0.95, ry);
 }
 function wallSeg(L, x1, z1, x2, z2, h = 6, col = COL.stone, thick = 1.6) {
   const b = L.b, dx = x2 - x1, dz = z2 - z1, len = Math.hypot(dx, dz), ry = Math.atan2(dx, dz), mx = (x1 + x2) / 2, mz = (z1 + z2) / 2, y = Math.min(L.h(x1, z1), L.h(x2, z2), L.h(mx, mz)) - 0.5;
-  b.add('boxb', col, mx, y, mz, thick, h + 0.5, len, 0, ry, 0);
+  const rows = 5; for (let r = 0; r < rows; r++) { const n = Math.ceil(len / 3); for (let i = 0; i < n; i++) { const t = (i + 0.5 + (r % 2) * 0.5) / n; if (t > 1) continue; b.add('boxb', pick([col, shade(col, 0.9), shade(col, 1.08)]), x1 + dx * t, y + r * (h + 0.5) / rows, z1 + dz * t, thick, (h + 0.5) / rows + 0.02, len / n + 0.02, 0, ry, 0, 0.02); } }
   const n = Math.floor(len / 1.2);
   for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; if (i % 2) continue; b.add('boxb', col, x1 + dx * t, y + h + 0.5, z1 + dz * t, thick + 0.1, 0.6, len / n * 0.9, 0, ry, 0); }
+  b.add('boxb', shade(col, 0.85), mx, y + h + 0.4, mz, thick + 0.2, 0.12, len, 0, ry, 0);
   if (L.winter) b.add('boxb', COL.snow, mx, y + h + 0.5, mz, thick + 0.05, 0.08, len, 0, ry, 0, 0);
 }
 function tower(L, x, z, r = 2.2, h = 10, roof = COL.slate, base) {
   const b = L.b, y = base !== undefined ? base : L.h(x, z) - 0.5;
-  b.add('cyl8', COL.stone, x, y + h / 2, z, r * 2, h, r * 2); b.add('cyl8', COL.stoneD, x, y + h + 0.2, z, r * 2.25, 0.5, r * 2.25);
-  b.add('cone8', roof, x, y + h + 0.45 + r * 1.3, z, r * 2.5, r * 2.6, r * 2.5); if (L.winter) b.add('cone8', COL.snow, x, y + h + 0.3 + r * 1.0, z, r * 2.35, r * 1.6, r * 2.35, 0, 0, 0, 0);
-  for (let i = 0; i < 3; i++) { const a = i * 2.1; b.add('box', '#2a2a30', x + Math.sin(a) * r * 0.98, y + h * 0.6, z + Math.cos(a) * r * 0.98, 0.3, 0.7, 0.3, 0, a, 0); }
-  b.add('box', COL.woodD, x, y + h + r * 2.7, z, 0.06, 1.2, 0.06); b.add('box', COL.elonth, x, y + h + r * 2.7 + 0.3, z + 0.35, 0.03, 0.45, 0.7);
+  b.add('cylS', COL.stone, x, y + h / 2, z, r * 2, h, r * 2); for (let k = 1; k < 4; k++) b.add('cylS', shade(COL.stone, 0.9), x, y + h * k / 4, z, r * 2.04, 0.15, r * 2.04);
+  b.add('cylS', COL.stoneD, x, y + h + 0.2, z, r * 2.3, 0.5, r * 2.3);
+  for (let i = 0; i < 10; i++) { const a = i / 10 * TAU; b.add('box', COL.stone, x + Math.cos(a) * r * 1.08, y + h + 0.6, z + Math.sin(a) * r * 1.08, 0.5, 0.5, 0.4, 0, -a, 0); }
+  b.add('coneS', roof, x, y + h + 0.6 + r * 1.35, z, r * 2.5, r * 2.7, r * 2.5); if (L.winter) b.add('coneS', COL.snow, x, y + h + 0.4 + r * 1.05, z, r * 2.35, r * 1.6, r * 2.35, 0, 0, 0, 0);
+  for (let i = 0; i < 3; i++) { const a = i * 2.1; b.add('box', '#2a2a30', x + Math.sin(a) * r * 0.98, y + h * 0.6, z + Math.cos(a) * r * 0.98, 0.3, 0.8, 0.3, 0, a, 0); }
+  b.add('cylS8', COL.woodD, x, y + h + r * 2.85, z, 0.06, 1.2, 0.06); b.add('box', COL.elonth, x, y + h + r * 2.85 + 0.3, z + 0.35, 0.03, 0.45, 0.7);
 }
 function palace(L, x, z, y, s = 1) {
   const b = L.b; b.begin(x, y, z, 0, s);
   b.box(COL.stoneL, 0, 0, 0, 34, 12, 20); b.box(COL.stone, 0, 12, 0, 20, 8, 14);
+  for (let i = -3; i <= 3; i++) b.box(shade(COL.stoneL, 0.9), i * 5, 0, 10.05, 0.8, 12, 0.3);
   b.add('roof', COL.slate, 0, 12, 0, 22, 6, 36, 0, Math.PI / 2, 0); b.add('roof', COL.slate, 0, 20, 0, 16, 6, 22, 0, Math.PI / 2, 0);
   b.end();
   const tw = (dx, dz, r, h) => tower(L, x + dx * s, z + dz * s, r * s, h * s, COL.slate, y);
   tw(-17, -10, 3, 18); tw(17, -10, 3, 18); tw(-17, 10, 3, 18); tw(17, 10, 3, 18); tw(0, 0, 4, 34); tw(-8, 8, 2.2, 26); tw(9, 7, 2.2, 24);
-  // pencereler ışıklı
   for (let i = -3; i <= 3; i++) L.gb.box('#ffd890', x + i * 4 * s, y + 6 * s, z + 10.1 * s, 0.9 * s, 2.2 * s, 0.1);
   for (let i = -2; i <= 2; i++) L.gb.box('#ffd890', x + i * 3.5 * s, y + 15 * s, z + 7.1 * s, 0.8 * s, 1.8 * s, 0.1);
 }
 function noticeBoard(L, x, z, ry) {
   const b = L.b; b.begin(x, L.h(x, z), z, ry);
-  b.box(COL.woodD, -1.1, 0, 0, 0.15, 2.4, 0.15); b.box(COL.woodD, 1.1, 0, 0, 0.15, 2.4, 0.15);
+  b.add('cylS8', COL.woodD, -1.1, 1.2, 0, 0.15, 2.4, 0.15); b.add('cylS8', COL.woodD, 1.1, 1.2, 0, 0.15, 2.4, 0.15);
   b.box(COL.wood, 0, 0.9, 0, 2.4, 1.3, 0.1); b.add('roof', COL.woodD, 0, 2.3, 0, 2.7, 0.45, 0.6, 0, 0, 0);
-  const papers = ['#efe6cc', '#e8dcc0', '#f4ecd8', '#ddd0b0'];
-  for (let i = 0; i < 9; i++) b.add('box', pick(papers), rnd(-0.9, 0.9), rnd(1.15, 2.0), 0.06, rnd(0.25, 0.4), rnd(0.3, 0.45), 0.01, 0, 0, rnd(-0.15, 0.15), 0);
+  const papers = ['#f4ecd2', '#ece0c4', '#f8f0dc', '#e4d6b4'];
+  for (let i = 0; i < 9; i++) { const px = rnd(-0.9, 0.9), py = rnd(1.15, 2.0); b.add('box', pick(papers), px, py, 0.06, rnd(0.25, 0.4), rnd(0.3, 0.45), 0.01, 0, 0, rnd(-0.15, 0.15), 0); b.add('sphS', '#b83a2a', px, py + 0.17, 0.07, 0.03, 0.03, 0.02); }
   b.end(); L.addBox(x, z, 1.25, 0.2, ry);
 }
 function fountain(L, x, z) {
   const b = L.b, y = L.h(x, z);
-  b.add('cyl8', COL.stoneL, x, y + 0.35, z, 6, 0.7, 6); b.add('cyl8', '#2d5a66', x, y + 0.66, z, 5.4, 0.05, 5.4, 0, 0, 0, 0);
-  b.add('cyl8', COL.stone, x, y + 1.3, z, 0.8, 2.2, 0.8); b.add('cyl8', COL.stoneL, x, y + 2.4, z, 2.2, 0.25, 2.2); b.add('cyl8', COL.stone, x, y + 3.0, z, 0.4, 1.1, 0.4); b.add('octa', COL.gold, x, y + 3.7, z, 0.5, 0.7, 0.5);
-  const w = new T.Mesh(new T.CylinderGeometry(2.6, 2.6, 0.05, 16), MAT.water); w.position.set(x, y + 0.68, z); L.add(w);
+  for (let i = 0; i < 16; i++) { const a = i / 16 * TAU; b.add('box', pick([COL.stoneL, COL.stone]), x + Math.cos(a) * 2.9, y + 0.35, z + Math.sin(a) * 2.9, 0.5, 0.7, 1.2, 0, -a, 0, 0.04); }
+  b.add('cylS', COL.stoneL, x, y + 1.3, z, 0.8, 2.2, 0.8); b.add('cylS', COL.stoneL, x, y + 2.4, z, 2.2, 0.25, 2.2); b.add('cylS', COL.stone, x, y + 3.0, z, 0.4, 1.1, 0.4); b.add('octa', COL.gold, x, y + 3.7, z, 0.5, 0.7, 0.5);
+  const w = new T.Mesh(new T.CircleGeometry(2.75, 24), waterMaterial({ opacity: 0.92 })); w.rotation.x = -Math.PI / 2; w.position.set(x, y + 0.62, z); L.add(w);
+  const w2 = new T.Mesh(new T.CircleGeometry(1.0, 16), waterMaterial({ opacity: 0.92 })); w2.rotation.x = -Math.PI / 2; w2.position.set(x, y + 2.55, z); L.add(w2);
+  L.fountains = (L.fountains || []).concat([V3(x, y + 2.6, z)]);
   L.addCircle(x, z, 3.1);
 }
 function dummyProp(L, x, z) {
   const g = new T.Group(); const y = L.h(x, z);
-  const m = (t, c, px, py, pz, sx, sy, sz, rz = 0) => { const k = new T.Mesh(prim(t), lam(c)); k.position.set(px, py, pz); k.scale.set(sx, sy, sz); k.rotation.z = rz; k.castShadow = true; g.add(k); return k; };
   const top = new T.Group(); g.add(top);
-  m('cyl6', COL.woodD, 0, 0.5, 0, 0.16, 1.0, 0.16);
-  const tm = (t, c, px, py, pz, sx, sy, sz, rz = 0) => { const k = m(t, c, px, py, pz, sx, sy, sz, rz); g.remove(k); top.add(k); return k; };
-  tm('cyl8', '#c8b080', 0, 1.35, 0, 0.55, 0.9, 0.5); tm('box', COL.woodD, 0, 1.55, 0, 1.3, 0.1, 0.1); tm('sph8', '#c8b080', 0, 2.0, 0, 0.42, 0.42, 0.42);
-  tm('box', '#8a3a2a', 0, 1.25, 0.26, 0.3, 0.3, 0.02);
+  const m = (par, geo, c, px, py, pz, sx, sy, sz, rz = 0) => { const k = new T.Mesh(geo, TOON.mat(c)); k.position.set(px, py, pz); k.scale.set(sx, sy, sz); k.rotation.z = rz; k.castShadow = true; par.add(k); const ol = new T.Mesh(geo, TOON.outline); ol.position.copy(k.position); ol.scale.copy(k.scale); ol.rotation.copy(k.rotation); par.add(ol); return k; };
+  m(g, prim('cylS8'), COL.woodD, 0, 0.5, 0, 0.16, 1.0, 0.16);
+  m(top, prim('cylS'), '#d8c090', 0, 1.35, 0, 0.55, 0.9, 0.5); m(top, prim('cylS8'), COL.woodD, 0, 1.55, 0, 0.1, 1.3, 0.1, Math.PI / 2); m(top, prim('sphS'), '#d8c090', 0, 2.0, 0, 0.42, 0.42, 0.42);
+  m(top, prim('box'), '#a83a2a', 0, 1.25, 0.26, 0.3, 0.3, 0.02);
   g.position.set(x, y, z); L.add(g); L.addCircle(x, z, 0.35);
   return { group: g, top, wobble: 0, t: 0 };
 }
-// Pencere manzarası (CanvasTexture)
 function windowView(night) {
   const c = document.createElement('canvas'); c.width = 256; c.height = 256; const g = c.getContext('2d');
   const sky = g.createLinearGradient(0, 0, 0, 256);
-  if (night) { sky.addColorStop(0, '#0a1024'); sky.addColorStop(1, '#25365a'); } else { sky.addColorStop(0, '#8fb8e8'); sky.addColorStop(1, '#f2dcb8'); }
+  if (night) { sky.addColorStop(0, '#0a1024'); sky.addColorStop(1, '#25365a'); } else { sky.addColorStop(0, '#8fbcef'); sky.addColorStop(1, '#f6e0bc'); }
   g.fillStyle = sky; g.fillRect(0, 0, 256, 256);
   if (night) { g.fillStyle = '#f2efe0'; g.beginPath(); g.arc(196, 52, 14, 0, TAU); g.fill(); g.fillStyle = '#fff'; for (let i = 0; i < 40; i++) g.fillRect(Math.random() * 256, Math.random() * 130, 1.2, 1.2); }
-  // tepe ve saray silueti
-  g.fillStyle = night ? '#121a2c' : '#7d8fa0';
+  else { g.fillStyle = 'rgba(255,255,255,0.85)'; for (const [cx, cy, r] of [[50, 50, 18], [70, 44, 22], [92, 52, 16], [190, 70, 14], [208, 64, 18]]) { g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.fill(); } }
+  g.fillStyle = night ? '#121a2c' : '#8aa0b4';
   g.beginPath(); g.moveTo(0, 170); g.quadraticCurveTo(128, 110, 256, 165); g.lineTo(256, 256); g.lineTo(0, 256); g.fill();
-  g.fillStyle = night ? '#0d1322' : '#6a7a8c';
+  g.fillStyle = night ? '#0d1322' : '#7a8ca0';
   const tw = (x, w, h, roof) => { g.fillRect(x, 140 - h, w, h + 40); g.beginPath(); g.moveTo(x - 3, 140 - h); g.lineTo(x + w / 2, 140 - h - roof); g.lineTo(x + w + 3, 140 - h); g.fill(); };
   g.fillRect(90, 108, 80, 40); tw(84, 12, 50, 18); tw(164, 12, 48, 18); tw(122, 16, 72, 26); tw(104, 9, 36, 14); tw(147, 9, 40, 14);
   if (night) { g.fillStyle = '#ffd890'; for (let i = 0; i < 9; i++) g.fillRect(96 + i * 8, 118, 2, 4); g.fillRect(128, 92, 3, 5); }
-  // önde çatılar
-  g.fillStyle = night ? '#1a1610' : '#8a6a3a';
+  g.fillStyle = night ? '#1a1610' : '#a8803e';
   for (let i = 0; i < 4; i++) { const x = i * 70 - 10; g.beginPath(); g.moveTo(x, 256); g.lineTo(x + 35, 200 + (i % 2) * 12); g.lineTo(x + 70, 256); g.fill(); }
   if (night) { g.fillStyle = '#ffb860'; g.fillRect(52, 236, 6, 6); g.fillRect(190, 240, 6, 6); }
   const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return t;
@@ -1425,19 +1872,18 @@ const hillF = (x, z, cx, cz, r, h) => { const d = Math.hypot(x - cx, z - cz) / r
 
 // ===== Gece yolu (kaza) =====
 function buildRoad() {
-  const L = new Level('road');
-  L.hf = (x, z) => { const ax = Math.abs(x); return ax < 7 ? 0 : (ax - 7) * 0.15 + fbm(x * 0.05, z * 0.05) * 3 * smooth(clamp((ax - 7) / 20, 0, 1)); };
-  terrain(L, -60, -620, 60, 160, 6, (x, z, y) => Math.abs(x) < 4.3 ? '#26282c' : Math.abs(x) < 5.2 ? '#3a3a38' : (hash2(x, z) > 0.5 ? '#1f2a1c' : '#243020'));
+  const L = new Level('road'); const P = 240;
+  L.hf = (x, z) => { const ax = Math.abs(x); const zz = ((z % P) + P) % P; return ax < 7 ? 0 : (ax - 7) * 0.15 + fbm(x * 0.05, zz * 0.05) * 3 * smooth(clamp((ax - 7) / 20, 0, 1)); };
+  terrain(L, -60, -620, 60, 160, 4, (x, z, y) => Math.abs(x) < 4.3 ? '#2c2e33' : Math.abs(x) < 5.2 ? '#46463f' : (hash2(Math.floor(x / 3), Math.floor(((z % P) + P) % P / 3)) > 0.5 ? '#26341f' : '#2c3a24'));
   const b = L.b;
-  for (let z = 150; z > -620; z -= 9) { b.add('box', '#c8c8b8', 0, 0.02, z, 0.15, 0.02, 4, 0, 0, 0, 0); }
-  for (const sx of [-1, 1]) { b.add('box', '#b8b8a8', sx * 4.0, 0.02, -235, 0.12, 0.02, 770, 0, 0, 0, 0); }
-  for (let z = 150; z > -620; z -= 4) for (const sx of [-1, 1]) b.add('box', '#8a8d92', sx * 5.4, 0.35, z, 0.1, 0.7, 0.1, 0, 0, 0, 0.02);
-  for (const sx of [-1, 1]) b.add('box', '#a4a8ae', sx * 5.4, 0.6, -235, 0.06, 0.25, 770, 0, 0, 0, 0);
-  for (let z = 140; z > -620; z -= 42) { const sx = (Math.round(z / 42) % 2) ? 1 : -1; b.add('box', '#55585e', sx * 6, 3.5, z, 0.15, 7, 0.15); b.add('box', '#55585e', sx * 5.2, 7, z, 1.8, 0.1, 0.12); L.gb.add('box', '#ffe2a8', sx * 4.4, 6.9, z, 0.6, 0.1, 0.3); }
-  seed(3);
-  for (let i = 0; i < 260; i++) { const sx = rng() < 0.5 ? -1 : 1, x = sx * rnd(9, 55), z = rnd(-610, 150); tree(L, x, z, 'pine', rnd(1.2, 2.2)); }
-  // uzak şehir ışıkları
-  for (let i = 0; i < 40; i++) { const x = rnd(-180, 180), z = rnd(-700, -560), h = rnd(10, 60); b.add('boxb', '#0e1118', x, 0, z, rnd(6, 14), h, rnd(6, 14)); for (let k = 0; k < 6; k++) L.gb.add('box', pick(['#ffd890', '#ffeec8', '#a8c8ff']), x + rnd(-3, 3), rnd(2, h), z + 7.2, 0.6, 0.6, 0.1); }
+  for (let z = 160; z > -620; z -= 8) { b.add('box', '#d8d8c8', 0, 0.02, z, 0.15, 0.02, 4, 0, 0, 0, 0); }
+  for (const sx of [-1, 1]) { b.add('box', '#c8c8b8', sx * 4.0, 0.02, -230, 0.12, 0.02, 780, 0, 0, 0, 0); }
+  for (let z = 160; z > -620; z -= 4) for (const sx of [-1, 1]) b.add('box', '#8a8d92', sx * 5.4, 0.35, z, 0.1, 0.7, 0.1, 0, 0, 0, 0.02);
+  for (const sx of [-1, 1]) b.add('box', '#a4a8ae', sx * 5.4, 0.6, -230, 0.06, 0.25, 780, 0, 0, 0, 0);
+  for (let z = 160; z > -620; z -= 40) { const sx = (Math.round(z / 40) % 2) ? 1 : -1; b.add('box', '#55585e', sx * 6, 3.5, z, 0.15, 7, 0.15); b.add('box', '#55585e', sx * 5.2, 7, z, 1.8, 0.1, 0.12); L.gb.add('box', '#ffe2a8', sx * 4.4, 6.9, z, 0.6, 0.1, 0.3); }
+  seed(3); const trees = []; for (let i = 0; i < 90; i++) trees.push([(rng() < 0.5 ? -1 : 1) * rnd(9, 55), rnd(0, P), rnd(1.2, 2.2)]);
+  for (let k = -3; k <= 1; k++) for (const [x, z, s] of trees) { const zz = z + k * P; if (zz < -620 || zz > 160) continue; tree(L, x, zz, 'pine', s); }
+  L.period = P;
   L.finalize();
   L.camBox = null;
   return L;
@@ -1554,23 +2000,24 @@ function buildVillage(o = {}) {
   L.extraResolve = (p, r) => { const rx = riverX(p.z), d = p.x - rx; if (Math.abs(d) < 3.3 + r && Math.abs(p.z - bridge.z) > bridge.hw - 0.2) p.x = rx + Math.sign(d || 1) * (3.3 + r); };
   const W = L.winter;
   const fieldIn = (x, z) => x > -32 && x < 6 && z > 40 && z < 58;
-  terrain(L, -110, -200, 120, 120, 1.8, (x, z, y, ny) => {
+  terrain(L, -110, -200, 120, 120, 1.4, (x, z, y, ny) => {
     const pd = distToPath(x, z, VILLAGE_PATHS);
     const rd = Math.abs(x - riverX(z));
-    if (rd < 4.2) return W ? '#9aa4ae' : '#6a6a52';
-    if (W) { if (pd < 1.8) return '#b9b2a6'; return hash2(x * 0.5, z * 0.5) > 0.5 ? COL.snow : COL.snow2; }
-    if (pd < 1.6 || Math.hypot(x, z) < 7) { const h = hash2(x * 0.7, z * 0.7); return h > 0.66 ? COL.dirt : h > 0.33 ? COL.dirtD : '#8c7050'; }
-    if (pd < 2.4) return '#8a8048';
-    if (fieldIn(x, z)) return '#7a6038';
-    if (ny < 0.85) return '#6a7a44';
-    const n = fbm(x * 0.08, z * 0.08); return n > 0.55 ? COL.grass2 : n > 0.38 ? COL.grass : '#7a9448';
+    const n = fbm(x * 0.06, z * 0.06), n2 = fbm(x * 0.21 + 7, z * 0.21);
+    if (W) { if (rd < 4.4) return '#a8b8c8'; if (pd < 1.7) return mixHex('#c8bcae', '#e8ecf2', smooth(clamp((pd - 0.6) / 1.1, 0, 1))); return mixHex(COL.snow2, COL.snow, n2); }
+    if (rd < 3.9) return '#6e6a50';
+    if (rd < 5.2) return mixHex('#8a8a5a', COL.grassD, (rd - 3.9) / 1.3);
+    const plaza = Math.hypot(x, z) < 7.5;
+    const grassC = n > 0.56 ? mixHex(COL.grass2, COL.grassD, (n - 0.56) * 4) : n > 0.36 ? mixHex(COL.grass, COL.grass2, (n - 0.36) * 5) : mixHex(COL.grassL, COL.grass, n / 0.36);
+    if (fieldIn(x, z)) return mixHex('#8a6a40', '#7a5c36', n2);
+    if (pd < 2.3 || plaza) { const t = plaza ? 0 : smooth(clamp((pd - 1.2) / 1.1, 0, 1)); const dc = mixHex(COL.dirt, COL.dirtD, n2); return mixHex(dc, grassC, t); }
+    if (ny < 0.8) return mixHex(grassC, '#7a7a52', 0.4);
+    return grassC;
   });
   // nehir suyu
-  { const pts = []; for (let z = -200; z <= 120; z += 4) pts.push(z); const N = pts.length; const pos = []; for (let i = 0; i < N - 1; i++) { const z1 = pts[i], z2 = pts[i + 1], a1 = riverX(z1), a2 = riverX(z2), w = 3.6; pos.push(a1 - w, 0, z1, a1 + w, 0, z1, a2 - w, 0, z2, a1 + w, 0, z1, a2 + w, 0, z2, a2 - w, 0, z2); }
+  { const pts = []; for (let z = -200; z <= 120; z += 2) pts.push(z); const N = pts.length; const pos = []; for (let i = 0; i < N - 1; i++) { const z1 = pts[i], z2 = pts[i + 1], a1 = riverX(z1), a2 = riverX(z2), w = 3.9; pos.push(a1 - w, 0, z1, a1 + w, 0, z1, a2 - w, 0, z2, a1 + w, 0, z1, a2 + w, 0, z2, a2 - w, 0, z2); }
     const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
-    const wm = W ? new T.MeshLambertMaterial({ color: '#b8c8d4', transparent: true, opacity: 0.9 }) : MAT.water;
-    const water = new T.Mesh(g, wm); water.position.y = -1.0; water.receiveShadow = true; L.add(water);
-    if (!W) L.anims.push(() => { MAT.water.emissive.setRGB(0.04 + Math.sin(G.t * 1.3) * 0.01, 0.13 + Math.sin(G.t * 1.7) * 0.015, 0.17); }); }
+    const water = new T.Mesh(g, waterMaterial(W ? { deep: '#9ab4c8', shallow: '#c8dceb', opacity: 0.96, ice: true } : {})); water.position.y = -0.95; L.add(water); }
   const b = L.b;
   // köprü
   { const x0 = riverX(0); b.begin(x0, 0, 0, 0);
@@ -1608,15 +2055,17 @@ function buildVillage(o = {}) {
   L.pts.alley = V3(16.5, 0, 15.5);
   crate(L, 13.0, 19.8, 0.9, 0.2); crate(L, 13.0, 19.8, 0.7, 0.5, L.h(13, 19.8) + 0.72); barrel(L, 21.4, 11.6); crate(L, 21.0, 18.9, 0.8, 0.9); barrel(L, 14.6, 11.8, 0.85); haystack(L, 20.2, 20.0, 0.7);
   // tarlalar
-  for (let z = 41.5; z < 57.5; z += 1.4) { if (W) break; b.add('box', z % 2.8 < 1.4 ? COL.wheat : COL.wheat2, -13, L.h(-13, z) + 0.35, z, 36, 0.7, 0.55, 0, 0, 0, 0.05); for (let x = -30; x < 4; x += 1.1) b.add('cone4', COL.wheat, x + rnd(-0.3, 0.3), L.h(x, z) + 0.82, z + rnd(-0.1, 0.1), 0.22, 0.35, 0.22, 0, rnd(0, 1), 0, 0.12); }
+  L.harvested = o.harvested || null;
+  if (!W) { const wp = []; for (let z = 41.6; z < 57.6; z += 0.75) for (let x = -31; x < 5; x += 0.42) { const xx = x + rnd(-0.12, 0.12), zz = z + rnd(-0.15, 0.15); if (L.harvested && L.harvested(xx, zz)) continue; wp.push([xx, zz, mixHex('#fff4d0', '#e8c890', rng()), rnd(0.9, 1.15)]); } vegetation(L, 'wheat', wp); }
+  for (let z = 41.2; z < 58; z += 0.75) b.add('box', '#6a5030', -13, L.h(-13, z) - 0.02, z, 37, 0.06, 0.22, 0, 0, 0, 0.04);
   fence(L, -33, 39.5, -33, 59, { collide: false }); fence(L, -33, 59, 7, 59, { collide: false }); fence(L, 7, 39.5, 7, 59, { collide: false });
   // korkuluk
-  { const x = -14, z = 49, y = L.h(x, z); b.add('box', COL.woodD, x, y + 1.2, z, 0.1, 2.4, 0.1); b.add('box', COL.woodD, x, y + 1.8, z, 1.4, 0.1, 0.1); b.add('box', '#7a5a3a', x, y + 1.6, z, 0.45, 0.6, 0.3); b.add('box', '#c8a868', x, y + 2.15, z, 0.35, 0.35, 0.3); b.add('cone8', '#b8984a', x, y + 2.42, z, 0.7, 0.3, 0.7); }
+  { const x = -14, z = 49, y = L.h(x, z); b.add('cylS8', COL.woodD, x, y + 1.2, z, 0.1, 2.4, 0.1); b.add('cylS8', COL.woodD, x, y + 1.8, z, 0.1, 1.5, 0.1, 0, 0, Math.PI / 2); b.add('sphS', '#7a5a3a', x, y + 1.55, z, 0.5, 0.7, 0.35); b.add('sphS', '#d8b878', x, y + 2.15, z, 0.36, 0.36, 0.32); b.add('coneS', '#c8a050', x, y + 2.42, z, 0.8, 0.3, 0.8); for (const s2 of [-1, 1]) b.add('sphS', '#d8b870', x + s2 * 0.75, y + 1.8, z, 0.18, 0.18, 0.18); }
   haystack(L, 10, 45, 1); haystack(L, 11, 49, 0.9); cart(L, 10.5, 53, 0.2);
   L.pts.field = V3(-13, 0, 50); L.pts.fieldEdge = V3(-13, 0, 38);
   // eğitim açıklığı
   L.pts.clearing = V3(46, 0, -12);
-  for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + 0.4; b.add('cyl6', COL.trunk, 46 + Math.cos(a) * 6.5, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5, 0.5, 2.2, 0.5, Math.PI / 2, a, 0); }
+  for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + 0.4; b.add('cylS', COL.trunk, 46 + Math.cos(a) * 6.5, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5, 0.5, 2.2, 0.5, Math.PI / 2, a, 0); b.add('cylS', '#c8a878', 46 + Math.cos(a) * 6.5 + Math.cos(a + 1.57) * 1.11, L.h(46, -12) + 0.25, -12 + Math.sin(a) * 6.5 + Math.sin(a + 1.57) * 1.11, 0.46, 0.02, 0.46, Math.PI / 2, a, 0, 0); }
   rock(L, 52, -7, 1.3); rock(L, 41, -18, 1.1);
   // tepe ve büyük ağaç
   tree(L, -33, -39, 'oak', 1.6); L.pts.hillTop = V3(-31, 0, -35); rock(L, -36, -34, 0.9); flowers(L, -29, -37, 10);
@@ -1638,6 +2087,19 @@ function buildVillage(o = {}) {
   for (let i = 0; i < 220; i++) { const x = rnd(-105, 115), z = rnd(-150, 110); const dc = Math.hypot(x, z); if (dc < 28 || occ(x, z)) continue; if (dc < 55 && rng() < 0.55) continue; tree(L, x, z, W ? pick(['pine', 'pine', 'oak', 'dead']) : pick(['oak', 'oak', 'pine', 'birch']), rnd(0.9, 1.5)); }
   for (let i = 0; i < 60; i++) { const z = rnd(-60, 60), x = riverX(z) + (rng() < 0.5 ? -1 : 1) * rnd(5.5, 9); if (Math.abs(z) < 4 || occ(x + 50, z + 200)) continue; if (rng() < 0.5) bush(L, x, z, rnd(0.7, 1.2)); else rock(L, x, z, rnd(0.4, 0.9)); }
   for (let i = 0; i < 90; i++) { const x = rnd(-55, 60), z = rnd(-62, 60); if (occ(x, z) && distToPath(x, z, VILLAGE_PATHS) < 2.6) continue; if (rng() < 0.4) bush(L, x, z, rnd(0.5, 1)); else if (rng() < 0.5) flowers(L, x, z, 5); else grassTufts(L, x, z, 6); }
+  // çimen, çiçek, kamış
+  if (!W) {
+    const gp = [], fl = [...L.flowerSpots], rd = [];
+    for (let i = 0; i < 16000 && gp.length < 11000; i++) {
+      const x = rnd(-62, 66), z = rnd(-70, 66); const pd = distToPath(x, z, VILLAGE_PATHS);
+      if (pd < 2.0 || Math.abs(x - riverX(z)) < 4.6 || fieldIn(x, z) || Math.hypot(x, z) < 8 || L.occupied(x, z, 0.5) || (z < -66)) continue;
+      const n = fbm(x * 0.06, z * 0.06); gp.push([x, z, mixHex('#e8ffd0', '#b8d890', n), pd < 3 ? 0.7 : rnd(0.85, 1.3)]);
+      if (rng() < 0.035) fl.push([x + rnd(-0.5, 0.5), z + rnd(-0.5, 0.5), pick(['#ffe060', '#ff7a7a', '#ffffff', '#c890ff', '#ffa040', '#80b0ff'])]);
+    }
+    for (let i = 0; i < 260; i++) { const z = rnd(-70, 66), side = rng() < 0.5 ? -1 : 1, x = riverX(z) + side * rnd(3.7, 4.9); if (Math.abs(z) < 2.5) continue; rd.push([x, z, '#ffffff', rnd(0.8, 1.2)]); }
+    vegetation(L, 'grass', gp); vegetation(L, 'flower', fl.map(f => [f[0], f[1], f[2], 1])); vegetation(L, 'reed', rd);
+    for (let i = 0; i < 70; i++) { const z = rnd(-66, 64), side = rng() < 0.5 ? -1 : 1, x = riverX(z) + side * rnd(3.4, 4.4); if (Math.abs(z) < 3) continue; rock(L, x, z, rnd(0.25, 0.6), pick(['#8a8a84', '#9a968a', '#7a7a74'])); }
+  }
   // meşaleler
   if (lit) { torch(L, 3.2, 2.5, true); torch(L, -12.5, 6, true); torch(L, 8.5, 14.5, true); torch(L, -2.5, -12, false); torch(L, riverX(0) - 6.2, 2.3, false); }
   L.pts.square = V3(0, 0, 4); L.pts.bridge = V3(riverX(0), 0, 0);
@@ -1650,7 +2112,15 @@ function buildEros(o = {}) {
   const L = new Level('eros'); seed(77);
   L.hf = (x, z) => 0; L.th = (x, z) => { const d = Math.max(Math.abs(x) - 26, Math.abs(z) - 30); return d > 0 ? d * 0.12 + fbm(x * 0.05, z * 0.05) * 2 : 0; };
   L.bounds = { x0: -24, x1: 24, z0: -24, z1: 34 };
-  terrain(L, -80, -90, 80, 70, 2, (x, z) => { if (Math.abs(x) < 26 && z > -28 && z < 36) { const t = Math.floor(x * 1.2) + Math.floor(z * 1.6); return t % 3 === 0 ? '#9a9286' : t % 3 === 1 ? '#8a8276' : '#a29a8c'; } return '#6a7a48'; });
+  terrain(L, -80, -90, 80, 70, 0.9, (x, z) => {
+    if (Math.abs(x) < 26 && z > -28 && z < 36) {
+      const cx = Math.floor(x / 0.9), cz = Math.floor(z / 0.9), h = hash2(cx * 1.3, cz * 0.7), r = Math.hypot(x, z - 3);
+      if (r > 6 && r < 7.2) return '#8a8070';
+      if (Math.abs(x) < 1.6 && z > -16) return h > 0.5 ? '#c4b8a0' : '#b8ac94';
+      return h > 0.66 ? '#b0a690' : h > 0.33 ? '#a09684' : '#bcb29c';
+    }
+    const n = fbm(x * 0.06, z * 0.06); return n > 0.5 ? COL.grass2 : COL.grass;
+  });
   const b = L.b;
   // lonca binası (kuzey)
   { const x = 0, z = -21; b.begin(x, 0, z, 0);
@@ -1672,6 +2142,13 @@ function buildEros(o = {}) {
   for (const [x, z, ry] of ring) townHouse(L, x, z, ry, { lit: o.night, awning: rng() < 0.5 ? pick(['#a33a2a', '#2a5a8a', '#3a7a3a']) : null, floors: rng() < 0.3 ? 3 : 2 });
   for (let i = 0; i < 26; i++) { const a = rnd(0, TAU), r = rnd(34, 55); townHouse(L, Math.cos(a) * r, Math.sin(a) * r - 5, -a + Math.PI / 2, { floors: rng() < 0.4 ? 3 : 2 }); }
   fountain(L, 0, 3);
+  // bayrak dizileri (çapraz)
+  const bunting = (x1, z1, x2, z2, y) => { const n = 18; for (let i = 0; i <= n; i++) { const t = i / n, x = lerp(x1, x2, t), z = lerp(z1, z2, t), yy = y - Math.sin(t * Math.PI) * 1.4; if (i < n) b.add('box', '#3a3026', x, yy, z, 0.03, 0.03, Math.hypot(x2 - x1, z2 - z1) / n + 0.05, 0, Math.atan2(x2 - x1, z2 - z1), 0, 0); if (i % 1 === 0 && i > 0 && i < n) b.add('wedge', pick(['#c83a2a', '#e8c040', '#2a6aa8', '#f4ecd8', '#3a8a4a']), x, yy - 0.36, z, 0.36, 0.34, 0.02, Math.PI, Math.atan2(x2 - x1, z2 - z1) + Math.PI / 2, 0, 0); } };
+  bunting(-17, -4, 17, 10, 6.8); bunting(-17, 10, 17, -4, 6.6); bunting(-17, 20, 17, 20, 6.4);
+  // saksılar ve banklar
+  for (const [x, z] of [[-4.5, -12], [4.5, -12], [-9, 0], [9, 0], [-9, 8], [9, 8]]) { b.add('cylS', '#8a6a50', x, 0.3, z, 0.8, 0.6, 0.8); b.add('blob2', '#5a9a3a', x, 0.8, z, 0.9, 0.6, 0.9); for (let i = 0; i < 4; i++) b.add('sphS', pick(['#e85a5a', '#f0d040', '#ffffff']), x + rnd(-0.3, 0.3), 1.05, z + rnd(-0.3, 0.3), 0.14, 0.12, 0.14); L.addCircle(x, z, 0.45); }
+  bench(L, -6, 6.5, Math.PI); bench(L, 6, 6.5, Math.PI); bench(L, -6, -0.5, 0); bench(L, 6, -0.5, 0);
+  { const gp = []; for (let i = 0; i < 3500; i++) { const x = rnd(-75, 75), z = rnd(-85, 65); if (Math.abs(x) < 27 && z > -29 && z < 37) continue; if (L.occupied(x, z, 0.6)) continue; gp.push([x, z, mixHex('#e8ffd0', '#b8d890', rng()), rnd(0.8, 1.2)]); } vegetation(L, 'grass', gp); }
   stall(L, -11, 10, 0.4, '#a33a2a'); stall(L, 11, 12, -0.5, '#2a5a8a'); stall(L, -12, -5, 1.2, '#7a5a2a'); stall(L, 12, -3, -1.3, '#3a6a3a');
   for (const [x, z] of [[-6, 20], [6, 22], [-15, 24], [15, 26]]) { barrel(L, x, z); crate(L, x + 1.2, z + 0.4, 0.8, 0.4); }
   lampPost(L, -7, -8, !!o.night); lampPost(L, 7, -8, !!o.night); lampPost(L, -8, 16, false); lampPost(L, 8, 16, false);
@@ -1838,6 +2315,91 @@ const Screen = {
   redFlash(v = 0.5) { this.fx.red = v; this.target.red = 0; },
 };
 
+// ---------- Ortam canlılığı: duman, kuşlar, kelebekler, ateşböcekleri, toz ----------
+const Ambient = {
+  init(scene) {
+    this.scene = scene; this.group = new T.Group(); scene.add(this.group);
+    const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+    const gr = g.createRadialGradient(32, 32, 2, 32, 32, 30); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64); this.soft = new T.CanvasTexture(c);
+    this.items = [];
+  },
+  clear() { for (const o of [...this.group.children]) { this.group.remove(o); o.traverse(k => { if (k.material && k.material.dispose && !k.material.userData.keep) k.material.dispose(); if (k.geometry && !k.geometry.userData.keep) k.geometry.dispose(); }); } this.items = []; },
+  setup(L, tod) {
+    this.clear();
+    const night = tod === 'night' || tod === 'interiorNight' || tod === 'storm';
+    const dusk = tod === 'dusk' || tod === 'winterdusk';
+    const outdoor = !L.interior;
+    // baca dumanı
+    if (outdoor && tod !== 'storm') for (const p of L.smoke.slice(0, 16)) {
+      for (let i = 0; i < 6; i++) {
+        const m = new T.SpriteMaterial({ map: this.soft, color: night ? '#5a6070' : '#d8d4cc', transparent: true, opacity: 0, depthWrite: false });
+        const s = new T.Sprite(m); this.group.add(s);
+        this.items.push({ k: 'smoke', s, p, t: i / 6 * 4.2, life: 4.2 });
+      }
+    }
+    // çeşme sıçraması
+    if (outdoor && L.fountains) for (const p of L.fountains) for (let i = 0; i < 10; i++) { const m = new T.SpriteMaterial({ map: this.soft, color: '#e8f8ff', transparent: true, opacity: 0, depthWrite: false }); const s = new T.Sprite(m); this.group.add(s); this.items.push({ k: 'spray', s, p, t: i / 10 * 1.1, life: 1.1, a: rnd(0, TAU) }); }
+    // kuşlar
+    if (outdoor && !night && tod !== 'storm') {
+      const wingG = new T.BufferGeometry(); wingG.setAttribute('position', new T.Float32BufferAttribute([0, 0, -0.12, 0, 0, 0.12, 0.7, 0.05, 0], 3)); wingG.computeVertexNormals(); wingG.userData.keep = true;
+      const bm = new T.MeshBasicMaterial({ color: '#2a2a30', side: T.DoubleSide });
+      for (let i = 0; i < 7; i++) {
+        const b = new T.Group(); const w1 = new T.Mesh(wingG, bm), w2 = new T.Mesh(wingG, bm); w2.scale.x = -1; b.add(w1, w2); b.scale.setScalar(rnd(0.9, 1.3)); this.group.add(b);
+        this.items.push({ k: 'bird', b, w1, w2, c: V3(rnd(-40, 40), rnd(22, 38), rnd(-50, 40)), r: rnd(18, 40), sp: rnd(0.15, 0.3) * (rng() < 0.5 ? 1 : -1), a: rnd(0, TAU), f: rnd(0, 6) });
+      }
+    }
+    // kelebekler
+    if (outdoor && !night && !dusk && !L.winter && L.flowerSpots && L.flowerSpots.length) {
+      const wg = new T.PlaneGeometry(0.12, 0.1); wg.translate(0.06, 0, 0); wg.userData.keep = true;
+      for (let i = 0; i < 16; i++) {
+        const sp = pick(L.flowerSpots); const col = pick(['#ffffff', '#ffe060', '#ff9ac0', '#90c8ff', '#ffb050']);
+        const m = new T.MeshBasicMaterial({ color: col, side: T.DoubleSide });
+        const b = new T.Group(); const w1 = new T.Mesh(wg, m), w2 = new T.Mesh(wg, m); w2.scale.x = -1; b.add(w1, w2); this.group.add(b);
+        this.items.push({ k: 'fly', b, w1, w2, home: V3(sp[0], L.h(sp[0], sp[1]) + 0.6, sp[1]), ph: rnd(0, 10) });
+      }
+    }
+    // ateşböcekleri / toz
+    const pts = (n, color, size, area, k) => {
+      const pos = new Float32Array(n * 3), seedA = new Float32Array(n);
+      for (let i = 0; i < n; i++) { pos[i * 3] = rnd(area.x0, area.x1); pos[i * 3 + 1] = rnd(area.y0, area.y1); pos[i * 3 + 2] = rnd(area.z0, area.z1); seedA[i] = rnd(0, 100); }
+      const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3));
+      const m = new T.PointsMaterial({ map: this.soft, color, size, transparent: true, opacity: 0.9, depthWrite: false, blending: T.AdditiveBlending, sizeAttenuation: true });
+      const p = new T.Points(g, m); p.frustumCulled = false; this.group.add(p);
+      this.items.push({ k, p, seedA, base: pos.slice(), area });
+    };
+    if (outdoor && night && !L.winter) pts(70, '#d8ff7a', 0.22, { x0: -30, x1: 30, y0: 0.3, y1: 2.2, z0: -25, z1: 30 }, 'firefly');
+    if (L.interior && L.camBox) { const B = L.camBox; pts(90, night ? '#8090c0' : '#ffe8c0', 0.05, { x0: B.x0, x1: B.x1, y0: B.y0, y1: B.y1, z0: B.z0, z1: B.z1 }, 'dust'); }
+  },
+  update(dt) {
+    const t = G.t;
+    for (const it of this.items) {
+      if (it.k === 'smoke') {
+        it.t += dt; if (it.t > it.life) it.t -= it.life; const u = it.t / it.life;
+        it.s.position.set(it.p.x + Math.sin(t * 0.4 + u * 3) * 0.3 + u * 1.2, it.p.y + u * 3.2, it.p.z + u * 0.6);
+        const sc = 0.6 + u * 2.4; it.s.scale.set(sc, sc, sc); it.s.material.opacity = Math.sin(u * Math.PI) * 0.4;
+      } else if (it.k === 'spray') {
+        it.t += dt; if (it.t > it.life) { it.t -= it.life; it.a = rnd(0, TAU); } const u = it.t / it.life;
+        it.s.position.set(it.p.x + Math.cos(it.a) * u * 0.9, it.p.y + u * 0.9 - u * u * 1.6, it.p.z + Math.sin(it.a) * u * 0.9);
+        it.s.scale.setScalar(0.25 + u * 0.2); it.s.material.opacity = 0.55 * (1 - u);
+      } else if (it.k === 'bird') {
+        it.a += it.sp * dt; it.f += dt * 9;
+        it.b.position.set(it.c.x + Math.cos(it.a) * it.r, it.c.y + Math.sin(it.a * 2) * 2, it.c.z + Math.sin(it.a) * it.r);
+        it.b.rotation.y = -it.a + (it.sp > 0 ? 0 : Math.PI); const fl = Math.sin(it.f) * 0.7; it.w1.rotation.z = fl; it.w2.rotation.z = -fl;
+      } else if (it.k === 'fly') {
+        it.ph += dt; const p = it.ph;
+        it.b.position.set(it.home.x + Math.sin(p * 0.7) * 1.2 + Math.sin(p * 1.9) * 0.3, it.home.y + Math.sin(p * 1.3) * 0.35, it.home.z + Math.cos(p * 0.6) * 1.1);
+        it.b.rotation.y = p * 0.8; const fl = Math.sin(p * 22) * 1.1; it.w1.rotation.z = fl; it.w2.rotation.z = -fl;
+      } else if (it.k === 'firefly' || it.k === 'dust') {
+        const a = it.p.geometry.attributes.position.array, n = it.seedA.length, sp = it.k === 'dust' ? 0.06 : 0.5;
+        for (let i = 0; i < n; i++) { const s = it.seedA[i]; a[i * 3] = it.base[i * 3] + Math.sin(t * sp + s) * (it.k === 'dust' ? 0.3 : 1.2); a[i * 3 + 1] = it.base[i * 3 + 1] + Math.sin(t * sp * 1.3 + s * 2) * (it.k === 'dust' ? 0.2 : 0.5); a[i * 3 + 2] = it.base[i * 3 + 2] + Math.cos(t * sp * 0.8 + s) * (it.k === 'dust' ? 0.3 : 1.2); }
+        it.p.geometry.attributes.position.needsUpdate = true;
+        if (it.k === 'firefly') it.p.material.opacity = 0.6 + Math.sin(t * 3) * 0.3;
+      }
+    }
+  },
+};
+
 
 // ==== 09_camera.js ====
 // ---------- Kamera ----------
@@ -1865,7 +2427,8 @@ const Cam = {
     const p = this.target; if (!p) return;
     const sc = p.scale || 1;
     const tgt = V3(p.pos.x, p.pos.y + this.height * Math.max(0.75, sc), p.pos.z);
-    if (this.lockTarget && this.lockTarget.alive) {
+    const SL = G.settings.shiftLock && !G.inCine;
+    if (!SL && this.lockTarget && this.lockTarget.alive) {
       const lt = this.lockTarget.pos; const want = Math.atan2(p.pos.x - lt.x, p.pos.z - lt.z);
       this.yaw = dampAngle(this.yaw, want, 2.2, dt);
     }
@@ -1875,7 +2438,10 @@ const Cam = {
     this.pitch = clamp(this.pitch, -0.15, 1.1);
     if (Math.abs(Input.look.x) + Math.abs(Input.look.y) > 0) this.idle = 0; else this.idle += dt;
     // hareket ederken hafifçe arkaya yerleş
-    if (this.recenter && p.moving && this.idle > 1.2 && !this.lockTarget) this.yaw = dampAngle(this.yaw, p.facing + Math.PI, 0.6, dt);
+    if (!SL && !G.combat && this.recenter && p.moving && this.idle > 1.5 && !this.lockTarget) this.yaw = dampAngle(this.yaw, p.facing + Math.PI, 0.5, dt);
+    // shift lock: omuz ofseti
+    this.sl = damp(this.sl || 0, SL ? 1 : 0, 6, dt || 0.016);
+    if (this.sl > 0.01) { const off = 0.55 * this.sl * Math.max(0.75, sc); tgt.x += Math.cos(this.yaw) * off; tgt.z -= Math.sin(this.yaw) * off; tgt.y += 0.1 * this.sl; }
     const d = this.dist * Math.max(0.8, sc);
     const want = V3(tgt.x + Math.sin(this.yaw) * Math.cos(this.pitch) * d, tgt.y + Math.sin(this.pitch) * d, tgt.z + Math.cos(this.yaw) * Math.cos(this.pitch) * d);
     const L = G.level;
@@ -1901,6 +2467,7 @@ const Cam = {
       const o = this.orbit; o.a += o.speed * dt;
       this.pos.set(o.center.x + Math.sin(o.a) * o.r, o.center.y + o.h, o.center.z + Math.cos(o.a) * o.r); this.look.copy(o.center);
     }
+    if (this.mode !== 'follow' && G.level && !G.level.interior) { const gh = G.level.h(this.pos.x, this.pos.z) + 0.35; if (this.pos.y < gh) this.pos.y = gh; }
     this.fov = damp(this.fov, this.fovT, 4, dt);
     const c = this.cam; c.position.copy(this.pos);
     if (Screen.shake > 0) { const s = Screen.shake * Screen.shake * 0.18; c.position.x += (Math.random() - 0.5) * s; c.position.y += (Math.random() - 0.5) * s; c.position.z += (Math.random() - 0.5) * s; }
@@ -2018,15 +2585,24 @@ class Player extends Actor {
     let x = fx * m.y + rx * m.x, z = fz * m.y + rz * m.x; const l = Math.hypot(x, z) || 1;
     return { mag, x: x / l, z: z / l };
   }
-  findTarget(dirX, dirZ, maxD = 3.6) {
-    let best = null, bs = 1e9;
-    for (const e of G.enemies) { if (!e.alive || e.untargetable) continue; const dx = e.pos.x - this.pos.x, dz = e.pos.z - this.pos.z, d = Math.hypot(dx, dz); if (d > maxD + e.radius) continue; const a = Math.abs(angDiff(Math.atan2(dirX, dirZ), Math.atan2(dx, dz))); const sc = d + a * 1.6; if (a < 1.9 && sc < bs) { bs = sc; best = e; } }
+  findTarget(dirX, dirZ, maxD = 3.4) {
+    // hedef yardımı: bakılan yöne 35° içindeki en yakın düşman; yoksa çok yakındaki (60°)
+    let best = null, bs = 1e9; const ya = Math.atan2(dirX, dirZ);
+    for (const e of G.enemies) {
+      if (!e.alive || e.untargetable) continue;
+      const dx = e.pos.x - this.pos.x, dz = e.pos.z - this.pos.z, d = Math.hypot(dx, dz), a = Math.abs(angDiff(ya, Math.atan2(dx, dz)));
+      const ok = (a < 0.62 && d < maxD + e.radius) || (a < 1.05 && d < 1.9 + e.radius);
+      if (!ok) continue; const sc = a * 2.2 + d * 0.45; if (sc < bs) { bs = sc; best = e; }
+    }
     return best;
   }
   startAttack(def, kind) {
-    const id = this.inputDir(); let dx = id.mag ? id.x : Math.sin(this.facing), dz = id.mag ? id.z : Math.cos(this.facing);
+    const id = this.inputDir(); const SL = G.settings.shiftLock;
+    let dx, dz;
+    if (SL) { dx = -Math.sin(Cam.yaw); dz = -Math.cos(Cam.yaw); if (id.mag > 0.5) { dx = id.x; dz = id.z; } }
+    else { dx = id.mag ? id.x : Math.sin(this.facing); dz = id.mag ? id.z : Math.cos(this.facing); }
     const t = this.findTarget(dx, dz);
-    if (t) { this.faceNow(t); } else if (id.mag) { this.facing = this.wantFacing = Math.atan2(dx, dz); }
+    if (t) { this.faceNow(t); } else { this.facing = this.wantFacing = Math.atan2(dx, dz); }
     this.atk = { def, t: 0, hitDone: false, kind, target: t };
     this.model.play(def.anim, ACTIONS[def.anim].dur / def.dur);
     this.state = kind; this.stateT = 0; Audio.sfx('whoosh', def.heavy ? 1.2 : 0.8);
@@ -2050,6 +2626,7 @@ class Player extends Actor {
       let lx = Math.sin(this.facing), lz = Math.cos(this.facing);
       if (A.target && A.target.alive && distXZ(this.pos, A.target.pos) < 0.95 + A.target.radius) lx = lz = 0;
       this.vel.x = lx * lungeK; this.vel.z = lz * lungeK;
+      if (A.target && A.target.alive && !A.hitDone) this.wantFacing = Math.atan2(A.target.pos.x - this.pos.x, A.target.pos.z - this.pos.z);
       if (!A.hitDone && A.t >= d.hit) { A.hitDone = true; this.resolveHit(d); }
       if (ctl && Input.take('attack') && this.state === 'attack' && A.t > d.dur * 0.25) this.queued = true;
       if (ctl && Input.take('dodge') && A.t > d.hit + 0.02) { this.tryDodge(); }
@@ -2075,6 +2652,7 @@ class Player extends Actor {
       if (this.state === 'move') { this.vel.x = damp(this.vel.x, dx * want, 12, dt); this.vel.z = damp(this.vel.z, dz * want, 12, dt); }
     }
     if (this.state === 'hitstun' || this.state === 'knock') { this.vel.x = damp(this.vel.x, 0, 8, dt); this.vel.z = damp(this.vel.z, 0, 8, dt); }
+    if (G.settings.shiftLock && ctl && !G.inCine && (this.state === 'move' || this.state === 'hitstun') && !this.noShiftFace) { this.wantFacing = Cam.yaw + Math.PI; }
     if (this.weakWalk) { this.wobT = (this.wobT || 0) + dt; const w = Math.sin(this.wobT * 1.7) * 0.5 + Math.sin(this.wobT * 0.6) * 0.5; if (this.moving) { this.vel.x += Math.cos(this.facing) * w * 0.5; this.vel.z -= Math.sin(this.facing) * w * 0.5; } }
     this.integrate(dt);
     if (this.model.stanceName === 'fight' && !G.combat) this.model.setStance(null);
@@ -2093,7 +2671,7 @@ class Player extends Actor {
       if (!e.alive || e.untargetable) continue;
       const dx = e.pos.x - this.pos.x, dz = e.pos.z - this.pos.z, dist = Math.hypot(dx, dz);
       if (dist > d.range + e.radius) continue;
-      const a = Math.abs(angDiff(this.facing, Math.atan2(dx, dz))); if (a > d.arc / 2 + 0.25 && dist > 0.6) continue;
+      const a = Math.abs(angDiff(this.facing, Math.atan2(dx, dz))); if (a > d.arc / 2 + 0.38 && dist > 0.6) continue;
       let dmg = d.dmg * (this.dmgMul || 1); if (this.perfectBonus > 0) { dmg *= 1.6; this.perfectBonus = 0; }
       e.takeHit(dmg, this, { knock: d.knock, heavy: d.heavy, dir: V3(dx / (dist || 1), 0, dz / (dist || 1)) });
       any = true;
@@ -2147,13 +2725,16 @@ class Wanderer extends NPC {
 }
 
 function separateActors() {
+  if (G.inCine) return;
   const A = G.actors;
+  const idle = a => !a.isPlayer && !a.path && !a.follow && !a.active && a.speed < 0.15;
   for (let i = 0; i < A.length; i++) for (let j = i + 1; j < A.length; j++) {
     const a = A[i], b = A[j]; if (!a.solid || !b.solid || !a.alive || !b.alive || !a.visible || !b.visible) continue;
     const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z, m = a.radius + b.radius; if (Math.abs(dx) > m || Math.abs(dz) > m) continue;
     const d = Math.hypot(dx, dz); if (d >= m || d < 1e-4) continue;
     const push = (m - d) / d; const wa = a.isPlayer && a.state !== 'move' ? 0.2 : a.heavyBody ? 0.1 : 0.5, wb = b.heavyBody ? 0.1 : 1 - wa;
-    if (a.pinned) { b.pos.x += dx * push; b.pos.z += dz * push; continue; } if (b.pinned) { a.pos.x -= dx * push; a.pos.z -= dz * push; continue; }
+    const ap = a.pinned || idle(a), bp = b.pinned || idle(b); if (ap && bp) continue;
+    if (ap) { b.pos.x += dx * push; b.pos.z += dz * push; continue; } if (bp) { a.pos.x -= dx * push; a.pos.z -= dz * push; continue; }
     a.pos.x -= dx * push * wa; a.pos.z -= dz * push * wa; b.pos.x += dx * push * wb; b.pos.z += dz * push * wb;
   }
 }
@@ -2416,8 +2997,12 @@ const UI = {
     $('#system').addEventListener('pointerdown', e => { e.preventDefault(); this.sysAdvance && this.sysAdvance(); });
     $('#skip').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Story.skip(); });
     $('#pausebtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Game.pause(true); });
+    $('#lockbtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); G.settings.shiftLock = !G.settings.shiftLock; this.syncLock(); Save.store(); Audio.sfx('ui'); UI.toast(G.settings.shiftLock ? 'Shift lock açık: karakter kameranın baktığı yöne döner' : 'Shift lock kapalı', 1800); });
+    this.syncLock(); this.applyScale();
     this.hpbars = $('#hpbars'); this.ebars = new Map();
   },
+  syncLock() { $('#lockbtn').classList.toggle('on', !!G.settings.shiftLock); },
+  applyScale() { document.documentElement.style.setProperty('--ui', String(G.settings.uiScale || 1.25)); },
   show(sel, on) { const e = typeof sel === 'string' ? $(sel) : sel; e.hidden = !on; },
   hud(on) { this.show('#hud', on); },
   combat(on, opts = {}) { this.show('#bars', on); this.show('#actions', on); $('#heavylbl').textContent = opts.heavy || 'Tekme'; },
@@ -2549,17 +3134,17 @@ const RANK_COLORS = { G: '#9a9a9a', F: '#a8b0a0', E: '#7ec87a', D: '#6ab0e8', C:
 const ABORT = { abort: true };
 const Story = {
   scenes: {}, order: [], runId: 0, current: null, skipping: false, canSkip: true, markerTarget: null, waiters: [], inter: [],
-  def(id, meta, fn) { this.scenes[id] = Object.assign({ id, fn }, meta); this.order.push(id); },
-  skip() { if (!G.inCine) return; this.skipping = true; UI.advance(); if (UI.sysAdvance) { UI.sysAdvance(); UI.sysAdvance && UI.sysAdvance(); } for (const w of this.waiters) if (w.skippable) w.t = 1e9; },
+  def(id, meta, fn) { this.scenes[id] = Object.assign({ id, fn }, meta); if (!meta.debug) this.order.push(id); },
+  skip() { if (!G.inCine || !this.canSkip) return; this.skipping = true; UI.advance(); if (UI.sysAdvance) { UI.sysAdvance(); UI.sysAdvance && UI.sysAdvance(); } for (const w of this.waiters) if (w.skippable) w.t = 1e9; },
   abort() { this.runId++; this.waiters = []; this.inter = []; this.skipping = false; UI.hideDialog(); $('#choices').hidden = true; $('#system').hidden = true; UI.interact(null); UI.objective(null); UI.counter(null); UI.boss(null); this.markerTarget = null; },
   async run(id) {
     const sc = this.scenes[id]; if (!sc) { Game.toMenu(); return; }
-    this.abort(); const my = this.runId; this.current = id; Save.reach(id);
+    this.abort(); const my = this.runId; this.current = id; Save.reach(id); this.canSkip = sc.noSkip ? false : true;
     const S = makeS(my);
     try {
       await sc.fn(S);
       if (my !== this.runId) return;
-      const i = this.order.indexOf(id); const nx = sc.next || this.order[i + 1];
+      Loading.show(); const i = this.order.indexOf(id); const nx = sc.next || this.order[i + 1];
       if (nx) { Save.reach(nx); this.run(nx); } else Game.finale();
     } catch (e) {
       if (e === ABORT) return;
@@ -2586,14 +3171,14 @@ function makeS(my) {
   const S = {
     my, chk,
     async wait(sec) { if (Story.skipping && G.inCine) { chk(); return; } await new Promise(res => Story.waiters.push({ time: sec, t: 0, res, skippable: true })); chk(); },
-    async until(fn) { const t0 = G.t; await new Promise(res => Story.waiters.push({ fn: G.auto ? () => fn() || G.t - t0 > 14 : fn, res })); chk(); },
+    async until(fn, maxT) { const t0 = G.t; if (maxT === undefined) maxT = G.auto ? 14 : G.inCine ? 12 : 1e9; await new Promise(res => Story.waiters.push({ fn: () => fn() || G.t - t0 > maxT, res })); chk(); },
     async level(build, tod, envOpts = {}) {
-      $('#loading').hidden = false; await sleep(30); chk();
+      Loading.show(); await sleep(60); chk();
       Game.clearWorld();
       const L = build(); G.level = L; G.scene.add(L.group);
-      G.env.set(tod, envOpts); FX.clear(); Screen.reset(); Cam.lockTarget = null; Cam.dist = Cam.distBase = L.interior ? 3.2 : 5.2; Cam.height = 1.45; Cam.pitch = 0.3; Cam.fovT = 55;
+      G.env.set(tod, envOpts); FX.clear(); Ambient.setup(L, tod); Screen.reset(); Cam.lockTarget = null; Cam.dist = Cam.distBase = L.interior ? 3.2 : 5.2; Cam.height = 1.45; Cam.pitch = 0.3; Cam.fovT = 55;
       G.renderer.shadowMap.needsUpdate = true;
-      await sleep(30); $('#loading').hidden = true; chk();
+      await sleep(30); chk(); Story.levelReady = true;
       return L;
     },
     async say(who, text, o = {}) {
@@ -2606,13 +3191,13 @@ function makeS(my) {
     narr(text) { return S.say(null, text, { narr: true }); },
     async choice(opts) { const r = await UI.choice(opts); chk(); return r; },
     cine(on) {
-      G.inCine = on; G.controlEnabled = !on; UI.cine(on); UI.hud(!on); if (!on) { Story.skipping = false; Cam.follow(G.player); } Input.reset();
+      G.inCine = on; G.controlEnabled = !on; UI.cine(on); UI.hud(!on); if (!on) { Story.skipping = false; Cam.follow(G.player); Loading.hide(); if ($('#fade').style.opacity !== '0') UI.fade(0, 0.5); } Input.reset();
       if (on && G.player) { G.player.vel.set(0, 0, 0); if (G.player.state !== 'dead') G.player.state = 'move'; }
     },
     async shot(pos, look, dur = 0, ease) { const p = Cam.shot(pos, look, Story.skipping ? 0 : dur, ease); if (dur > 0 && !Story.skipping) { await new Promise(res => Story.waiters.push({ fn: () => Cam.shotT >= Cam.shotDur || Story.skipping, res })); } chk(); },
     follow(snap) { Cam.follow(G.player, snap); },
     async fadeOut(d = 0.8) { await UI.fade(1, d); chk(); },
-    async fadeIn(d = 0.8) { await UI.fade(0, d); chk(); },
+    async fadeIn(d = 0.8) { Loading.hide(); await UI.fade(0, d); chk(); },
     async title(k, h, sub, hold = 4.6) { UI.title(k, h, sub); await S.wait(hold); },
     objective(text, target) { UI.objective(text); Story.markerTarget = target || null; },
     clearObjective() { UI.objective(null); Story.markerTarget = null; },
@@ -2643,9 +3228,24 @@ function makeS(my) {
 // ---- Kalıcı kayıt ----
 const Save = {
   key: 'elonth.save.v1', data: { last: null, unlocked: [], settings: null },
-  load() { try { const s = localStorage.getItem(this.key); if (s) this.data = Object.assign(this.data, JSON.parse(s)); } catch (_) { } if (this.data.settings) Object.assign(G.settings, this.data.settings); },
+  load() { try { const s = localStorage.getItem(this.key); if (s) this.data = Object.assign(this.data, JSON.parse(s)); } catch (_) { } const fix = id => id === 'c1_boar' ? 'c1_harvest' : id; this.data.last = this.data.last && fix(this.data.last); this.data.unlocked = (this.data.unlocked || []).map(fix); if (this.data.settings) Object.assign(G.settings, this.data.settings); },
   store() { this.data.settings = G.settings; try { localStorage.setItem(this.key, JSON.stringify(this.data)); } catch (_) { } },
   reach(id) { this.data.last = id; if (!this.data.unlocked.includes(id)) this.data.unlocked.push(id); this.store(); },
+};
+
+// ---- Yükleme ekranı ----
+const LOAD_TIPS = [
+  'Saldırı halkası yere düştüğünde son anda yuvarlanırsan zaman yavaşlar ve bir sonraki vuruşun güçlenir.',
+  'Sağ üstteki Kilit düğmesi shift lock\'u açıp kapatır. Açıkken karakter kameranın baktığı yöne döner.',
+  'Arayüz küçük geliyorsa Ayarlar > Arayüz boyutu ile büyütebilirsin.',
+  'Elonth\'ta loncaya girmek on gümüş. Bir köylü için iki yıllık birikim.',
+  'Enkron yüz kişiden yaklaşık on kişiye verilir. Ne yaptığını yalnızca sahibi bilir.',
+  'Lonca rütbeleri G\'den SS\'e uzanır. Dünyada yalnızca üç SS vardır.',
+  'Sinematikleri sağ üstteki Atla düğmesiyle geçebilirsin.',
+];
+const Loading = {
+  show() { const el = $('#loading'); if (!el.hidden) return; el.hidden = false; const s = Story.scenes[Story.current]; $('#ld-chap').textContent = s ? s.chapter : ''; $('#ld-title').textContent = s ? s.title : ''; $('#ld-tip').textContent = pick(LOAD_TIPS); el.classList.remove('out'); },
+  hide() { const el = $('#loading'); if (el.hidden) return; el.classList.add('out'); setTimeout(() => { el.hidden = true; el.classList.remove('out'); }, 450); },
 };
 
 
@@ -2754,13 +3354,15 @@ async function lilyLead(S, lily, pts, near = 6.5, speed = 2.6) {
 }
 
 // ======================= PROLOG =======================
-Story.def('p_crash', { chapter: 'Prolog', title: 'Yağmur', sub: 'Son gece', kind: 'Sinematik' }, async S => {
+Story.def('p_crash', { chapter: 'Prolog', title: 'Yağmur', sub: 'Son gece', kind: 'Sinematik', noSkip: true }, async S => {
   const L = await S.level(buildRoad, 'storm', { weather: 'storm' });
   const car = makeCar(); L.add(car); car.rotation.y = Math.PI;
   const truck = makeTruck(); L.add(truck); truck.rotation.y = 0; truck.visible = false;
   const st = { z: 40, v: 31, sw: 0, roll: 0, tz: -300, tv: 0, tx: -1.9, spin: 0 };
   L.anims.push(dt => {
-    st.z -= st.v * dt; car.position.set(1.9 + st.sw, 0, st.z); car.rotation.set(0, Math.PI + st.spin, st.roll);
+    st.z -= st.v * dt;
+    if (st.z < -300) { st.z += L.period; st.tz += L.period; Cam.pos.z += L.period; Cam.look.z += L.period; Cam.fromPos.z += L.period; Cam.fromLook.z += L.period; }
+    car.position.set(1.9 + st.sw, 0, st.z); car.rotation.set(0, Math.PI + st.spin, st.roll);
     if (truck.visible) { st.tz += st.tv * dt; truck.position.set(st.tx, 0, st.tz); }
   });
   G.env.flashFn = () => setTimeout(() => Audio.sfx('thunder', 0.8), 300 + Math.random() * 500);
@@ -2816,7 +3418,7 @@ Story.def('p_crash', { chapter: 'Prolog', title: 'Yağmur', sub: 'Son gece', kin
 Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir beden', kind: 'Hikâye' }, async S => {
   const L = await S.level(() => buildHut('day'), 'interior', { sunDir: [0.25, 0.55, -0.8], noSky: true });
   S.amb('interior'); S.amb('fire');
-  const p = spawnJoseph(10, -2.5, -1.25, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.model.closedEyes = true; p.solid = false;
+  const p = spawnJoseph(10, -2.5, -1.25, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.model.closedEyes = true; p.solid = false; p.collides = false;
   const marta = S.cast('marta', npc(LOOK.marta(), -1.55, -1.45, -Math.PI / 2, { stance: 'kneel', watch: false }));
   marta.model.setUpper('cry'); marta.pinned = true;
   const lily = S.cast('lily', npc(LOOK.lily(10), -2.45, 0.05, Math.PI, { watch: false }));
@@ -2887,7 +3489,7 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   await S.think('Biraz suya ihtiyacım var. Ve kim olduğuma bakmaya.');
   // kontrol
   await S.fadeOut(0.4);
-  p.model.setStance(null, true); p.lockY = null; p.solid = true; p.place(-1.7, -0.7, Math.PI * 0.8);
+  p.model.setStance(null, true); p.lockY = null; p.solid = true; p.collides = true; p.place(-1.7, -0.7, Math.PI * 0.8);
   marta.place(-0.9, 0.9, -2.2); marta.model.setStance('crossArms'); daniel.place(2.3, 1.75, -2.4); daniel.model.setStance('crossArms', true);
   lily.place(-1.0, -0.2, -2.0);
   S.cine(false); p.speedMul = 0.55; p.allowRun = false; Cam.yaw = 0.15; Cam.pitch = 0.5;
@@ -2937,7 +3539,7 @@ Story.def('p_village', { chapter: 'Prolog', title: 'Yeni Dünya', sub: 'Eros, k�
   const wander = (x, z, f, r = 4) => { const w = new Wanderer({ look: randomVillager(rng() < 0.5) }); w.place(x, z, rnd(0, TAU)); w.home = V3(x, 0, z); w.homeR = r; return w; };
   const villagers = [wander(2, 6), wander(-3, -6), wander(8, -2), wander(-8, 10, 0, 3), wander(14, 2, 0, 5), wander(-4, 18, 0, 3), wander(20, -10, 0, 4), wander(-18, -10, 0, 4)];
   const ws = npc(randomVillager(true), 1.4, 1.2, -2.2, { stance: 'pickup' }); ws.model.setWeapon('bucket');
-  const elder = S.cast('elder', npc(LOOK.elder(), L.pts.elder.x, L.pts.elder.z, -0.9, { stance: 'sit' })); elder.lockY = L.h(5.4, -3.2) + 0.0; elder.pinned = true; elder.solid = true;
+  const elder = S.cast('elder', npc(LOOK.elder(), L.pts.elder.x, L.pts.elder.z, -0.9, { stance: 'sit' })); elder.lockY = L.h(5.4, -3.2) + 0.0; elder.pinned = true; elder.solid = true; elder.collides = false;
   const kids = [];
   for (let i = 0; i < 3; i++) { const a = -0.9 + (i - 1) * 0.55, kx = 5.4 + Math.sin(a) * 1.9, kz = -3.2 + Math.cos(a) * 1.9; const k = npc(LOOK.kid(i === 1), kx, kz, a + Math.PI, { stance: 'sitGround', watch: false }); kids.push(k); k.lookAt(elder.root); }
   S.cast('kid', kids[1]);
@@ -3031,10 +3633,10 @@ Story.def('p_village', { chapter: 'Prolog', title: 'Yeni Dünya', sub: 'Eros, k�
   S.cine(true); S.music('title');
   lily.place(-30.3, -34.2, 2.85); lily.model.setStance('sitGround'); p.walkTo([V3(-31.3, 0, -34.6)], 1.2);
   const hy = L.h(-31, -35);
-  await S.shot(V3(-28.5, hy + 1.5, -31.5), V3(-26, hy + 6, -70), 0);
-  await S.shot(V3(-29.5, hy + 4, -38), V3(-12, hy + 8, -120), 5, easeInOut);
+  await S.shot(V3(-32.5, hy + 2.4, -30.5), V3(-26, hy + 5, -70), 0);
+  await S.shot(V3(-31.0, hy + 5.2, -36.5), V3(-12, hy + 8, -120), 5, easeInOut);
   p.model.setStance('sitGround'); p.faceNow(V3(-25, 0, -70));
-  await S.shot(V3(-33.6, hy + 1.6, -29.8), V3(-24, hy + 3.2, -72), 0);
+  await S.shot(V3(-33.4, hy + 2.1, -29.4), V3(-24, hy + 3.2, -72), 0);
   await S.say('lily', 'Şurası Eros Sarayı. Lordlar orada yaşıyor. Hepsinin kendine ait bir yatağı varmış!');
   await S.say('lily', 'Bir gün ben de orada beyaz ekmek yiyeceğim.');
   await S.say('joseph', 'Beyaz ekmek mi?');
@@ -3047,7 +3649,7 @@ Story.def('p_village', { chapter: 'Prolog', title: 'Yeni Dünya', sub: 'Eros, k�
   await S.say('joseph', c2 === 0 ? 'Söz veriyorum.' : 'Artık hiçbir yere gitmiyorum.');
   lily.model.setStance('hugKnees');
   await S.say('lily', 'İyi. Çünkü sen uyurken annem her gece ağladı. Babam da ağladı ama gizli gizli.');
-  await S.shot(V3(-30.5, hy + 1.1, -37.5), V3(-30.8, hy + 0.6, -34.4), 3);
+  await S.shot(V3(-30.4, hy + 1.7, -37.4), V3(-30.8, hy + 0.7, -34.4), 3);
   await S.think('Bu insanları tanımıyorum. Bir hafta önce yoktular.');
   await S.think('Ama onları ağlatan her şeyle savaşırım.');
   await S.wait(0.8);
@@ -3058,7 +3660,7 @@ Story.def('p_window', { chapter: 'Prolog', title: 'Pencere', sub: 'İlk gece', k
   const L = await S.level(() => buildHut('night'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true });
   S.amb('interior'); S.music('none');
   const p = spawnJoseph(10, -2.1, -0.4, Math.PI * 0.9); p.speedMul = 0.6; p.allowRun = false;
-  const lily = npc(LOOK.lily(10), 2.6, -1.85, 0, { stance: 'lie', watch: false }); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false;
+  const lily = npc(LOOK.lily(10), 2.6, -1.85, 0, { stance: 'lie', watch: false }); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false; lily.collides = false;
   S.cast('lily', lily);
   S.cine(true);
   await S.shot(V3(0.5, 2.2, 1.8), V3(-1.5, 0.7, -1), 0);
@@ -3440,90 +4042,81 @@ Story.def('c1_spar', { chapter: 'Bölüm 1 · Taban', title: 'İdman', sub: '15 
   await S.fadeOut(1.2);
 });
 
-Story.def('c1_boar', { chapter: 'Bölüm 1 · Taban', title: 'Yaban Domuzu', sub: '17 yaş · Tarlada', kind: 'Boss' }, async S => {
-  const L = await S.level(() => buildVillage({}), 'dusk', { sunDir: [0.45, 0.32, -0.85], hemi: 1.15, glow: 0.4 });
+Story.def('c1_harvest', { chapter: 'Bölüm 1 · Taban', title: 'Hasat', sub: '17 yaş · Babayla tarlada', kind: 'Hikâye' }, async S => {
+  const L = await S.level(() => buildVillage({ harvested: (x, z) => x > -15 }), 'dusk', { sunDir: [0.45, 0.32, -0.85], hemi: 1.15, glow: 0.4 });
   S.amb('wind'); S.music('village');
-  const fx = -13, fz = 49;
-  const p = spawnJoseph(17, fx + 1.2, fz - 1.5, Math.PI); p.model.setWeapon('pitchfork');
-  const daniel = S.cast('daniel', npc(LOOK.daniel(), fx - 1.3, fz - 0.4, Math.PI * 0.8, { weapon: 'pitchfork' }));
-  const boar = new Boar({ hp: 300 }); boar.place(fx - 4, 70, Math.PI);
+  const cartP = V3(10.5, 0, 53);
+  const p = spawnJoseph(17, -4, 46, Math.PI / 2);
+  const daniel = S.cast('daniel', npc(LOOK.daniel(), -12.5, 49, Math.PI / 2, { weapon: 'pitchfork' }));
+  let danielWork = true; let wt = 0; L.anims.push(dt => { if (!danielWork) return; wt += dt; if (wt > 2.4) { wt = 0; daniel.model.play('swing', 0.8); } });
+  // demetler
+  const sheaves = [V3(-6.5, 0, 47.5), V3(-1.5, 0, 51.5), V3(2.0, 0, 44.8)].map(v => {
+    const g = new T.Group(); const m1 = new T.Mesh(new T.CylinderGeometry(0.2, 0.26, 0.9, 10), TOON.mat('#e0bc62')); m1.rotation.z = Math.PI / 2; m1.castShadow = true; g.add(m1);
+    const m2 = new T.Mesh(new T.CylinderGeometry(0.27, 0.27, 0.08, 10), TOON.mat('#8a6a30')); m2.rotation.z = Math.PI / 2; g.add(m2);
+    g.position.set(v.x, L.h(v.x, v.z) + 0.24, v.z); g.rotation.y = rnd(0, TAU); L.add(g); return { v, g };
+  });
+  const pile = new T.Group(); pile.position.set(cartP.x, L.h(cartP.x, cartP.z) + 0.95, cartP.z - 0.3); pile.rotation.y = 0.2; L.add(pile);
   S.cine(true);
   await S.fadeIn(0.1);
   UI.title('Sekiz yıl', '17 yaş', 'Hasat');
-  await S.shot(V3(fx + 9, 4, fz - 8), V3(fx, 1, fz), 0);
-  await S.wait(3.4);
-  await S.shot(V3(fx + 2.6, 1.6, fz - 4), V3(fx, 1.2, fz - 0.8), 1.5);
-  await S.say('daniel', 'Hasat iyi bu yıl. Bu kış aç geçmeyecek, oğlum.');
-  daniel.lookAt(p.root);
-  await S.say('daniel', 'Biliyor musun... O hastalıktan sonra bambaşka biri oldun. Daha yaşlı gibi.');
-  await S.say('joseph', 'Kötü bir şey mi bu?');
-  daniel.model.play('laugh');
-  await S.say('daniel', 'Hayır. Sadece bazen bana, ben senin babanmışım gibi değil de, sen benim babammışsın gibi bakıyorsun.');
-  await S.wait(0.4);
-  S.sfx('boar', 0.7);
-  await S.say('daniel', '...Duydun mu?');
-  boar.walkTo([V3(fx - 3, 0, 60)], 2);
-  await S.shot(V3(fx + 1, 1.5, fz - 3), V3(fx - 3, 1.2, 60), 1.2);
-  S.music('tension');
-  await S.wait(1.4);
-  await S.say('daniel', 'Geri çekil, Joseph. Bu bir orman domuzu... Tanrım, ne kadar büyük!');
-  daniel.walkTo([V3(fx - 2, 0, fz + 1.2)], 1.2);
-  S.sfx('boar', 1.2); boar.model.lowered = true;
-  await S.wait(0.9);
-  S.sfx('charge');
-  boar.walkTo([V3(daniel.pos.x, 0, daniel.pos.z + 0.5)], 11);
-  await S.shot(V3(fx + 2, 1.2, fz - 2), () => V3(boar.pos.x, 1, boar.pos.z), 0);
-  await S.until(() => boar.dist(daniel) < 1.6 || Story.skipping);
-  boar.stopWalk(); daniel.model.setWeapon(null); daniel.model.play('knock'); S.sfx('hitHeavy'); Screen.addShake(0.8); FX.dust(daniel.pos.clone(), 10);
-  daniel.kv.set(1.5, 0, -3);
-  await S.wait(0.6);
-  daniel.model.setStance('lie'); daniel.solid = false;
-  boar.walkTo([V3(fx - 1, 0, fz + 6)], 4);
-  await S.say('daniel', 'Joseph! Kaç! Köye koş!');
-  p.model.setWeapon(null);
-  await S.shot(V3(p.pos.x + 1.6, 1.0, p.pos.z - 1.4), V3(p.pos.x, 1.2, p.pos.z), 0.6);
-  p.model.play('pickup'); await S.wait(0.7); p.setWeapon('stick');
-  await S.say('joseph', 'Hayır.');
-  await S.think('Otuz altı yıl kaçarak yaşadım. Bu hayatta kaçmayacağım.');
-  // ---- boss
-  L.arena = { x: fx, z: fz + 1, r: 10.5 };
-  let tries = 0;
-  while (true) {
-    tries++;
-    boar.hp = boar.maxHp; boar.alive = true; boar.untargetable = false; boar.enraged = false; boar.model.eyeM.color.set('#120c08'); boar.place(fx - 1, fz + 7, Math.PI); boar.state = 'stalk'; boar.cd = 2;
-    p.revive(); p.place(fx + 1.5, fz - 3, Math.PI * 0.1); p.noDeath = false;
-    S.cine(false); S.music('battle'); combatOn(S, p, { heavy: 'Ağır', stance: 'armed' }); boar.activate(); Cam.yaw = Math.PI * 0.1 + Math.PI; Cam.lockTarget = boar;
-    UI.boss('Orman Domuzu', 1);
-    S.objective('Babanı koru: domuzu kov');
-    if (tries === 1) { S.tip('KIRMIZI ÇİZGİ: hücum yolu. Son anda yana kaç!', 6000); }
-    let tip2 = false;
-    boar.onEnrage = () => S.tip('Domuz öfkelendi! Hücumları artık iki kez geliyor.', 4500);
-    let dead = false; p.onDeath = () => { dead = true; };
-    await S.until(() => { UI.boss('', boar.hp / boar.maxHp); if (!tip2 && boar.state === 'dizzy') { tip2 = true; S.tip('Sersemledi! Şimdi vur: sersemken daha çok hasar alır.', 4500); } return !boar.alive || dead; });
-    Cam.lockTarget = null; combatOff(p); S.clearObjective();
-    if (!dead) break;
-    boar.active = false; boar.state = 'idle';
-    await retryPrompt(S, 'Toprak soğuktu. Babamın sesi uzaklardan geliyordu.');
+  await S.shot(V3(-2, 5, 34), V3(-6, 1, 50), 0);
+  await S.wait(3.2);
+  await S.shot(V3(-1.5, 1.7, 43.5), V3(-4, 1.3, 46.5), 1.6);
+  await S.say('daniel', 'Biçtiklerimizi arabaya taşı, oğlum. Güneş batmadan bitirelim.');
+  await S.say('joseph', 'Kaç demet kaldı?');
+  await S.say('daniel', 'Üç. Ama sen geçen yıl "üç" deyip altı tane taşımıştın. Saymayı benden öğrenmedin herhalde.');
+  S.cine(false); Cam.yaw = -Math.PI / 2 + Math.PI;
+  for (let i = 0; i < 3; i++) {
+    const sh = sheaves[i];
+    S.objective(`Demetleri arabaya taşı (${i}/3)`, sh.v);
+    await S.interact(sh.v, 'Demeti al', 1.6);
+    p.model.play('pickup'); sh.g.visible = false; p.model.setWeapon('sheaf'); p.model.setUpper('carry'); S.sfx('wood', 0.5);
+    S.objective(`Demetleri arabaya taşı (${i}/3)`, cartP);
+    await S.interact(cartP, 'Arabaya koy', 2.4);
+    p.model.setWeapon(null); p.model.setUpper(null); p.model.play('push');
+    const m = sh.g; m.visible = true; m.position.set(0, i * 0.22, (i - 1) * 0.45); m.rotation.set(0, Math.PI / 2, 0); pile.add(m); S.sfx('checkpoint');
   }
-  S.cine(true); S.music('sad');
-  await S.shot(V3(p.pos.x + 2, 1.4, p.pos.z - 2), () => V3(boar.pos.x, 1, boar.pos.z), 0.6);
-  S.sfx('boar', 0.8);
-  await S.until(() => boar.pos.z > fz + 18 || Story.skipping);
-  boar.remove();
-  p.model.setWeapon(null); p.walkTo([V3(daniel.pos.x + 0.9, 0, daniel.pos.z)], 3);
-  await S.until(() => !p.path || Story.skipping);
-  p.model.setStance('kneel'); p.faceTo(daniel);
-  daniel.model.setStance('sitGround'); daniel.lookAt(p.root);
-  await S.shot(V3(daniel.pos.x - 0.4, 1.15, daniel.pos.z - 2.3), V3(daniel.pos.x + 0.45, 0.55, daniel.pos.z), 1);
-  await S.say('daniel', 'Kovdun onu... Tek başına...');
-  await S.say('joseph', 'Bacağın?');
-  await S.say('daniel', 'Kırık değil. Sanırım. Annen beni öldürecek ama.');
+  S.clearObjective();
+  // akşam sohbeti
+  S.cine(true); danielWork = false; S.music('sad');
+  await S.fadeOut(0.6);
+  daniel.model.setWeapon(null);
+  p.place(cartP.x - 1.3, cartP.z + 1.7, -2.6); p.model.setStance('sitGround', true);
+  daniel.place(cartP.x - 0.2, cartP.z + 1.9, -2.3); daniel.model.setStance('sitGround', true);
+  p.lookAt(daniel.root); daniel.lookAt(p.root);
+  await S.shot(V3(cartP.x - 3.2, 1.25, cartP.z - 1.2), V3(cartP.x - 0.8, 0.75, cartP.z + 1.8), 0);
+  await S.fadeIn(0.8);
+  await S.say('daniel', 'Annen tavşan yahnisi yapacakmış. Lily\'nin kurduğu tuzağa bir tavşan düşmüş. Bütün gün onu anlattı.');
+  await S.say('joseph', 'Lily mi yakalamış? Tavşanı?');
   daniel.model.play('laugh');
-  await S.say('daniel', 'Benim oğlum... bir sopayla... bir orman domuzunu...');
-  daniel.model.setUpper('cry');
-  await S.say('daniel', 'Sen hasta yatarken her gece dua ettim. Tanrı seni geri verdi diye sandım. Meğer bana bir aslan vermiş.');
-  await S.think('Bir aslan değilim. Sadece yeniden ölmekten korkan bir adamım.');
-  await S.think('Ama bu kez korktuğum şey kendi ölümüm değildi.');
+  await S.say('daniel', 'Senin kardeşin o. İnatçı. Tıpkı sana benziyor.');
+  await S.wait(0.6);
+  await S.shot(V3(cartP.x - 1.7, 1.05, cartP.z - 0.2), V3(cartP.x - 0.2, 0.95, cartP.z + 1.9), 1.6);
+  await S.say('daniel', 'Gelecek yıl tören var.');
+  await S.say('joseph', 'Biliyorum.');
+  await S.say('daniel', 'Ben de on sekizimde o taşa dokundum. Hiçbir şey olmadı. Taş bana bakmadı bile.');
+  await S.say('daniel', 'Tarlaya döndüm. Bir yıl kızgın gezdim. Sonra annenle bu tarlada tanıştım. Yanlış sıraya ekiyordum, beni herkesin önünde azarladı.');
+  p.model.play('laugh');
+  await S.think('Avukatken kimse bana bir şey öğretmezdi. Herkes benden bir şey isterdi.');
+  daniel.model.setExpression('smile');
+  await S.say('daniel', 'Demek istediğim şu: o taş ne derse desin, sen benim oğlumsun. Enkron\'un olsa da olmasa da.');
+  await S.say('daniel', 'Al. Kayın dalından oydum. Tören günü cebinde dursun.');
+  daniel.model.play('reach'); await S.wait(0.8); p.model.setWeapon('charm'); S.sfx('coin', 0.6);
+  await S.shot(V3(cartP.x - 1.0, 0.85, cartP.z + 0.9), V3(cartP.x - 1.15, 0.6, cartP.z + 1.6), 1.0);
+  await S.say('joseph', 'Teşekkür ederim, baba.');
+  p.model.setExpression('smile');
+  await S.wait(0.5);
+  const lily = S.cast('lily', npc(LOOK.lily(17), -8, 40, 2.5));
+  S.walk(lily, [V3(cartP.x - 2.6, 0, cartP.z + 3.2)], 3.4);
+  await S.shot(V3(cartP.x - 4.5, 1.6, cartP.z + 5.5), V3(cartP.x - 1.5, 0.9, cartP.z + 2.4), 1.2);
+  await S.say('lily', 'Abi! Baba! Annem "yahni soğudu" diyor! Üçüncü kez!');
+  await S.until(() => !lily.path);
+  lily.lookAt(p.root); lily.model.setStance('hips'); lily.model.setExpression('angry');
+  await S.say('lily', 'Ve tavşanı ben yakaladım, bunu da bilin. Kimse bana teşekkür etmedi.');
+  daniel.model.play('laugh'); p.model.setExpression('smile');
+  await S.say('daniel', 'Teşekkürler, büyük avcı Lily.');
+  lily.model.setExpression('smile');
+  await S.think('Bir yıl sonra her şey değişecek. Ama bu akşamı unutmayacağım.');
   await S.fadeOut(1.5);
 });
 
@@ -3556,14 +4149,15 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   const row = S.cast('rowena', npc(LOOK.rowena(), 1.3, -16.4, 0, { watch: false }));
   S.sfx('door');
   await S.shot(V3(1.5, 1.6, -8.5), V3(0, 1.8, -15), 1.0);
-  const exitP = [V3(1.5, 0, -11.6), V3(4.6, 0, -10.6), V3(7, 0, -7)];
-  iso.walkTo(exitP, 1.5); ser.walkTo(exitP.map(v => V3(v.x - 1.1, 0, v.z - 0.9)), 1.5); row.walkTo(exitP.map(v => V3(v.x + 0.6, 0, v.z - 1.6)), 1.5);
-  await S.wait(1.3);
+  p.place(5.3, -10.6, Math.atan2(6.5 - 5.3, -13 + 10.6));
+  const isoWalk = S.walk(iso, [V3(1.3, 0, -12.6), V3(3.9, 0, -11.5)], 1.6);
+  S.walk(ser, [V3(0.2, 0, -13.6), V3(2.5, 0, -12.9)], 1.5); S.walk(row, [V3(2.3, 0, -13.5), V3(4.5, 0, -12.9)], 1.5);
+  await S.wait(1.0);
   await S.say('rowena', 'Üç gün bataklıkta, bir trol ve sıfır teşekkür. Ben bu işi neden yapıyorum, Isolde?');
   await S.say('isolde', 'Para için, Rowena. Herkes gibi.');
-  p.walkTo([V3(5.0, 0, -10.0)], 1.2);
-  await S.until(() => iso.dist(p) < 1.3 || Story.skipping);
-  iso.stopWalk(); ser.stopWalk(); row.stopWalk(); p.stopWalk();
+  await isoWalk;
+  await S.shot(V3(6.4, 1.5, -8.6), V3(4.4, 1.3, -11.0), 0.6);
+  await S.walk(p, [V3(4.55, 0, -11.0)], 1.1);
   S.sfx('hit', 0.5); p.model.play('hit'); iso.model.play('flinch', 1.5);
   iso.faceTo(p); p.faceTo(iso); iso.lookAt(p.root); iso.model.setStance('hips');
   await S.shot(V3(p.pos.x + 1.4, 1.6, p.pos.z + 1.5), V3((p.pos.x + iso.pos.x) / 2, 1.5, (p.pos.z + iso.pos.z) / 2), 0.5);
@@ -3597,7 +4191,7 @@ Story.def('c1_guild', { chapter: 'Bölüm 1 · Taban', title: 'Lonca Kapısı', 
   L = await S.level(() => buildHut('night'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true });
   S.amb('interior'); S.music('sad');
   const p2 = spawnJoseph(17, -1.6, -0.5, Math.PI * 0.75); p2.speedMul = 0.7; p2.allowRun = false;
-  const lily = S.cast('lily', npc(LOOK.lily(17), 2.6, -1.85, 0, { stance: 'lie', watch: false })); lily.lockY = 0.38; lily.solid = false;
+  const lily = S.cast('lily', npc(LOOK.lily(17), 2.6, -1.85, 0, { stance: 'lie', watch: false })); lily.lockY = 0.38; lily.solid = false; lily.collides = false;
   S.cine(true);
   await S.shot(V3(0.6, 2.1, 1.6), V3(-1.6, 0.7, -0.6), 0);
   await S.fadeIn(1);
@@ -3795,8 +4389,8 @@ Story.def('c1_walk', { chapter: 'Bölüm 1 · Taban', title: 'Eve Dönüş', sub
 Story.def('c1_system', { chapter: 'Bölüm 1 · Taban', title: 'Sistem', sub: 'O gece', kind: 'Hikâye' }, async S => {
   const L = await S.level(() => buildHut('dark'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true, hemi: 0.7, sun: 0.8 });
   S.amb('interior'); S.music('none');
-  const p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.solid = false;
-  const lily = npc(LOOK.lily(18), 2.6, -1.85, 0, { stance: 'lie', watch: false }); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false; S.cast('lily', lily);
+  const p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.solid = false; p.collides = false;
+  const lily = npc(LOOK.lily(18), 2.6, -1.85, 0, { stance: 'lie', watch: false }); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false; lily.collides = false; S.cast('lily', lily);
   S.cine(true);
   Screen.set({ vig: 0.7, sat: 0.7 }, true);
   await S.shot(V3(-1.6, 2.3, -0.1), V3(-2.5, 0.6, -1.6), 0);
@@ -3827,7 +4421,7 @@ Story.def('c1_system', { chapter: 'Bölüm 1 · Taban', title: 'Sistem', sub: 'O
     '<div class="row"><span>Kalan süre</span><b>23:59:59</b></div>',
     '<div class="row warn"><span>Başarısızlık cezası</span><b>???</b></div>',
   ], { speed: 380 });
-  p.model.setStance(null); p.model.setStance('lie'); p.model.play('reach', 0.4);
+  p.model.play('reach', 0.4);
   await S.shot(V3(-1.9, 1.1, -1.0), V3(-2.4, 0.7, -1.4), 1.5);
   await S.think('Kolumu bile kaldıramıyorum. On kilometre mi?');
   await S.think('Her sözleşmenin bir ceza maddesi vardır. Soru işaretiyle yazılmış bir ceza maddesi ise her zaman en kötüsüdür.');
@@ -3847,7 +4441,7 @@ const Game = {
   init() {
     window.addEventListener('error', e => this.showError(e.error || e.message));
     Save.load();
-    initMaterials();
+    TOON.init(); initMaterials();
     const r = G.renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     r.outputColorSpace = T.SRGBColorSpace; r.toneMapping = T.NoToneMapping;
     r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap;
@@ -3855,7 +4449,7 @@ const Game = {
     G.scene = new T.Scene();
     G.camera = new T.PerspectiveCamera(55, 1, 0.1, 900);
     G.env = new Env(G.scene);
-    Cam.init(G.camera); FX.init(G.scene); Input.init(); UI.init();
+    Cam.init(G.camera); FX.init(G.scene); Ambient.init(G.scene); Input.init(); UI.init();
     this.applyQuality(); this.resize(); addEventListener('resize', () => this.resize());
     this.bindMenus();
     G.env.set('dusk'); this.last = performance.now();
@@ -3880,7 +4474,7 @@ const Game = {
     for (const a of [...G.actors]) a.remove();
     G.actors = []; G.enemies = []; G.allies = []; G.attackers.clear(); G.player = null; UI.clearBars();
     if (G.level) { G.scene.remove(G.level.group); G.level.dispose(); G.level = null; }
-    FX.clear(); G.combat = false; Audio.stopAmbience();
+    FX.clear(); Ambient.clear(); WATER.length = 0; G.combat = false; Audio.stopAmbience();
   },
   loop(now) {
     requestAnimationFrame(t => this.loop(t));
@@ -3899,6 +4493,7 @@ const Game = {
     Cam.update(raw * (G.hitstop > 0 ? 0.3 : 1) * (G.slowmo > 0 ? 0.5 : 1));
     if (G.player) G.env.focus.copy(G.player.pos); else G.env.focus.copy(Cam.look);
     G.env.update(dt, G.camera);
+    WIND.time.value += dt; Ambient.update(dt);
     FX.update(dt, G.camera); Screen.update(raw); UI.frame(raw);
     if (G.onFrame) G.onFrame(dt);
     Input.endFrame();
@@ -3934,7 +4529,7 @@ const Game = {
   },
   menuScene() {
     Story.abort(); Story.current = null; this.clearWorld(); UI.hud(false); UI.cine(false); G.inCine = false;
-    const L = buildVillage({ night: false }); G.level = L; G.scene.add(L.group); G.env.set('dusk');
+    const L = buildVillage({ night: false }); G.level = L; G.scene.add(L.group); G.env.set('dusk'); Ambient.setup(L, 'dusk');
     const n = new NPC({ look: LOOK.joseph(18), watch: false }); n.place(-31, -35, 2.9); n.model.setStance('sitGround', true);
     const l = new NPC({ look: LOOK.lily(15), watch: false }); l.place(-30.1, -34.8, 2.8); l.model.setStance('hugKnees', true);
     const hy = L.h(-31, -35);
@@ -3976,13 +4571,15 @@ const Game = {
     $('#panel').hidden = false; $('#p-title').textContent = 'Ayarlar';
     const S = G.settings, body = $('#p-body');
     const range = (id, label, key, min, max, step) => `<div class="set-row"><label for="${id}">${label}</label><input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${S[key]}" data-k="${key}"></div>`;
-    body.innerHTML = range('s-sens', 'Kamera hassasiyeti', 'sens', 0.3, 2.5, 0.1) + range('s-mus', 'Müzik', 'music', 0, 1, 0.05) + range('s-sfx', 'Efektler', 'sfx', 0, 1, 0.05) + range('s-txt', 'Metin hızı', 'textSpeed', 0.5, 3, 0.1)
+    body.innerHTML = range('s-ui', 'Arayüz boyutu', 'uiScale', 0.8, 1.8, 0.05) + range('s-sens', 'Kamera hassasiyeti', 'sens', 0.3, 2.5, 0.1) + range('s-mus', 'Müzik', 'music', 0, 1, 0.05) + range('s-sfx', 'Efektler', 'sfx', 0, 1, 0.05) + range('s-txt', 'Metin hızı', 'textSpeed', 0.5, 3, 0.1)
+      + `<div class="set-row"><label>Shift lock</label><div class="seg" id="s-sl"><button type="button" data-v="1">Açık</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Grafik</label><div class="seg" id="s-q"><button type="button" data-v="low">Akıcı</button><button type="button" data-v="high">Kaliteli</button></div></div>`
       + `<div class="set-row"><label>Dikey kamera</label><div class="seg" id="s-inv"><button type="button" data-v="0">Normal</button><button type="button" data-v="1">Ters</button></div></div>`;
-    body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); Save.store(); }));
+    body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); UI.applyScale(); Save.store(); }));
     const seg = (id, get, set) => { const el = $(id); const upd = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === get())); el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.v); upd(); Save.store(); }); upd(); };
     seg('#s-q', () => S.quality, v => { S.quality = v; this.applyQuality(); });
     seg('#s-inv', () => S.invertY ? '1' : '0', v => { S.invertY = v === '1'; });
+    seg('#s-sl', () => S.shiftLock ? '1' : '0', v => { S.shiftLock = v === '1'; UI.syncLock(); });
   },
   async finale() {
     UI.hud(false); await UI.fade(1, 1.5);
@@ -3994,6 +4591,30 @@ const Game = {
 };
 window.addEventListener('load', () => { try { Game.init(); } catch (e) { Game.showError(e); } });
 window.__G = G; window.__Story = Story; window.__Game = Game; window.__Cam = Cam; window.__Input = () => Input; window.__UI = UI;
+
+
+// ==== 17_debug.js ====
+// ---------- Test sahneleri (menüde görünmez) ----------
+Story.def('lineup', { chapter: 'Debug', title: 'Lineup', debug: true }, async S => {
+  const L = await S.level(() => buildVillage({}), 'day');
+  const looks = [LOOK.joseph(18), LOOK.nora(18), LOOK.leo(18), LOOK.clara(18), LOOK.lily(12), LOOK.marta(), LOOK.daniel(), LOOK.selen(), LOOK.victor(18), LOOK.isolde(), LOOK.seraphine(), LOOK.rowena()];
+  const acts = looks.map((lk, i) => { const a = npc(lk, -5.5 + i * 1.0, 3, 0, { watch: false }); return a; });
+  window.__acts = acts;
+  S.cine(true);
+  await S.shot(V3(0.0, 1.5, 7.2), V3(0, 1.1, 3), 0);
+  await S.fadeIn(0.2);
+  await S.wait(9999);
+});
+Story.def('closeup', { chapter: 'Debug', title: 'Closeup', debug: true }, async S => {
+  const L = await S.level(() => buildVillage({}), 'day');
+  const looks = (location.hash.includes('b') ? [LOOK.clara(18), LOOK.lily(12), LOOK.isolde(), LOOK.seraphine(), LOOK.marta(), LOOK.daniel()] : [LOOK.joseph(18), LOOK.nora(18), LOOK.clara(18), LOOK.leo(18)]);
+  const acts = looks.map((lk, i) => npc(lk, -0.5 * (looks.length - 1) * 0.8 + i * 0.8, 3, i % 2 ? 0.4 : -0.4, { watch: false }));
+  window.__acts = acts;
+  S.cine(true);
+  await S.shot(V3(0, 1.62, 5.0), V3(0, 1.5, 3), 0);
+  await S.fadeIn(0.2);
+  await S.wait(9999);
+});
 
 
 })();</script>

@@ -2,17 +2,17 @@
 const ABORT = { abort: true };
 const Story = {
   scenes: {}, order: [], runId: 0, current: null, skipping: false, canSkip: true, markerTarget: null, waiters: [], inter: [],
-  def(id, meta, fn) { this.scenes[id] = Object.assign({ id, fn }, meta); this.order.push(id); },
-  skip() { if (!G.inCine) return; this.skipping = true; UI.advance(); if (UI.sysAdvance) { UI.sysAdvance(); UI.sysAdvance && UI.sysAdvance(); } for (const w of this.waiters) if (w.skippable) w.t = 1e9; },
+  def(id, meta, fn) { this.scenes[id] = Object.assign({ id, fn }, meta); if (!meta.debug) this.order.push(id); },
+  skip() { if (!G.inCine || !this.canSkip) return; this.skipping = true; UI.advance(); if (UI.sysAdvance) { UI.sysAdvance(); UI.sysAdvance && UI.sysAdvance(); } for (const w of this.waiters) if (w.skippable) w.t = 1e9; },
   abort() { this.runId++; this.waiters = []; this.inter = []; this.skipping = false; UI.hideDialog(); $('#choices').hidden = true; $('#system').hidden = true; UI.interact(null); UI.objective(null); UI.counter(null); UI.boss(null); this.markerTarget = null; },
   async run(id) {
     const sc = this.scenes[id]; if (!sc) { Game.toMenu(); return; }
-    this.abort(); const my = this.runId; this.current = id; Save.reach(id);
+    this.abort(); const my = this.runId; this.current = id; Save.reach(id); this.canSkip = sc.noSkip ? false : true;
     const S = makeS(my);
     try {
       await sc.fn(S);
       if (my !== this.runId) return;
-      const i = this.order.indexOf(id); const nx = sc.next || this.order[i + 1];
+      Loading.show(); const i = this.order.indexOf(id); const nx = sc.next || this.order[i + 1];
       if (nx) { Save.reach(nx); this.run(nx); } else Game.finale();
     } catch (e) {
       if (e === ABORT) return;
@@ -39,14 +39,14 @@ function makeS(my) {
   const S = {
     my, chk,
     async wait(sec) { if (Story.skipping && G.inCine) { chk(); return; } await new Promise(res => Story.waiters.push({ time: sec, t: 0, res, skippable: true })); chk(); },
-    async until(fn) { const t0 = G.t; await new Promise(res => Story.waiters.push({ fn: G.auto ? () => fn() || G.t - t0 > 14 : fn, res })); chk(); },
+    async until(fn, maxT) { const t0 = G.t; if (maxT === undefined) maxT = G.auto ? 14 : G.inCine ? 12 : 1e9; await new Promise(res => Story.waiters.push({ fn: () => fn() || G.t - t0 > maxT, res })); chk(); },
     async level(build, tod, envOpts = {}) {
-      $('#loading').hidden = false; await sleep(30); chk();
+      Loading.show(); await sleep(60); chk();
       Game.clearWorld();
       const L = build(); G.level = L; G.scene.add(L.group);
-      G.env.set(tod, envOpts); FX.clear(); Screen.reset(); Cam.lockTarget = null; Cam.dist = Cam.distBase = L.interior ? 3.2 : 5.2; Cam.height = 1.45; Cam.pitch = 0.3; Cam.fovT = 55;
+      G.env.set(tod, envOpts); FX.clear(); Ambient.setup(L, tod); Screen.reset(); Cam.lockTarget = null; Cam.dist = Cam.distBase = L.interior ? 3.2 : 5.2; Cam.height = 1.45; Cam.pitch = 0.3; Cam.fovT = 55;
       G.renderer.shadowMap.needsUpdate = true;
-      await sleep(30); $('#loading').hidden = true; chk();
+      await sleep(30); chk(); Story.levelReady = true;
       return L;
     },
     async say(who, text, o = {}) {
@@ -59,13 +59,13 @@ function makeS(my) {
     narr(text) { return S.say(null, text, { narr: true }); },
     async choice(opts) { const r = await UI.choice(opts); chk(); return r; },
     cine(on) {
-      G.inCine = on; G.controlEnabled = !on; UI.cine(on); UI.hud(!on); if (!on) { Story.skipping = false; Cam.follow(G.player); } Input.reset();
+      G.inCine = on; G.controlEnabled = !on; UI.cine(on); UI.hud(!on); if (!on) { Story.skipping = false; Cam.follow(G.player); Loading.hide(); if ($('#fade').style.opacity !== '0') UI.fade(0, 0.5); } Input.reset();
       if (on && G.player) { G.player.vel.set(0, 0, 0); if (G.player.state !== 'dead') G.player.state = 'move'; }
     },
     async shot(pos, look, dur = 0, ease) { const p = Cam.shot(pos, look, Story.skipping ? 0 : dur, ease); if (dur > 0 && !Story.skipping) { await new Promise(res => Story.waiters.push({ fn: () => Cam.shotT >= Cam.shotDur || Story.skipping, res })); } chk(); },
     follow(snap) { Cam.follow(G.player, snap); },
     async fadeOut(d = 0.8) { await UI.fade(1, d); chk(); },
-    async fadeIn(d = 0.8) { await UI.fade(0, d); chk(); },
+    async fadeIn(d = 0.8) { Loading.hide(); await UI.fade(0, d); chk(); },
     async title(k, h, sub, hold = 4.6) { UI.title(k, h, sub); await S.wait(hold); },
     objective(text, target) { UI.objective(text); Story.markerTarget = target || null; },
     clearObjective() { UI.objective(null); Story.markerTarget = null; },
@@ -96,7 +96,22 @@ function makeS(my) {
 // ---- Kalıcı kayıt ----
 const Save = {
   key: 'elonth.save.v1', data: { last: null, unlocked: [], settings: null },
-  load() { try { const s = localStorage.getItem(this.key); if (s) this.data = Object.assign(this.data, JSON.parse(s)); } catch (_) { } if (this.data.settings) Object.assign(G.settings, this.data.settings); },
+  load() { try { const s = localStorage.getItem(this.key); if (s) this.data = Object.assign(this.data, JSON.parse(s)); } catch (_) { } const fix = id => id === 'c1_boar' ? 'c1_harvest' : id; this.data.last = this.data.last && fix(this.data.last); this.data.unlocked = (this.data.unlocked || []).map(fix); if (this.data.settings) Object.assign(G.settings, this.data.settings); },
   store() { this.data.settings = G.settings; try { localStorage.setItem(this.key, JSON.stringify(this.data)); } catch (_) { } },
   reach(id) { this.data.last = id; if (!this.data.unlocked.includes(id)) this.data.unlocked.push(id); this.store(); },
+};
+
+// ---- Yükleme ekranı ----
+const LOAD_TIPS = [
+  'Saldırı halkası yere düştüğünde son anda yuvarlanırsan zaman yavaşlar ve bir sonraki vuruşun güçlenir.',
+  'Sağ üstteki Kilit düğmesi shift lock\'u açıp kapatır. Açıkken karakter kameranın baktığı yöne döner.',
+  'Arayüz küçük geliyorsa Ayarlar > Arayüz boyutu ile büyütebilirsin.',
+  'Elonth\'ta loncaya girmek on gümüş. Bir köylü için iki yıllık birikim.',
+  'Enkron yüz kişiden yaklaşık on kişiye verilir. Ne yaptığını yalnızca sahibi bilir.',
+  'Lonca rütbeleri G\'den SS\'e uzanır. Dünyada yalnızca üç SS vardır.',
+  'Sinematikleri sağ üstteki Atla düğmesiyle geçebilirsin.',
+];
+const Loading = {
+  show() { const el = $('#loading'); if (!el.hidden) return; el.hidden = false; const s = Story.scenes[Story.current]; $('#ld-chap').textContent = s ? s.chapter : ''; $('#ld-title').textContent = s ? s.title : ''; $('#ld-tip').textContent = pick(LOAD_TIPS); el.classList.remove('out'); },
+  hide() { const el = $('#loading'); if (el.hidden) return; el.classList.add('out'); setTimeout(() => { el.hidden = true; el.classList.remove('out'); }, 450); },
 };

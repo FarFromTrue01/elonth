@@ -44,7 +44,8 @@ ${body}
 fs.writeFileSync(path.join(root, 'index.html'), pwa);
 
 // Artifact build (skeleton is added by host)
-const art = `<title>Elonth</title>
+const art = `<meta charset="utf-8">
+<title>Elonth</title>
 ${fonts}
 <style>${css}</style>
 ${body}

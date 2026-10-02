@@ -2149,7 +2149,7 @@ class VRMHumanoid extends PoseRig {
     const mat = new T.MeshBasicMaterial({ map: VRMKit.decalTex(B, V), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, color: new T.Color(this.o.skin).lerp(new T.Color('#ffffff'), 0.55).multiplyScalar(0.8) });
     const d = new T.SkinnedMesh(geo, mat); d.name = 'faceDecal'; d.userData.role = 'decal'; d.frustumCulled = false; d.renderOrder = 2;
     fm.parent.add(d); d.bind(fm.skeleton, fm.bindMatrix); d.morphTargetInfluences = fm.morphTargetInfluences; d.morphTargetDictionary = fm.morphTargetDictionary;
-    this.allMats.push(mat);
+    this.decalMat = mat; // allMats dışında: emissive yok
   }
   // ---- malzemeler ----
   setupMaterials() {
@@ -2511,6 +2511,7 @@ class VRMHumanoid extends PoseRig {
     }
   }
   dispose() {
+    if (this.decalMat) this.decalMat.dispose();
     for (const m of this.allMats) m.dispose();
     for (const m of this.garments) m.geometry.dispose();
     if (this.ownGeo) for (const g of this.ownGeo) g.dispose();
@@ -4542,8 +4543,8 @@ class Fighter extends Actor {
       case 'windup': {
         this.wantFacing = Math.atan2(dx, dz);
         const u = this.stateT / this.atk.windup; const pulse = 0.4 + 0.6 * Math.abs(Math.sin(this.stateT * 18));
-        for (const m of this.model.allMats) m.emissive.setRGB(0.6 * u * pulse, 0.25 * u * pulse, 0);
-        if (this.stateT >= this.atk.windup) { for (const m of this.model.allMats) m.emissive.set('#000'); this.removeRing(); this.state = 'attack'; this.stateT = 0; this.hitDone = false; this.model.play(this.atk.anim, ACTIONS[this.atk.anim].dur / this.atk.dur); Audio.sfx('whoosh', 0.9); }
+        for (const m of this.model.allMats) m.emissive && m.emissive.setRGB(0.6 * u * pulse, 0.25 * u * pulse, 0);
+        if (this.stateT >= this.atk.windup) { for (const m of this.model.allMats) m.emissive && m.emissive.set('#000'); this.removeRing(); this.state = 'attack'; this.stateT = 0; this.hitDone = false; this.model.play(this.atk.anim, ACTIONS[this.atk.anim].dur / this.atk.dur); Audio.sfx('whoosh', 0.9); }
         break;
       }
       case 'attack': {

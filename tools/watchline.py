@@ -16,7 +16,7 @@ async def main():
             b = await p.chromium.launch(executable_path=(os.environ.get('CHROME') or ('/opt/pw-browsers/chromium' if os.path.exists('/opt/pw-browsers/chromium') else None)), args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
             pg = await b.new_page(viewport={'width': 1024, 'height': 640})
             errs = []
-            pg.on('pageerror', lambda e: errs.append(str(e)))
+            pg.on('pageerror', lambda e: errs.append(str(e) + ' @ ' + str(getattr(e, 'stack', ''))[:600]))
             pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' and 'CERT' not in m.text else None)
             await pg.add_init_script("try{localStorage.setItem('elonth.save.v1', JSON.stringify({last:null,unlocked:[],settings:{quality:'low',textSpeed:3,music:0,sfx:0}}))}catch(e){}")
             await pg.goto(f'http://localhost:{port}/index.html#{scene}&auto')

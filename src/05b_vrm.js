@@ -598,7 +598,7 @@ class VRMHumanoid extends PoseRig {
     const mat = new T.MeshBasicMaterial({ map: VRMKit.decalTex(B, V), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, color: new T.Color(this.o.skin).lerp(new T.Color('#ffffff'), 0.55).multiplyScalar(0.8) });
     const d = new T.SkinnedMesh(geo, mat); d.name = 'faceDecal'; d.userData.role = 'decal'; d.frustumCulled = false; d.renderOrder = 2;
     fm.parent.add(d); d.bind(fm.skeleton, fm.bindMatrix); d.morphTargetInfluences = fm.morphTargetInfluences; d.morphTargetDictionary = fm.morphTargetDictionary;
-    this.allMats.push(mat);
+    this.decalMat = mat; // allMats dışında: emissive yok
   }
   // ---- malzemeler ----
   setupMaterials() {
@@ -960,6 +960,7 @@ class VRMHumanoid extends PoseRig {
     }
   }
   dispose() {
+    if (this.decalMat) this.decalMat.dispose();
     for (const m of this.allMats) m.dispose();
     for (const m of this.garments) m.geometry.dispose();
     if (this.ownGeo) for (const g of this.ownGeo) g.dispose();

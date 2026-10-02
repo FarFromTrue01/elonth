@@ -106,9 +106,10 @@ const Game = {
     const J = V3(-32.0, 0, -41.0), hy = L.h(J.x, J.z);
     const n = new NPC({ look: LOOK.joseph(18), watch: false }); n.place(J.x, J.z, Math.PI * 0.97); n.model.setStance('sitSlope', true);
     const l = new NPC({ look: LOOK.lily(15), watch: false }); l.place(J.x + 0.95, J.z + 0.2, Math.PI * 0.93); l.model.setStance('hugKnees', true);
-    const cx = J.x - 2.2, cz = J.z + 4.6;
-    Cam.shot(V3(cx, hy + 1.7, cz), V3(J.x - 7, hy + 2.2, J.z - 40), 0);
-    G.onFrame = dt => { Cam.toPos.x = cx + Math.sin(G.t * 0.06) * 0.8; Cam.toPos.y = hy + 1.7 + Math.sin(G.t * 0.09) * 0.15; };
+    // önden, gün batımına karşı: çocuklar ekranın sağ yarısında, menü solda
+    const cx = J.x + 2.9, cz = J.z - 3.9, ly = hy + 1.25;
+    Cam.shot(V3(cx, hy + 1.05, cz), V3(J.x + 1.2, ly, J.z + 0.6), 0);
+    G.onFrame = dt => { Cam.toPos.x = cx + Math.sin(G.t * 0.07) * 0.25; Cam.toPos.y = hy + 1.05 + Math.sin(G.t * 0.11) * 0.06; };
     Audio.play('title'); Audio.ambience('wind');
   },
   newGame() { Save.data.last = null; this.start(Story.order[0]); },

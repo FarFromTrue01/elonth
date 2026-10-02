@@ -13,6 +13,7 @@ const VRMKit = {
         const g = await L.loadAsync(this.FILES[k]);
         this.bases[k] = this.prep(k, g); done++; if (onProgress) onProgress(done / keys.length);
       }));
+      if (VRMLib.MeshoptSimplifier) await VRMLib.MeshoptSimplifier.ready;
       this.ready = true;
     } catch (e) { console.error('VRM yüklenemedi', e); this.failed = true; }
     return this.ready;
@@ -80,6 +81,12 @@ const VRMKit = {
     const box = new T.Box3(); for (const m of B.meshes) if (m.userData.role === 'face' || m.userData.role === 'body') { if (m.isSkinnedMesh) m.computeBoundingBox && m.computeBoundingBox(); box.union(new T.Box3().setFromObject(m)); }
     B.height = box.max.y; B.hipY = B.bp.hips.y; B.headY = B.bp.head.y;
     this.prepBody(B);
+    // çocuk bedeni: göğüs önünü düzleştir (kadın tabanları için); konum tabanlı, kıyafet ve vücutta aynı
+    if (key !== 'm') {
+      const bp = B.bp, cz = B.dims.chest.cz, y0 = bp.chest.y - 0.1, y1 = bp.upperChest.y + 0.08, F = B.F;
+      B.flatAt = (x, y, z) => { if (y < y0 || y > y1) return z; const w = Math.sin((y - y0) / (y1 - y0) * Math.PI); const zf = z * F; if (zf <= cz) return z; return (cz + (zf - cz) * (1 - 0.6 * w * clamp(1 - Math.abs(x) / 0.16, 0, 1))) * F; };
+      B.childFlat = g => { const a = g.attributes.position; for (let i = 0; i < a.count; i++) a.setZ(i, B.flatAt(a.getX(i), a.getY(i), a.getZ(i))); a.needsUpdate = true; g.computeBoundingSphere(); };
+    }
     this.prepColors(B);
     // geniş sınır küresi: yatarken/otururken yanlışlıkla kırpılmasın
     for (const m of B.meshes) { m.frustumCulled = true; }
@@ -93,18 +100,18 @@ const VRMKit = {
     B.skelInv = skel.bones.map(b => b.matrixWorld.clone().invert());
     // kemik -> en yakın insan kemiği (ör. J_Sec_L_Bust1 -> upperChest)
     B.semOf = skel.bones.map(b => { let o = b; while (o && !B.humanOf[o.name]) o = o.parent; return o ? B.humanOf[o.name] : 'hips'; });
-    const P = [], N = [], UV = [], SI = [], SW = [], IDX = []; let base = 0;
+    const P = [], N = [], UV = [], SI = [], SW = [], IDX = []; let base = 0; B.bodyMap = new Map();
     const v = V3(), nm = new T.Matrix3();
     for (const m of bodies) {
       const g = m.geometry, pos = g.attributes.position, nor = g.attributes.normal, uv = g.attributes.uv, si = g.attributes.skinIndex, sw = g.attributes.skinWeight;
       const remap = m.skeleton.bones.map(b => B.skelNames.indexOf(b.name));
       m.updateMatrixWorld(true); nm.getNormalMatrix(m.matrixWorld);
-      const local = new Map();
+      const local = new Map(); const vmap = new Int32Array(pos.count).fill(-1); B.bodyMap.set(m.name, vmap);
       const idx = g.index ? g.index.array : [...Array(pos.count).keys()];
       for (let t = 0; t < idx.length; t++) {
         const vi = idx[t]; let ni = local.get(vi);
         if (ni === undefined) {
-          ni = base + local.size; local.set(vi, ni);
+          ni = base + local.size; local.set(vi, ni); vmap[vi] = ni;
           v.fromBufferAttribute(pos, vi); m.applyBoneTransform(vi, v); v.applyMatrix4(m.matrixWorld); P.push(v.x * B.F, v.y, v.z * B.F);
           v.fromBufferAttribute(nor, vi).applyMatrix3(nm).normalize(); N.push(v.x * B.F, v.y, v.z * B.F);
           UV.push(uv ? uv.getX(vi) : 0, uv ? uv.getY(vi) : 0);
@@ -219,7 +226,8 @@ const VMAT = {
     m.shadeColorFactor = sh;
     m.normalMap = null; m.emissiveMap = null; m.matcapTexture = null; m.rimMultiplyTexture = null;
     m.shadingShiftFactor = o.shift !== undefined ? o.shift : -0.05; m.shadingToonyFactor = 0.86;
-    m.parametricRimColorFactor = new T.Color(o.rim || '#000000'); m.parametricRimFresnelPowerFactor = 3.5; m.parametricRimLiftFactor = 0.05;
+    m.parametricRimColorFactor = new T.Color(o.rim || '#000000'); m.parametricRimFresnelPowerFactor = o.rim ? 3.2 : 3.5; m.parametricRimLiftFactor = o.rim ? 0.0 : 0.05;
+    if (o.rim) { m.shadingToonyFactor = 0.97; m.shadingShiftFactor = -0.15; }
     if (o.double) m.side = T.DoubleSide;
     if (o.repeat) this.repeat(m, o.repeat);
     m.needsUpdate = true;
@@ -276,7 +284,7 @@ const Garments = {
       for (let k = 0; k < 3; k++) { const a = v[k], q = v[(k + 1) % 3]; if (fv[a] > 0) poly.push(vert(a)); if ((fv[a] > 0) !== (fv[q] > 0)) poly.push(cut(a, q)); }
       for (let k = 1; k + 1 < poly.length; k++) IDX.push(poly[0], poly[k], poly[k + 1]);
     }
-    return this.geo(P, N, UV, SI, SW, IDX, false, B.F);
+    const g = this.geo(P, N, UV, SI, SW, IDX, false, B.F); g.userData.cover = fv; return g;
   },
   geo(P, N, UV, SI, SW, IDX, computeN, F = 1) {
     if (F < 0) { for (let i = 0; i < P.length; i += 3) { P[i] = -P[i]; P[i + 2] = -P[i + 2]; } if (N) for (let i = 0; i < N.length; i += 3) { N[i] = -N[i]; N[i + 2] = -N[i + 2]; } }
@@ -310,7 +318,7 @@ const Garments = {
         P.push(sx * rx * ruff, y, s.cz + cz * (cz > 0 ? zf : zb) * ruff);
         UV.push(i / segs * 4, t * 2.5);
         // ağırlık: üstte kalça, aşağı indikçe yan taraflar bacaklara bağlanır, ön/arka iki bacağın ortalaması
-        const side = clamp(Math.abs(sx) * 1.4, 0, 1), down = clamp(t * 1.15, 0, 1) * (o.follow !== undefined ? o.follow : 0.6);
+        const side = clamp(Math.abs(sx) * 1.4, 0, 1), down = clamp(t * 1.3, 0, 1) * (o.follow !== undefined ? o.follow : 0.95);
         const own = down * side, shared = down * (1 - side) * 0.5;
         let wL = sx > 0 ? own + shared : shared, wR = sx > 0 ? shared : own + shared;
         const low = o.knee ? clamp((t - 0.55) * 2, 0, 1) * 0.5 : 0;
@@ -353,7 +361,8 @@ const Garments = {
     const neckCut = lerp(bp.neck.y, bp.head.y, spec.collar === 'high' ? 0.45 : 0.08), waist = bp.spine.y + 0.02;
     let g = null;
     const armpit = bp.leftUpperArm.y - 0.05, abX = i => Math.abs(X(i));
-    const armhole = (i, w) => Math.max(shX + w - abX(i), armpit - Y(i));
+    const isArm = i => /Arm|Hand/.test(sem[i]);
+    const armhole = (i, w) => isArm(i) ? Math.min(shX + w - abX(i), armpit + 0.05 - Y(i)) : Math.max(shX + w - abX(i), armpit - Y(i));
     switch (spec.t) {
       case 'shirt': {
         const sl = spec.sleeves || 'short';
@@ -394,6 +403,7 @@ const Garments = {
         const bot = spec.len === 'floor' ? bp.leftFoot.y + 0.05 : spec.len === 'ankle' ? lerp(bp.leftFoot.y, bp.leftLowerLeg.y, 0.25) : spec.len === 'knee' ? bp.leftLowerLeg.y - 0.04 : spec.len === 'thigh' ? lerp(bp.leftUpperLeg.y, bp.leftLowerLeg.y, 0.55) : spec.len === 'tunic' ? lerp(bp.leftUpperLeg.y, bp.leftLowerLeg.y, 0.32) : lerp(bp.leftUpperLeg.y, bp.leftLowerLeg.y, 0.3);
         const ao = spec.open === 'front' ? { a0: 0.42, a1: TAU - 0.42 } : spec.open === 'apron' ? { a0: -1.05, a1: 1.05 } : {};
         g = this.skirt(B, Object.assign({ top, bot, flare: spec.flare, loose: spec.loose, follow: spec.follow, knee: spec.len === 'floor' || spec.len === 'ankle' }, ao));
+        if (!spec.open && (spec.len === 'floor' || spec.len === 'ankle' || spec.len === 'knee')) { const cv = new Float32Array(b.n); for (let i = 0; i < b.n; i++) { const s = sem[i]; cv[i] = (legU(s) || legL(s) || s === 'hips') ? Math.min(top - 0.02 - Y(i), Y(i) - bot - 0.06) : -1; } g.userData.cover = cv; }
         if (spec.open) { const a = g.attributes.position; for (let i = 0; i < a.count; i++) { /* önlük/ceket: içi görünür */ } }
         break;
       }
@@ -416,7 +426,7 @@ const VACC = {
       case 'scarf': { const g = new T.TorusGeometry(1, 0.38, 7, 20); g.rotateX(Math.PI / 2); g.scale(0.068, 0.06, 0.068); return { bone: 'neck', at: V3(0, 0.035, 0.005), g }; }
       case 'hat': { const g = latheGeo([[0.001, 0.13], [0.33, 0.12], [0.37, 0.02], [0.66, 0.0], [0.7, -0.03], [0.62, -0.03], [0.34, 0.0], [0.001, 0.0]], 20); g.scale(hw * 1.45, hh * 0.95, hd * 1.45); return { bone: 'head', at: V3(0, h.max.y - B.bp.head.y - hh * 0.25, h.c.z - B.bp.head.z), g, mat: 'linen' }; }
       case 'cap': { const g = new T.SphereGeometry(1, 16, 8, 0, TAU, 0, Math.PI * 0.45); g.scale(hw * 1.13, hh * 1.0, hd * 1.15); return { bone: 'head', at: V3(0, h.c.y - B.bp.head.y + hh * 0.08, h.c.z - B.bp.head.z - 0.005), g, mat: 'wool' }; }
-      case 'helmet': { const g = new T.SphereGeometry(1, 18, 10, 0, TAU, 0, Math.PI * 0.55); g.scale(hw * 1.18, hh * 1.08, hd * 1.2); return { bone: 'head', at: V3(0, h.c.y - B.bp.head.y + hh * 0.05, h.c.z - B.bp.head.z - 0.008), g, mat: 'metal' }; }
+      case 'helmet': { const g = latheGeo([[0.001, 1.0], [0.4, 0.93], [0.72, 0.72], [0.9, 0.4], [0.97, 0.05], [1.0, -0.12], [1.06, -0.16], [1.0, -0.17]], 22); g.scale(hw * 1.32, hh * 1.06, hd * 1.36); return { bone: 'head', at: V3(0, h.c.y - B.bp.head.y + hh * 0.18, h.c.z - B.bp.head.z - 0.02), g, mat: 'metal' }; }
       case 'hood': { const g = new T.SphereGeometry(1, 18, 12, Math.PI * 1.5 - 1.95, 3.9, 0, Math.PI * 0.78); g.scale(hw * 1.3, hh * 1.18, hd * 1.32); return { bone: 'head', at: V3(0, h.c.y - B.bp.head.y + 0.01, h.c.z - B.bp.head.z - 0.012), g, double: true }; }
       case 'headscarf': { const g = new T.SphereGeometry(1, 18, 12, Math.PI * 1.5 - 1.7, 3.4, 0, Math.PI * 0.62); g.scale(hw * 1.14, hh * 1.05, hd * 1.18); return { bone: 'head', at: V3(0, h.c.y - B.bp.head.y + 0.012, h.c.z - B.bp.head.z - 0.008), g, double: true }; }
       case 'circlet': { const g = new T.TorusGeometry(1, 0.035, 5, 28); g.rotateX(Math.PI / 2 - 0.12); g.scale(hw * 1.06, 1, hd * 1.08); return { bone: 'head', at: V3(0, h.c.y - B.bp.head.y + hh * 0.42, h.c.z - B.bp.head.z), g, mat: 'metal' }; }
@@ -433,6 +443,8 @@ const VACC = {
       case 'necklace': { const g = new T.TorusGeometry(1, 0.03, 4, 24); g.rotateX(Math.PI / 2 - 0.5); g.scale(ch.rx * 0.42, 0.05, (ch.zf - ch.zb) * 0.4); return { bone: 'upperChest', at: V3(0, B.bp.neck.y - B.bp.upperChest.y - 0.035, (ch.cz || 0) + 0.012), g, mat: 'metal' }; }
       case 'gem': return { bone: 'upperChest', at: V3(0, B.bp.neck.y - B.bp.upperChest.y - 0.1, ch.zf + 0.006), g: new T.OctahedronGeometry(0.016), mat: 'gem' };
       case 'sash': { const g = new T.TorusGeometry(1, 0.05, 5, 26); g.rotateX(Math.PI / 2); g.rotateZ(0.62); g.scale(ch.rx + 0.03, 1, (ch.zf - ch.zb) / 2 + 0.03); return { bone: 'spine', at: V3(0, 0.08, ch.cz), g }; }
+      case 'cuirass': { const g = new T.SphereGeometry(1, 20, 12, Math.PI * 0.12, Math.PI * 0.76, Math.PI * 0.2, Math.PI * 0.62); g.scale(ch.rx * 1.08, 0.24, (ch.zf - ch.cz) * 1.35 + 0.02); return { bone: 'chest', at: V3(0, (B.bp.upperChest.y - B.bp.chest.y) * 0.4, ch.cz - 0.01), g, mat: 'metal', double: true }; }
+      case 'gorget': { const g = new T.CylinderGeometry(0.075, 0.1, 0.06, 18, 1, true); return { bone: 'upperChest', at: V3(0, B.bp.neck.y - B.bp.upperChest.y + 0.005, ch.cz - 0.005), g, mat: 'metal', double: true }; }
       case 'pauldron': { const g = new T.SphereGeometry(1, 12, 8, 0, TAU, 0, Math.PI * 0.55); g.scale(0.085, 0.06, 0.085); return { g, mat: 'metal' }; }
     }
     return null;
@@ -637,18 +649,48 @@ class VRMHumanoid extends PoseRig {
       bones.push(cb); inv.push(ucw.clone().multiply(new T.Matrix4().compose(lp, cq, V3(1, 1, 1))).invert()); capeIdx = bones.length - 1;
     }
     this.gSkel = new T.Skeleton(bones, inv);
+    const cov = new Uint8Array(B.body.n); let anyCov = false;
     const covered = { shirt: list.some(g => g.t === 'vest' || g.t === 'armor'), pants: false };
     for (const spec of list) {
       const geo = spec.t === 'cape' ? Garments.cape(B, spec, capeIdx) : Garments.build(B, spec, child);
       if (!geo || !geo.index || !geo.index.count) continue;
+      if (geo.userData.cover) { const c = geo.userData.cover; for (let i = 0; i < c.length; i++) if (c[i] > 0.015) { cov[i] = 1; anyCov = true; } }
       const g2 = geo.clone(); // grup eklemek için paylaşılan geometriyi bozma
-      const mats = VMAT.make(B, spec.c || '#7a6a55', { tex: spec.tex || (spec.t === 'boots' || spec.t === 'shoes' ? 'leather' : spec.t === 'armor' || spec.t === 'bracers' ? 'metal' : 'linen'), double: spec.t === 'skirt' || spec.t === 'cape', rim: spec.t === 'armor' || spec.t === 'bracers' ? '#5a6070' : null, shade: spec.shade, olw: spec.t === 'skirt' || spec.t === 'cape' ? 0.8 : 1, repeat: spec.t === 'skirt' || spec.t === 'cape' ? 1 : 3 });
+      const mats = VMAT.make(B, spec.c || '#7a6a55', { tex: spec.tex || (spec.t === 'boots' || spec.t === 'shoes' ? 'leather' : spec.t === 'armor' || spec.t === 'bracers' ? 'metal' : 'linen'), double: spec.t === 'skirt' || spec.t === 'cape', rim: spec.t === 'armor' || spec.t === 'bracers' ? '#c4ccdc' : null, shade: spec.shade || (spec.t === 'armor' || spec.t === 'bracers' ? '#4a5262' : undefined), olw: spec.t === 'skirt' || spec.t === 'cape' ? 0.8 : 1, repeat: spec.t === 'skirt' || spec.t === 'cape' ? 1 : 3 });
       if (covered[spec.t]) mats.length = 1;
       for (const m of mats) { this.allMats.push(m); if (m.isOutline) this.outlines.push(m); }
       const me = VMAT.mesh(g2, mats, true); me.name = 'garment_' + spec.t;
       this.sc.add(me); me.bind(this.gSkel, new T.Matrix4());
       this.garments.push(me); this.meshes.push(me);
     }
+    if (anyCov && !location.hash.includes('nocull')) this.cullBody(cov);
+    if (child && B.flatAt) this.flattenBody();
+  }
+  // Kıyafetin altında kalan vücut üçgenlerini çizme (performans + bükülmede taşmayı önler)
+  cullBody(cov) {
+    const B = this.B;
+    this.sc.traverse(m => {
+      if (!m.isSkinnedMesh || m.userData.role !== 'body') return;
+      const map = B.bodyMap.get(m.name), og = m.geometry; if (!map || !og.index) return;
+      const src = og.index.array, keep = [];
+      for (let t = 0; t < src.length; t += 3) { const a = map[src[t]], b = map[src[t + 1]], c = map[src[t + 2]]; if (a >= 0 && b >= 0 && c >= 0 && cov[a] && cov[b] && cov[c]) continue; keep.push(src[t], src[t + 1], src[t + 2]); }
+      if (keep.length === src.length) return;
+      // (öznitelikleri paylaşan yeni BufferGeometry iskelet animasyonunu bozuyor; tam kopya kullan)
+      const ng = og.clone(); ng.setIndex(keep); if (og.boundingSphere) ng.boundingSphere = og.boundingSphere.clone(); if (og.boundingBox) ng.boundingBox = og.boundingBox.clone();
+      m.geometry = ng; this.ownGeo = (this.ownGeo || []).concat(ng);
+      if (!keep.length) m.visible = false;
+    });
+  }
+  flattenBody() {
+    const B = this.B;
+    this.sc.traverse(m => {
+      if (!m.isSkinnedMesh || m.userData.role !== 'body') return;
+      // (öznitelik paylaşan yeni geometri iskelet animasyonunu bozuyor; tam kopya kullan)
+      let g = m.geometry; if (!this.ownGeo || !this.ownGeo.includes(g)) { const ng = g.clone(); m.geometry = g = ng; this.ownGeo = (this.ownGeo || []).concat(ng); }
+      const a = g.attributes.position.clone(); m.updateMatrixWorld(true);
+      for (let i = 0; i < a.count; i++) a.setZ(i, B.flatAt(a.getX(i), a.getY(i), a.getZ(i)));
+      g.setAttribute('position', a);
+    });
   }
   // ---- yay kemikleri ----
   setupSprings() {
@@ -686,10 +728,11 @@ class VRMHumanoid extends PoseRig {
     const parts = type === 'armor' ? ['pauldronL', 'pauldronR'] : type === 'belt' ? ['belt', 'buckle'] : type === 'sheath' ? ['sheath', 'hilt'] : type === 'trim' ? ['collar'] : type === 'necklace' ? ['necklace', 'gem'] : type === 'satchel' ? ['satchel', 'strap'] : [type];
     for (const p of parts) {
       let d, bone;
-      if (p === 'pauldronL' || p === 'pauldronR') { d = VACC.geo('pauldron', this.B, ex); bone = this.raw[p === 'pauldronL' ? 'leftUpperArm' : 'rightUpperArm']; d.at = V3(p === 'pauldronL' ? 0.03 : -0.03, 0.035, 0); }
+      if (p === 'cuirass' || p === 'gorget') { d = VACC.geo(p, this.B, ex); bone = this.raw[d.bone]; }
+      else if (p === 'pauldronL' || p === 'pauldronR') { d = VACC.geo('pauldron', this.B, ex); bone = this.raw[p === 'pauldronL' ? 'leftUpperArm' : 'rightUpperArm']; d.at = V3(p === 'pauldronL' ? 0.03 : -0.03, 0.035, 0); }
       else { d = VACC.geo(p, this.B, ex); if (!d) continue; bone = this.raw[d.bone]; }
       if (!bone) continue;
-      const col = p === 'buckle' ? (ex.buckle || '#b89a5a') : p === 'hilt' ? '#c9a85a' : p === 'gem' ? '#7fd0ff' : p.startsWith('pauldron') ? (ex.c || '#b8bec8') : d.mat === 'hair' ? (this.V.hairColor || this.o.hair) : c;
+      const col = p === 'buckle' ? (ex.buckle || '#b89a5a') : p === 'hilt' ? '#c9a85a' : p === 'gem' ? '#7fd0ff' : (p.startsWith('pauldron') || p === 'cuirass' || p === 'gorget') ? (ex.c || '#b8bec8') : d.mat === 'hair' ? (this.V.hairColor || this.o.hair) : c;
       const mats = VMAT.make(this.B, col, { tex: d.mat === 'metal' ? 'metal' : d.mat === 'leather' ? 'leather' : d.mat === 'gem' ? null : d.mat === 'hair' ? 'wool' : 'linen', rim: d.mat === 'metal' || d.mat === 'gem' ? '#6a7080' : null, double: d.double, repeat: 1 });
       for (const m of mats) { this.allMats.push(m); if (m.isOutline) this.outlines.push(m); }
       const me = VMAT.mesh(d.g, mats, false); me.castShadow = true;
@@ -712,7 +755,10 @@ class VRMHumanoid extends PoseRig {
   updateFace(dt) {
     this.blinkT -= dt;
     const want = { happy: 0, angry: 0, sad: 0, surprised: 0, relaxed: 0 };
-    switch (this.expr) {
+    switch (this.curExpr()) {
+      case 'alert': want.surprised = 0.3; break;
+      case 'gloom': want.sad = 0.4; break;
+      case 'fierce': want.angry = 0.6; break;
       case 'smile': want.happy = 0.55; break;
       case 'happy': want.happy = 1; break;
       case 'angry': want.angry = 0.85; break;
@@ -725,7 +771,7 @@ class VRMHumanoid extends PoseRig {
     let blink = 0;
     if (this.closedEyes) blink = 1; else if (this.blinkT < 0.13 && this.blinkT > 0) blink = Math.sin((0.13 - this.blinkT) / 0.13 * Math.PI);
     if (this.blinkT < 0) this.blinkT = frand(2, 5.5);
-    if (this.expr === 'pain') blink = Math.max(blink, 0.45);
+    if (this.curExpr() === 'pain') blink = Math.max(blink, 0.45);
     blink *= 1 - clamp((this.exprW.happy || 0) * 1.4, 0, 1) * (this.closedEyes ? 0 : 1);
     this.blinkW = this.closedEyes ? 1 : blink;
     let aa = 0, oh = 0, ih = 0;
@@ -801,6 +847,7 @@ class VRMHumanoid extends PoseRig {
   dispose() {
     for (const m of this.allMats) m.dispose();
     for (const m of this.garments) m.geometry.dispose();
+    if (this.ownGeo) for (const g of this.ownGeo) g.dispose();
     if (this.gSkel) this.gSkel.dispose();
     this.sc.traverse(m => { if (m.isSkinnedMesh && m.skeleton && m.skeleton !== this.gSkel) m.skeleton.dispose(); });
   }
@@ -818,7 +865,8 @@ function vrmSpecFor(o) {
   if (!v.base) v.base = fem ? ['fa', 'fg'][Math.floor(hsh * 2) % 2] : 'm';
   if (v.hair === undefined) {
     const st = o.hairStyle || 'short';
-    if (st === 'bald' || st === 'baldRing') v.hair = 'none';
+    // kel/dazlak: VRoid kafa derisi iyi görünmüyor; kısa kır saç
+    if (st === 'bald' || st === 'baldRing') { v.hair = 'm'; if (v.hairColor === undefined) v.hairColor = pick(['#8a8478', '#a8a298', '#6a6258', '#c8c2b8']); }
     else if (!fem && (st === 'curly')) v.hair = 'fa';
     else if (!fem) v.hair = 'm';
     else { let d = 'fg'; for (const k in VRM_HAIR) if (VRM_HAIR[k].includes(st)) d = k; v.hair = d === 'm' ? 'fa' : d; }
@@ -839,7 +887,7 @@ function vrmSpecFor(o) {
     if (!longDress) gs.push({ t: 'pants', c: o.pants, boots: !!o.boots });
     gs.push({ t: o.boots ? 'boots' : 'shoes', c: o.shoes || '#3a2b20', high: !!armor });
     if (has('vest')) gs.push({ t: 'vest', c: has('vest').c, tex: 'leather' });
-    if (armor) gs.push({ t: 'armor', c: armor.c || '#b8bec8', tex: 'metal' });
+    if (armor) gs.push({ t: 'armor', c: shade(armor.c || '#b8bec8', 0.78), tex: 'metal', shade: '#3a404c' });
     if (has('dress')) { const d = has('dress'); gs.push({ t: 'skirt', c: d.c, len: d.len && d.len < 0.75 ? 'knee' : 'ankle', from: 'waist', flare: 0.09 }); }
     if (has('robe')) { gs.push({ t: 'shirt', c: has('robe').c, sleeves: 'long' }); gs.push({ t: 'skirt', c: has('robe').c, len: 'floor', from: 'waist', flare: 0.1 }); }
     if (has('skirtShort')) gs.push({ t: 'skirt', c: has('skirtShort').c, len: 'thigh', from: 'waist', flare: 0.06 });
@@ -860,3 +908,133 @@ function makeHumanoid(look) {
   if (VRMKit.ready && !(look && look.noVRM)) { try { return new VRMHumanoid(look || {}); } catch (e) { console.error('VRM karakter hatası', e); } }
   return new Humanoid(look || {});
 }
+
+// ---- Kalabalık: pozlanmış VRM varyantları -> sadeleştirilmiş, tek dokulu (atlas), örneklenmiş (instanced) figürler ----
+const CrowdKit = {
+  cache: new Map(), outlineMat: null,
+  classOf(o) {
+    const ex = (o.extras || []).map(e => typeof e === 'string' ? e : e.t);
+    return (ex.includes('armor') ? 'guard' : ex.includes('trim') ? 'noble' : 'vill') + (o.female ? 'F' : 'M');
+  },
+  // seviye kurulurken: bakeHumanoid çağrılarını topla
+  queue(b, opts, stance, x, y, z, ry, extraPose) { (b.crowd || (b.crowd = [])).push({ opts, stance, m: b.top.clone().multiply(new T.Matrix4().compose(V3(x, y, z), new T.Quaternion().setFromAxisAngle(V3(0, 1, 0), ry), V3(1, 1, 1))) }); },
+  build(list) {
+    const root = new T.Group(); const per = new Map(); const slots = {};
+    for (const r of list) {
+      const cls = this.classOf(r.opts), sk = cls + '|' + (r.stance || '');
+      const n = slots[sk] = (slots[sk] || 0) + 1, slot = (n - 1) % (cls.startsWith('guard') ? 1 : 3);
+      const key = sk + '|' + slot;
+      if (!per.has(key)) per.set(key, { look: r.opts, stance: r.stance, items: [] });
+      per.get(key).items.push(r.m);
+    }
+    for (const [key, v] of per) {
+      let bake = this.cache.get(key);
+      if (!bake) { try { bake = this.bake(v.look, v.stance); } catch (e) { console.error('kalabalık', e); continue; } this.cache.set(key, bake); }
+      const mk = (mat, cast, g) => { const im = new T.InstancedMesh(g || bake.geo, mat, v.items.length); v.items.forEach((m, i) => im.setMatrixAt(i, m)); im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); im.castShadow = cast; im.receiveShadow = false; im.userData.shared = true; im.frustumCulled = true; return im; };
+      root.add(mk(bake.mat, true)); root.add(mk(this.outline(), false, bake.olGeo));
+    }
+    return root;
+  },
+  outline() {
+    if (this.outlineMat) return this.outlineMat;
+    this.outlineMat = new T.ShaderMaterial({
+      uniforms: TOON.outline.uniforms,
+      vertexShader: `uniform float thick; varying float vD;
+        void main(){ mat4 im = instanceMatrix; vec4 wp = modelMatrix * im * vec4(position,1.0); vec3 n = normalize(mat3(modelMatrix) * mat3(im) * normal);
+          float d = distance(wp.xyz, cameraPosition); wp.xyz += n * thick * 0.75 * clamp(d * 0.16, 0.55, 3.5);
+          vec4 mv = viewMatrix * wp; vD = -mv.z; gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: TOON.outline.fragmentShader, side: T.BackSide,
+    });
+    return this.outlineMat;
+  },
+  // Bir varyantı pişir: poz ver, köşeleri dünyaya çevir, sadeleştir, dokuları atlasa topla
+  bake(look, stance) {
+    const m = new VRMHumanoid(look);
+    m.springOn = false;
+    if (stance) m.setStance(stance, true); m.stanceW = 1;
+    m.root.updateMatrixWorld(true); m.update(0.016, 0); m.update(0.016, 0);
+    m.root.updateMatrixWorld(true);
+    const parts = []; // {pos[], nor[], uv[], idx[], mat}
+    const v = V3(), nrm = V3(), sm = new T.Matrix4(), tmp = new T.Matrix4(), nm3 = new T.Matrix3();
+    const visible = o => { while (o) { if (!o.visible) return false; o = o.parent; } return true; };
+    m.root.traverse(o => {
+      if (!o.isMesh || !visible(o)) return;
+      const g = o.geometry, mats = Array.isArray(o.material) ? o.material : [o.material];
+      const groups = g.groups.length ? g.groups : [{ start: 0, count: g.index ? g.index.count : g.attributes.position.count, materialIndex: 0 }];
+      for (const gr of groups) {
+        const mat = mats[gr.materialIndex || 0]; if (!mat || mat.isOutline || !mat.visible) continue;
+        if (o.isSkinnedMesh) o.skeleton.update();
+        const P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, I = g.index;
+        const remap = new Map(), pos = [], nor = [], uv = [], idx = [];
+        const si = g.attributes.skinIndex, sw = g.attributes.skinWeight;
+        for (let k = gr.start; k < gr.start + gr.count; k++) {
+          const vi = I ? I.getX(k) : k; let ni = remap.get(vi);
+          if (ni === undefined) {
+            ni = pos.length / 3; remap.set(vi, ni);
+            o.getVertexPosition(vi, v); v.applyMatrix4(o.matrixWorld); pos.push(v.x, v.y, v.z);
+            nrm.set(0, 1, 0); if (N) nrm.fromBufferAttribute(N, vi);
+            if (o.isSkinnedMesh && si) { sm.set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); for (let c = 0; c < 4; c++) { const w = sw.getComponent(vi, c); if (!w) continue; const bi = si.getComponent(vi, c); tmp.multiplyMatrices(o.skeleton.bones[bi].matrixWorld, o.skeleton.boneInverses[bi]); for (let e = 0; e < 16; e++) sm.elements[e] += tmp.elements[e] * w; } tmp.multiplyMatrices(sm, o.bindMatrix); nm3.setFromMatrix4(tmp); nrm.applyMatrix3(nm3); }
+            else { nm3.getNormalMatrix(o.matrixWorld); nrm.applyMatrix3(nm3); }
+            nrm.normalize(); nor.push(nrm.x, nrm.y, nrm.z);
+            uv.push(U ? U.getX(vi) : 0.5, U ? U.getY(vi) : 0.5);
+          }
+          idx.push(ni);
+        }
+        parts.push({ pos, nor, uv, idx, mat, big: idx.length > 600 && !/Eye|Brow|Mouth|Lash|line/i.test(mat.name || ''), decal: /Eye|Brow|Mouth|Lash|line/i.test(mat.name || '') });
+      }
+    });
+    // sadeleştir (gövde, saç, kıyafet); yüz parçaları aynen kalır
+    const S = VRMLib.MeshoptSimplifier;
+    for (const p of parts) if (p.big && S) {
+      try { const ind = new Uint32Array(p.idx), fc = /Face|FACE/.test(p.mat.name || ''), target = Math.floor(ind.length * (fc ? 0.45 : 0.2) / 3) * 3; const [res] = S.simplify(ind, new Float32Array(p.pos), 3, target, fc ? 0.01 : 0.05, fc ? ['LockBorder'] : []); if (res && res.length >= 3) p.idx = Array.from(res); } catch (e) { }
+    }
+    // atlas: her malzemeye bir hücre (yüz 2x2)
+    const A = 2048, C = 256, grid = A / C, used = new Set(), cells = new Map();
+    const alloc = sz => { for (let y = 0; y + sz <= grid; y++) for (let x = 0; x + sz <= grid; x++) { let ok = true; for (let a = 0; a < sz && ok; a++) for (let c = 0; c < sz; c++) if (used.has((y + a) * grid + x + c)) { ok = false; break; } if (ok) { for (let a = 0; a < sz; a++) for (let c = 0; c < sz; c++) used.add((y + a) * grid + x + c); return { x: x * C, y: y * C, s: sz * C }; } } return { x: 0, y: 0, s: C }; };
+    const cv = document.createElement('canvas'); cv.width = cv.height = A; const cx = cv.getContext('2d');
+    const flat = p => /fab\||solid\|/.test(this.texKey(p.mat.map)) || !p.mat.map;
+    for (const p of parts) {
+      const mt = p.mat; if (cells.has(mt)) continue;
+      const face = /Face_00|^Face$|FACE/i.test(mt.name || '') && !/Mouth|Brow|Lash|line/i.test(mt.name || '');
+      const cell = alloc(face ? 2 : 1); cells.set(mt, cell);
+      const col = mt.color ? mt.color.clone() : new T.Color(1, 1, 1);
+      const css = '#' + col.getHexString(T.SRGBColorSpace);
+      cx.save(); cx.beginPath(); cx.rect(cell.x, cell.y, cell.s, cell.s); cx.clip();
+      if (mt.map && mt.map.image && !flat(p)) {
+        cx.drawImage(mt.map.image, cell.x, cell.y, cell.s, cell.s);
+        cx.globalCompositeOperation = 'multiply'; cx.fillStyle = css; cx.fillRect(cell.x, cell.y, cell.s, cell.s);
+        cx.globalCompositeOperation = 'destination-in'; cx.drawImage(mt.map.image, cell.x, cell.y, cell.s, cell.s);
+      } else {
+        // kumaş/düz: dokunun ortalama tonu * renk
+        const k = mt.map ? 0.92 : 1; cx.fillStyle = '#' + col.clone().multiplyScalar(k).getHexString(T.SRGBColorSpace); cx.fillRect(cell.x, cell.y, cell.s, cell.s);
+      }
+      cx.restore();
+    }
+    // birleştir
+    let nv = 0, ni = 0; for (const p of parts) { nv += p.pos.length / 3; ni += p.idx.length; }
+    const POS = new Float32Array(nv * 3), NOR = new Float32Array(nv * 3), UVA = new Float32Array(nv * 2), IDX = new Uint32Array(ni);
+    let ov = 0, oi = 0;
+    for (const p of parts) {
+      const c = cells.get(p.mat), fl = flat(p), flipY = p.mat.map ? p.mat.map.flipY : false, mg = 2;
+      for (let i = 0; i < p.pos.length / 3; i++) {
+        POS.set([p.pos[i * 3], p.pos[i * 3 + 1], p.pos[i * 3 + 2]], (ov + i) * 3); NOR.set([p.nor[i * 3], p.nor[i * 3 + 1], p.nor[i * 3 + 2]], (ov + i) * 3);
+        let u = fl ? 0.5 : clamp(p.uv[i * 2], 0, 1), w = fl ? 0.5 : clamp(p.uv[i * 2 + 1], 0, 1); if (flipY) w = 1 - w;
+        UVA[(ov + i) * 2] = (c.x + mg + u * (c.s - 2 * mg)) / A; UVA[(ov + i) * 2 + 1] = 1 - (c.y + mg + w * (c.s - 2 * mg)) / A;
+      }
+      for (const k of p.idx) IDX[oi++] = k + ov;
+      ov += p.pos.length / 3;
+    }
+    const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.BufferAttribute(POS, 3)); geo.setAttribute('normal', new T.BufferAttribute(NOR, 3)); geo.setAttribute('uv', new T.BufferAttribute(UVA, 2)); geo.setIndex(new T.BufferAttribute(IDX, 1)); geo.computeBoundingSphere();
+    // kontur: yalnızca silüet, çok sade geometri (yüz çıkartmaları hariç)
+    let olIdx = []; { let o2 = 0; for (const p of parts) { if (!p.decal) for (const k of p.idx) olIdx.push(k + o2); o2 += p.pos.length / 3; } }
+    if (S) { try { const t = Math.floor(olIdx.length * 0.1 / 3) * 3; const [res] = S.simplify(new Uint32Array(olIdx), POS, 3, t, 0.1, []); if (res && res.length >= 3) olIdx = res; } catch (e) { } }
+    const olGeo = new T.BufferGeometry(); olGeo.setAttribute('position', geo.attributes.position); olGeo.setAttribute('normal', geo.attributes.normal); olGeo.setIndex(new T.BufferAttribute(new Uint32Array(olIdx), 1)); olGeo.computeBoundingSphere();
+    const tex = new T.CanvasTexture(cv); tex.colorSpace = T.SRGBColorSpace; tex.flipY = true; tex.anisotropy = 2;
+    const mat = new T.MeshToonMaterial({ map: tex, gradientMap: TOON.gradSoft, alphaTest: 0.5 });
+    m.dispose();
+    return { geo, olGeo, mat, info: parts.map(p => (p.mat.name || '?').slice(0, 14) + ':' + p.idx.length / 3 + (p.big ? '*' : '')).join(',') };
+  },
+  texKey(t) { for (const [k, v] of VRMKit.texCache) if (v === t) return k; return ''; },
+};
+
+window.__VRMKit = VRMKit; window.__CrowdKit = CrowdKit;

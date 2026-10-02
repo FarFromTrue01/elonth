@@ -71,10 +71,14 @@ class PoseRig {
   setUpper(name) { this.upperSt = name; this.upperW = 0; }
   play(name, speedMul = 1) { const a = ACTIONS[name]; if (!a) return 0; this.act = { a, t: 0, dur: a.dur / speedMul, name }; return this.act.dur; }
   stop() { this.act = null; }
+  // geçici ifade (dövüş, diyalog): süre bitince kalıcı ifadeye döner
+  emote(e, dur = 0.8) { this.emoteE = e; this.emoteT = dur; }
+  curExpr() { return this.emoteT > 0 ? this.emoteE : this.expr; }
   flash(color = '#ffffff', t = 0.12) { this.flashT = t; for (const m of this.allMats) { m.emissive.set(color); } }
   // base: hareket + nefes; poz bileşimi
   update(dt, speed) {
     const p = this.base, o = this.o; for (const k of POSE_KEYS) p[k] = 0;
+    if (this.emoteT > 0) this.emoteT -= dt;
     const t = G.t + this.idleSeed;
     p.shLz = 0.09; p.shRz = -0.09; p.elL = -0.12; p.elR = -0.12;
     p.spX = 0.015 * Math.sin(t * 1.7) * this.breathe; p.shLz += 0.015 * Math.sin(t * 1.7); p.shRz -= 0.015 * Math.sin(t * 1.7);
@@ -436,8 +440,8 @@ class Humanoid extends PoseRig {
     let mouth = 'closed';
     if (this.talking) { this.talkT += dt; mouth = Math.floor(this.talkT * 9) % 2 ? 'open' : 'closed'; }
     const eyes = blink ? 'closed' : 'open';
-    const k = this.expr + '|' + eyes + '|' + mouth;
-    if (k !== this.faceState) { this.faceState = k; this.faceMat.map = this.faceTexFor(this.expr, eyes, mouth); }
+    const ex = this.curExpr(), k = ex + '|' + eyes + '|' + mouth;
+    if (k !== this.faceState) { this.faceState = k; this.faceMat.map = this.faceTexFor(ex, eyes, mouth); }
     // uzakta kontur kapalı
     if (G.camera && (this._olT = (this._olT || 0) + dt) > 0.4) { this._olT = 0; const far = G.camera.position.distanceTo(this.root.getWorldPosition(_v3a)) > 34; for (const ol of this.outlines) ol.visible = !far; }
   }
@@ -460,6 +464,7 @@ class Humanoid extends PoseRig {
 
 // Kalabalıklar için statik pişirme
 function bakeHumanoid(b, opts, stance, x, y, z, ry, extraPose) {
+  if (VRMKit.ready && !(opts && opts.noVRM)) { CrowdKit.queue(b, opts, stance, x, y, z, ry, extraPose); return; }
   const h = new Humanoid(opts);
   if (stance) h.setStance(stance); h.stanceW = 1;
   h.update(0.016, 0);

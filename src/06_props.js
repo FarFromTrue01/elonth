@@ -18,6 +18,7 @@ class Level {
   add(obj) { this.group.add(obj); return obj; }
   light(l) { this.group.add(l); this.lights.push(l); return l; }
   finalize() {
+    if (this.b.crowd) { this.group.add(CrowdKit.build(this.b.crowd)); this.b.crowd = null; }
     if (this.b.parts.length) this.group.add(this.b.build(MAT.static));
     if (this.gb.parts.length) this.group.add(this.gb.build(MAT.glow, { cast: false, receive: false }));
   }

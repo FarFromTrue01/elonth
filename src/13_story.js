@@ -67,6 +67,8 @@ function makeS(my) {
     async say(who, text, o = {}) {
       const c = typeof who === 'string' ? CAST[who] : who; const a = c && c.actor && !c.actor.removed ? c.actor : null;
       if (a) a.say(true);
+      // konuşurken hafif ifade: ünlem -> dikkat, üç nokta -> hüzün (kalıcı ifade yoksa)
+      if (a && a.model.emote && !o.narr) { const t = String(text).trim(); const e = o.expr || ((a.model.expr || 'neutral') !== 'neutral' ? null : /^\.\.\.|\.\.\.$/.test(t) ? 'gloom' : /!$/.test(t) ? 'alert' : null); if (e) a.model.emote(e, clamp(t.length * 0.05, 1.2, 4)); }
       if (o.look && a) { a.faceTo(o.look); }
       if (o.narr || !c || o.noPort) Portrait.hide(); else { const pa = a || (c === CAST.thought && CAST.joseph.actor && !CAST.joseph.actor.removed ? CAST.joseph.actor : null); Portrait.show(pa, c === CAST.thought ? CAST.joseph : c, c === CAST.thought); }
       await UI.say(c, text, Object.assign({ thought: c === CAST.thought }, o)); if (a) a.say(false); chk();

@@ -22,7 +22,7 @@ class Fighter extends Actor {
     dmg = Math.round(dmg * frand(0.9, 1.1));
     this.hp -= dmg; this.lastHitT = G.t;
     const dir = o.dir || V3(this.pos.x - from.pos.x, 0, this.pos.z - from.pos.z).normalize();
-    this.model.flash('#ffffff', 0.08);
+    this.model.flash('#ffffff', 0.08); this.model.emote('pain', 0.7);
     FX.impact(V3(this.pos.x - dir.x * 0.2, this.pos.y + 1.15 * this.scale, this.pos.z - dir.z * 0.2), dir, o.heavy);
     FX.text(V3(this.pos.x, this.pos.y + 1.9 * this.scale, this.pos.z), String(dmg), o.heavy ? 'big' : '');
     Audio.sfx(o.heavy ? 'hitHeavy' : 'hit');
@@ -37,8 +37,8 @@ class Fighter extends Actor {
   }
   defeat(dir) {
     G.attackers.delete(this); this.removeRing();
-    if (this.ai.nonLethal) { this.state = 'yield'; this.stateT = 0; this.model.setStance('kneel2'); this.model.stop(); }
-    else { this.state = 'out'; this.stateT = 0; this.model.play('knock'); this.kv.addScaledVector(dir, 4); setTimeout(() => { if (!this.removed) this.model.setStance('lie'); }, 450); }
+    if (this.ai.nonLethal) { this.state = 'yield'; this.stateT = 0; this.model.setStance('kneel2'); this.model.stop(); this.model.emote('pain', 2.5); }
+    else { this.state = 'out'; this.stateT = 0; this.model.play('knock'); this.kv.addScaledVector(dir, 4); setTimeout(() => { if (!this.removed) { this.model.setStance('lie'); this.model.closedEyes = true; } }, 450); }
     this.alive = false; this.corpse = true; this.untargetable = true;
     if (this.onDefeat) this.onDefeat(this);
   }
@@ -92,7 +92,7 @@ class Fighter extends Actor {
       this.combo = A.combos && !heavy && rng() < 0.45 ? [pick(A.moves)] : [];
     }
     this.atk = Object.assign({}, this.atk, { windup: this.atk.windup * scale * (A.windMul || 1) });
-    this.state = 'windup'; this.stateT = 0;
+    this.state = 'windup'; this.stateT = 0; this.model.emote('angry', this.atk.windup + this.atk.dur);
     this.ring = FX.ring(this.pos, this.atk.range + 0.2, this.atk.heavy ? '#ff3a20' : '#ffaa30', this.atk.windup + 0.05, { grow: true, follow: this.pos });
   }
 }
@@ -112,7 +112,7 @@ class Ally extends Actor {
       this.wantFacing = Math.atan2(dx, dz); this.cd -= dt;
       if (this.atkT !== undefined) { this.atkT += dt; if (this.atkT > 0.15 && !this.hitDone) { this.hitDone = true; if (d < 1.5) tgt.takeHit(this.dmg, this, { knock: 2.5 }); } if (this.atkT > 0.5) this.atkT = undefined; }
       else if (d > 1.1) { mx = dx / d; mz = dz / d; sp = this.speedA; }
-      else if (this.cd <= 0) { this.cd = frand(1.0, 2.0); this.atkT = 0; this.hitDone = false; this.model.play(pick(this.atkAnim)); Audio.sfx('whoosh', 0.6); }
+      else if (this.cd <= 0) { this.cd = frand(1.0, 2.0); this.atkT = 0; this.hitDone = false; this.model.play(pick(this.atkAnim)); this.model.emote('fierce', 0.7); Audio.sfx('whoosh', 0.6); }
     } else if (G.player) { const d = this.dist(G.player); if (d > 2.2) { mx = (G.player.pos.x - this.pos.x) / d; mz = (G.player.pos.z - this.pos.z) / d; sp = 2.5; this.wantFacing = Math.atan2(mx, mz); } }
     this.vel.x = damp(this.vel.x, mx * sp, 8, dt); this.vel.z = damp(this.vel.z, mz * sp, 8, dt);
     this.integrate(dt);

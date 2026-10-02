@@ -26,7 +26,7 @@ async def main():
                 await pg.wait_for_timeout(every * 1000)
                 n += 1
                 cur = await pg.evaluate("__Story.current")
-                info = await pg.evaluate("(()=>{const d=document.querySelector('#dialog .dtext');return (document.querySelector('#dialog').hidden?'':d.textContent.slice(0,60))+' | obj:'+document.querySelector('#obj-text').textContent})()")
+                info = await pg.evaluate("(()=>{const d=document.querySelector('#dialog .dtext');const ri=__G.renderer.info.render;return (document.querySelector('#dialog').hidden?'':d.textContent.slice(0,60))+' | obj:'+document.querySelector('#obj-text').textContent+' | calls '+ri.calls+' tris '+ri.triangles+' actors '+__G.actors.length})()")
                 await pg.screenshot(path=f'{pref}{n}.png')
                 print(f'{n} t={time.time()-t0:.0f}s scene={cur} {info}')
                 if cur != scene: break

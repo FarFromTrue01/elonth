@@ -69,6 +69,39 @@ def main(src, dst):
         for p in mesh['primitives']:
             if 'extras' in p and 'targetNames' in p['extras']: p['extras']['targetNames'] = [p['extras']['targetNames'][o] for o in keep if o < len(p['extras']['targetNames'])]
     for bd, mi, k in binds: bd[k] = tmap[mi][bd[k]]
+    # 1c) aynı malzemeyi ve köşe verisini paylaşan primitive'leri birleştir (çizim çağrısı sayısı)
+    def acc_bytes(ai):
+        a = j['accessors'][ai]; bv = j['bufferViews'][a['bufferView']]
+        ct = {5121: ('B', 1), 5123: ('H', 2), 5125: ('I', 4)}[a['componentType']]
+        o = bv.get('byteOffset', 0) + a.get('byteOffset', 0)
+        return list(struct.unpack('<%d%s' % (a['count'], ct[0]), binb[o:o + a['count'] * ct[1]]))
+    extra_bin = bytearray()
+    merged_n = 0
+    for mesh in j['meshes']:
+        groups = {}
+        order = []
+        for p in mesh['primitives']:
+            key = json.dumps([p.get('material'), p['attributes'], p.get('targets'), p.get('mode', 4)], sort_keys=True)
+            if key not in groups: groups[key] = []; order.append(key)
+            groups[key].append(p)
+        if len(order) == len(mesh['primitives']): continue
+        newp = []
+        for key in order:
+            ps = groups[key]
+            if len(ps) == 1 or any('indices' not in p for p in ps): newp.extend(ps); continue
+            idx = []
+            for p in ps: idx.extend(acc_bytes(p['indices']))
+            data = struct.pack('<%dI' % len(idx), *idx)
+            while (len(binb) + len(extra_bin)) % 4: extra_bin.append(0)
+            off = len(binb) + len(extra_bin); extra_bin.extend(data)
+            j['bufferViews'].append({'buffer': 0, 'byteOffset': off, 'byteLength': len(data), 'target': 34963})
+            j['accessors'].append({'bufferView': len(j['bufferViews']) - 1, 'componentType': 5125, 'count': len(idx), 'type': 'SCALAR'})
+            q = dict(ps[0]); q['indices'] = len(j['accessors']) - 1
+            newp.append(q); merged_n += len(ps) - 1
+        mesh['primitives'] = newp
+    if extra_bin:
+        binb = binb + bytes(extra_bin)
+    print('  birleştirilen primitive:', merged_n)
     # 2) doku rollerini bul: hangi resim neye kullanılıyor
     tex_src = [t['source'] for t in j['textures']]
     role = {}

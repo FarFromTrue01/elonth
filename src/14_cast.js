@@ -68,8 +68,8 @@ const VRM_CAST = {
   isolde: { base: 'fa', hair: 'fg', hairColor: '#ece2c8', eyeColor: '#7a9ac8', browColor: '#c8bc9a' },
   seraphine: { base: 'fg', hair: 'fg', hairColor: '#16121c', eyeColor: '#8a6ad8', browColor: '#141016' },
   rowena: { base: 'fg', hair: 'fb', hairColor: '#b8481e', eyeColor: '#6a8a3a', browColor: '#7a2e14' },
-  guard: { base: 'm', hair: 'm', hairColor: '#2a1d14', extraAcc: [{ t: 'helmet', c: '#9aa2ac' }] },
-  knight: { base: 'm', hair: 'm', hairColor: '#3a2a1c', extraAcc: [{ t: 'helmet', c: '#b8bec8' }] },
+  guard: { base: 'm', hair: 'none', extraAcc: [{ t: 'helmet', c: '#9aa2ac' }] },
+  knight: { base: 'm', hair: 'none', extraAcc: [{ t: 'helmet', c: '#b8bec8' }] },
   priest: { base: 'm', hair: 'm', hairColor: '#ece8e0', hairGain: 1.15, eyeColor: '#5a5048', browColor: '#e8e4dc' },
 };
 for (const k in VRM_CAST) { const f = LOOK[k]; LOOK[k] = (...a) => { const o = f(...a); o.vrm = Object.assign({}, VRM_CAST[k], o.vrm || {}); return o; }; }

@@ -32,6 +32,7 @@ const UI = {
       this.dname.textContent = spk ? spk.name : ''; this.dname.style.color = spk ? spk.color : '';
       if (spk && spk.rank) { this.dbadge.hidden = false; this.dbadge.textContent = spk.rank; this.dbadge.style.color = RANK_COLORS[spk.rank] || '#ccc'; } else this.dbadge.hidden = true;
       this.full = text; this.shown = 0; this.typing = true; this.res = res; this.dtext.textContent = '';
+      if (!Story.skipping) { const L = G.dlgLog || (G.dlgLog = []); L.push({ n: spk ? spk.name : '', c: spk ? spk.color : '', t: text, th: !!o.thought, nr: !!o.narr }); if (L.length > 150) L.shift(); }
       const cps = 42 * G.settings.textSpeed;
       clearInterval(this.ti);
       if (Story.skipping) { this.finish(); return; }
@@ -41,7 +42,8 @@ const UI = {
       }, 1000 / 30);
     });
   },
-  finish() { clearInterval(this.ti); this.typing = false; this.dtext.textContent = this.full; this.dlg.classList.add('done'); if (this.onTyped) this.onTyped(); if (Story.skipping) this.advance(); else if (G.auto) setTimeout(() => this.advance(), 700); },
+  finish() { clearInterval(this.ti); this.typing = false; this.dtext.textContent = this.full; this.dlg.classList.add('done'); if (this.onTyped) this.onTyped(); if (Story.skipping) this.advance(); else if (G.auto) setTimeout(() => this.advance(), 700);
+    else if (G.settings.autoText) { const r = this.res, ms = 1300 + this.full.length * 45 / Math.max(0.5, G.settings.textSpeed); clearTimeout(this.at); this.at = setTimeout(() => { if (this.res === r && !this.dlg.hidden && !this.typing) this.advance(); }, ms); } },
   advance() {
     if (this.dlg.hidden) return;
     if (this.typing) { this.finish(); return; }

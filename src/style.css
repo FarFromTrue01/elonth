@@ -238,3 +238,9 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .cx-item[open] summary::after { content: '–'; }
 .cx-item p { margin: 0 0 12px; color: var(--parch); opacity: .86; line-height: 1.55; font-size: 16px; }
 .cx-empty { color: var(--muted); font-size: 15px; margin: 18px 4px; }
+
+/* konuşma geçmişi */
+.log-row { display: flex; gap: .7em; padding: .45em .2em; border-bottom: 1px solid rgba(255,255,255,.06); line-height: 1.4; }
+.log-row b { min-width: 6.5em; flex: none; font-weight: 600; }
+.log-row.th span { font-style: italic; opacity: .8; }
+.log-row.nr span { opacity: .75; font-style: italic; }

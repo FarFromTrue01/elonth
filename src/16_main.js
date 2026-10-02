@@ -101,6 +101,7 @@ const Game = {
       if (p === 'restart') { this.pause(false); this.start(Story.current); }
       if (p === 'chapters') this.openChapters();
       if (p === 'codex') openCodex();
+      if (p === 'log') this.openLog();
       if (p === 'settings') this.openSettings();
       if (p === 'menu') { this.pause(false); this.toMenu(); }
     });
@@ -138,6 +139,18 @@ const Game = {
     if (on) { const s = Story.scenes[Story.current]; $('#pz-where').textContent = s ? s.chapter + ' · ' + s.title : ''; if (Audio.ctx) Audio.ctx.suspend(); }
     else { if (Audio.ctx) Audio.ctx.resume(); }
   },
+  openLog() {
+    $('#panel').hidden = false; $('#p-title').textContent = 'Konuşma geçmişi';
+    const body = $('#p-body'); body.innerHTML = '';
+    const L = G.dlgLog || [];
+    if (!L.length) { body.innerHTML = '<p class="cx-empty">Henüz bir konuşma yok.</p>'; return; }
+    for (const e of L) {
+      const d = document.createElement('div'); d.className = 'log-row' + (e.th ? ' th' : '') + (e.nr ? ' nr' : '');
+      const n = document.createElement('b'); n.textContent = e.nr ? '' : e.n; n.style.color = e.c || ''; const t = document.createElement('span'); t.textContent = e.t;
+      d.appendChild(n); d.appendChild(t); body.appendChild(d);
+    }
+    body.scrollTop = body.scrollHeight;
+  },
   openChapters() {
     $('#panel').hidden = false; $('#p-title').textContent = 'Bölümler';
     const body = $('#p-body'); body.innerHTML = '';
@@ -164,6 +177,7 @@ const Game = {
       + `<div class="set-row"><label>Ekran sarsıntısı</label><div class="seg" id="s-shk"><button type="button" data-v="1">Tam</button><button type="button" data-v="0.6">Az</button><button type="button" data-v="0">Kapalı</button></div></div>`
       + `<div class="set-row"><label>Grafik</label><div class="seg" id="s-q"><button type="button" data-v="low">Akıcı</button><button type="button" data-v="high">Kaliteli</button></div></div>`
       + `<div class="set-row"><label>Karakterler</label><div class="seg" id="s-ch"><button type="button" data-v="anime">Anime</button><button type="button" data-v="simple">Basit</button></div></div>`
+      + `<div class="set-row"><label>Diyalog</label><div class="seg" id="s-auto"><button type="button" data-v="0">Dokunarak</button><button type="button" data-v="1">Otomatik</button></div></div>`
       + `<div class="set-row"><label>Dikey kamera</label><div class="seg" id="s-inv"><button type="button" data-v="0">Normal</button><button type="button" data-v="1">Ters</button></div></div>`;
     body.querySelectorAll('input[type=range]').forEach(i => i.addEventListener('input', () => { S[i.dataset.k] = parseFloat(i.value); Audio.applyVolumes(); UI.applyScale(); Save.store(); }));
     const seg = (id, get, set) => { const el = $(id); const upd = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === get())); el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; set(b.dataset.v); upd(); Save.store(); }); upd(); };
@@ -175,6 +189,7 @@ const Game = {
       else UI.toast('Karakter görünümü bir sonraki sahnede değişecek.', 3000);
     });
     seg('#s-inv', () => S.invertY ? '1' : '0', v => { S.invertY = v === '1'; });
+    seg('#s-auto', () => S.autoText ? '1' : '0', v => { S.autoText = v === '1'; });
     seg('#s-sl', () => S.shiftLock ? '1' : '0', v => { S.shiftLock = v === '1'; UI.syncLock(); });
     seg('#s-shk', () => String(S.shake === undefined ? 1 : S.shake), v => { S.shake = parseFloat(v); });
   },

@@ -2,8 +2,8 @@
 // Temel modeller: VRoid Project örnek avatarları (pixiv), lisans: ticari kullanım, değiştirme ve dağıtım serbest.
 const VRMKit = {
   ready: false, failed: false, bases: {},
-  // m: erkek (AvatarSample_C), fa: kısa saçlı kız (AvatarSample_A), fb: ikiz örgü saç donörü (AvatarSample_B), fg: uzun saçlı kız (three-vrm-girl)
-  FILES: { m: 'assets/vrm/m.vrm', fa: 'assets/vrm/fa.vrm', fb: 'assets/vrm/fb.vrm', fg: 'assets/vrm/fg.vrm' },
+  // m: erkek (AvatarSample_C), fa: küt saçlı kız (AvatarSample_A), fg: uzun saçlı kız (three-vrm-girl)
+  FILES: { m: 'assets/vrm/m.vrm', fa: 'assets/vrm/fa.vrm', fg: 'assets/vrm/fg.vrm' },
   async load(onProgress) {
     if (!window.VRMLib || location.hash.includes('novrm')) { this.failed = true; return false; }
     const L = new VRMLib.GLTFLoader(); L.register(p => new VRMLib.VRMLoaderPlugin(p));
@@ -144,7 +144,8 @@ const VRMKit = {
       shoulderX: Math.abs(bp.leftUpperArm.x), neckY: bp.neck.y, headY: bp.head.y,
     };
     // kafa ölçüleri (yüz mesh'inden)
-    const fb = new T.Box3(); for (const m of B.meshes) if (m.userData.role === 'face') fb.union(new T.Box3().setFromObject(m));
+    // (bazı modellerde yüz parçası tüm vücudun köşe tamponunu paylaşır: yalnızca indekslenen köşeler)
+    const fb = new T.Box3(), vv = V3(); for (const m of B.meshes) if (m.userData.role === 'face') { const g = m.geometry, P = g.attributes.position, I = g.index; const n = I ? I.count : P.count; for (let k = 0; k < n; k++) { vv.fromBufferAttribute(P, I ? I.getX(k) : k).applyMatrix4(m.matrixWorld); fb.expandByPoint(vv); } }
     if (B.F < 0) { const a = fb.min.clone(), b = fb.max.clone(); fb.min.set(-b.x, a.y, -b.z); fb.max.set(-a.x, b.y, -a.z); }
     B.head = { min: fb.min.clone(), max: fb.max.clone(), c: fb.getCenter(V3()), size: fb.getSize(V3()) };
   },
@@ -212,6 +213,9 @@ const VRMKit = {
     const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; this.texCache.set(k, t); return t;
   },
 };
+
+// İndeksi değiştir, malzeme gruplarını (ana + kontur) yeni uzunluğa uyarla
+function setIndexKeepGroups(g, keep) { g.setIndex(keep); for (const gr of g.groups) { gr.start = 0; gr.count = keep.length; } }
 
 // ---- MToon malzeme yardımcıları ----
 const VMAT = {
@@ -438,11 +442,11 @@ const VACC = {
       case 'strap': { const g = new T.BoxGeometry(0.03, 0.62, 0.008); g.rotateZ(0.62); return { bone: 'upperChest', at: V3(0.0, -0.06, ch.zf + 0.012), g, mat: 'leather' }; }
       case 'sheath': { const g = new T.CylinderGeometry(0.024, 0.018, 0.74, 8); g.translate(0, -0.3, 0); g.rotateZ(0.16); g.rotateX(0.18); return { bone: 'hips', at: V3(hi.rx + 0.04, 0.05, -0.02), g, mat: 'leather' }; }
       case 'hilt': { const g = new T.CylinderGeometry(0.016, 0.016, 0.16, 8); g.translate(0, 0.12, 0); g.rotateZ(0.16); g.rotateX(0.18); return { bone: 'hips', at: V3(hi.rx + 0.04, 0.05, -0.02), g, mat: 'metal' }; }
-      case 'quiver': { const g = new T.CylinderGeometry(0.05, 0.04, 0.48, 10); g.rotateZ(0.4); return { bone: 'upperChest', at: V3(-0.06, 0.02, ch.zb - 0.05), g, mat: 'leather' }; }
-      case 'bowBack': { const g = new T.TorusGeometry(0.42, 0.012, 5, 22, Math.PI * 0.85); g.rotateY(Math.PI / 2); g.rotateX(-0.45); return { bone: 'upperChest', at: V3(0.03, -0.12, ch.zb - 0.07), g, mat: 'leather' }; }
+      case 'quiver': { const g = new T.CylinderGeometry(0.045, 0.036, 0.46, 10); g.rotateZ(0.42); return { bone: 'upperChest', at: V3(-0.04, -0.06, ch.zb - 0.055), g, mat: 'leather' }; }
+      case 'bowBack': { const g = new T.TorusGeometry(0.34, 0.011, 5, 22, Math.PI * 0.62); g.rotateZ(Math.PI * 0.19 - 0.55); g.translate(-0.12, -0.2, 0); return { bone: 'upperChest', at: V3(0.04, 0.0, ch.zb - 0.085), g, mat: 'leather' }; }
       case 'necklace': { const g = new T.TorusGeometry(1, 0.03, 4, 24); g.rotateX(Math.PI / 2 - 0.5); g.scale(ch.rx * 0.42, 0.05, (ch.zf - ch.zb) * 0.4); return { bone: 'upperChest', at: V3(0, B.bp.neck.y - B.bp.upperChest.y - 0.035, (ch.cz || 0) + 0.012), g, mat: 'metal' }; }
       case 'gem': return { bone: 'upperChest', at: V3(0, B.bp.neck.y - B.bp.upperChest.y - 0.1, ch.zf + 0.006), g: new T.OctahedronGeometry(0.016), mat: 'gem' };
-      case 'sash': { const g = new T.TorusGeometry(1, 0.05, 5, 26); g.rotateX(Math.PI / 2); g.rotateZ(0.62); g.scale(ch.rx + 0.03, 1, (ch.zf - ch.zb) / 2 + 0.03); return { bone: 'spine', at: V3(0, 0.08, ch.cz), g }; }
+      case 'sash': { const g = new T.TorusGeometry(1, 0.03, 5, 28); g.rotateX(Math.PI / 2); g.scale(ch.rx + 0.025, 1, (ch.zf - ch.zb) / 2 + 0.025); g.rotateZ(0.55); return { bone: 'spine', at: V3(0, 0.1, ch.cz), g }; }
       case 'cuirass': { const g = new T.SphereGeometry(1, 20, 12, Math.PI * 0.12, Math.PI * 0.76, Math.PI * 0.2, Math.PI * 0.62); g.scale(ch.rx * 1.08, 0.24, (ch.zf - ch.cz) * 1.35 + 0.02); return { bone: 'chest', at: V3(0, (B.bp.upperChest.y - B.bp.chest.y) * 0.4, ch.cz - 0.01), g, mat: 'metal', double: true }; }
       case 'gorget': { const g = new T.CylinderGeometry(0.075, 0.1, 0.06, 18, 1, true); return { bone: 'upperChest', at: V3(0, B.bp.neck.y - B.bp.upperChest.y + 0.005, ch.cz - 0.005), g, mat: 'metal', double: true }; }
       case 'pauldron': { const g = new T.SphereGeometry(1, 12, 8, 0, TAU, 0, Math.PI * 0.55); g.scale(0.085, 0.06, 0.085); return { g, mat: 'metal' }; }
@@ -497,6 +501,7 @@ class VRMHumanoid extends PoseRig {
     this.setupMaterials();
     // saç
     this.setupHair();
+    if (V.hairTrim) this.trimHair(V.hairTrim);
     // kıyafetler
     this.capeBone = null; this.garments = [];
     this.setupGarments();
@@ -599,7 +604,7 @@ class VRMHumanoid extends PoseRig {
     // saç mesh'leri: donör geometrisi, bu karakterin kemiklerine bağlı yeni iskelet
     const findBone = n => this.donorBones.get(n) || proxy(n) || this.nodes.get(n);
     // kafa farkı: donör kafa boyu / hedef kafa boyu
-    const hs = (B.head.size.x / D.head.size.x + B.head.size.z / D.head.size.z) / 2;
+    const hs = clamp((B.head.size.x / D.head.size.x + B.head.size.z / D.head.size.z) / 2, 0.85, 1.2);
     for (const [n, b] of this.donorBones) if (D.hairRoots.includes(n)) { b.scale.setScalar(hs); b.updateMatrix(); }
     for (const dm of D.meshes) {
       if (dm.userData.role !== 'hair' || !dm.isSkinnedMesh) continue;
@@ -626,6 +631,22 @@ class VRMHumanoid extends PoseRig {
       this.hairMeshes.push(me); this.meshes.push(me);
     }
     this.hairShift = { donorHead: D.bp.head.clone(), headScale: hs };
+  }
+  // Saçı kısalt: dinlenme pozunda kafa kemiğinin 'trim' metre altına inen üçgenleri at (omuz boyu vb.)
+  trimHair(trim) {
+    if (!trim) return;
+    for (const m of this.hairMeshes) {
+      const src = m.geometry; if (!src.index) continue;
+      const D = m.name.startsWith('xhair_') ? this.hairDonor : this.B;
+      const cut = D.headY - trim, P = src.attributes.position, idx = src.index.array, keep = [];
+      const v = V3(); const dm = m.name.startsWith('xhair_') ? D.meshes.find(x => 'xhair_' + x.name === m.name) : D.meshes.find(x => x.name === m.name);
+      if (!dm || !dm.isSkinnedMesh) continue;
+      const yOf = i => { v.fromBufferAttribute(P, i); dm.applyBoneTransform(i, v); v.applyMatrix4(dm.matrixWorld); return v.y; };
+      const ys = new Float32Array(P.count).fill(NaN);
+      const Y = i => { if (isNaN(ys[i])) ys[i] = yOf(i); return ys[i]; };
+      for (let t = 0; t < idx.length; t += 3) if (Y(idx[t]) > cut && Y(idx[t + 1]) > cut && Y(idx[t + 2]) > cut) keep.push(idx[t], idx[t + 1], idx[t + 2]);
+      const ng = src.clone(); setIndexKeepGroups(ng, keep); m.geometry = ng; this.ownGeo = (this.ownGeo || []).concat(ng);
+    }
   }
   // ---- kıyafetler ----
   setupGarments() {
@@ -676,7 +697,7 @@ class VRMHumanoid extends PoseRig {
       for (let t = 0; t < src.length; t += 3) { const a = map[src[t]], b = map[src[t + 1]], c = map[src[t + 2]]; if (a >= 0 && b >= 0 && c >= 0 && cov[a] && cov[b] && cov[c]) continue; keep.push(src[t], src[t + 1], src[t + 2]); }
       if (keep.length === src.length) return;
       // (öznitelikleri paylaşan yeni BufferGeometry iskelet animasyonunu bozuyor; tam kopya kullan)
-      const ng = og.clone(); ng.setIndex(keep); if (og.boundingSphere) ng.boundingSphere = og.boundingSphere.clone(); if (og.boundingBox) ng.boundingBox = og.boundingBox.clone();
+      const ng = og.clone(); setIndexKeepGroups(ng, keep); if (og.boundingSphere) ng.boundingSphere = og.boundingSphere.clone(); if (og.boundingBox) ng.boundingBox = og.boundingBox.clone();
       m.geometry = ng; this.ownGeo = (this.ownGeo || []).concat(ng);
       if (!keep.length) m.visible = false;
     });
@@ -725,6 +746,7 @@ class VRMHumanoid extends PoseRig {
   // ---- aksesuarlar (eski 'extras' adlarıyla) ----
   addExtra(ex) {
     const type = typeof ex === 'string' ? ex : ex.t, c = ex.c || '#555';
+    if (type === 'circlet' || type === 'sash') return; // saç alnı örtüyor / skinned olmayan kuşak kötü duruyor
     const parts = type === 'armor' ? ['pauldronL', 'pauldronR'] : type === 'belt' ? ['belt', 'buckle'] : type === 'sheath' ? ['sheath', 'hilt'] : type === 'trim' ? ['collar'] : type === 'necklace' ? ['necklace', 'gem'] : type === 'satchel' ? ['satchel', 'strap'] : [type];
     for (const p of parts) {
       let d, bone;
@@ -856,7 +878,7 @@ class VRMHumanoid extends PoseRig {
 // ---- Eski görünüm tanımından VRM tanımına çeviri ----
 // o.vrm ile elle de verilebilir: { base, hair, hairColor, eyeColor, garments:[...], acc:[...] }
 const VRM_HAIR = {
-  m: ['messy', 'spiky', 'short', 'slick'], fa: ['bob', 'curly', 'bun'], fg: ['long', 'braid', 'ponytail', 'tied'], fb: ['twin'],
+  m: ['messy', 'spiky', 'short', 'slick'], fa: ['bob', 'curly', 'bun'], fg: ['long', 'braid', 'ponytail', 'tied'],
 };
 function vrmSpecFor(o) {
   const v = Object.assign({}, o.vrm || {});
@@ -869,7 +891,7 @@ function vrmSpecFor(o) {
     if (st === 'bald' || st === 'baldRing') { v.hair = 'm'; if (v.hairColor === undefined) v.hairColor = pick(['#8a8478', '#a8a298', '#6a6258', '#c8c2b8']); }
     else if (!fem && (st === 'curly')) v.hair = 'fa';
     else if (!fem) v.hair = 'm';
-    else { let d = 'fg'; for (const k in VRM_HAIR) if (VRM_HAIR[k].includes(st)) d = k; v.hair = d === 'm' ? 'fa' : d; }
+    else { let d = 'fg'; for (const k in VRM_HAIR) if (VRM_HAIR[k].includes(st)) d = k; v.hair = d === 'm' ? 'fa' : d; if (st === 'ponytail' || st === 'tied' || st === 'braid') v.hairTrim = v.hairTrim || 0.2; }
   }
   // saç nakli yalnızca aynı tür modeller arasında (VRM0 <-> VRM0); VRM1 (ft) yalnızca kendi saçını kullanır
   if (v.hair && v.hair !== 'none' && VRMKit.bases[v.hair] && VRMKit.bases[v.base] && VRMKit.bases[v.hair].vrm0 !== VRMKit.bases[v.base].vrm0) v.hair = v.base;
@@ -929,7 +951,7 @@ const CrowdKit = {
     }
     for (const [key, v] of per) {
       let bake = this.cache.get(key);
-      if (!bake) { try { bake = this.bake(v.look, v.stance); } catch (e) { console.error('kalabalık', e); continue; } this.cache.set(key, bake); }
+      if (!bake) { try { bake = this.bake(v.look, v.stance); } catch (e) { console.error('kalabalık ' + key + ': ' + e.message); continue; } this.cache.set(key, bake); }
       const mk = (mat, cast, g) => { const im = new T.InstancedMesh(g || bake.geo, mat, v.items.length); v.items.forEach((m, i) => im.setMatrixAt(i, m)); im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); im.castShadow = cast; im.receiveShadow = false; im.userData.shared = true; im.frustumCulled = true; return im; };
       root.add(mk(bake.mat, true)); root.add(mk(this.outline(), false, bake.olGeo));
     }
@@ -959,6 +981,9 @@ const CrowdKit = {
     const visible = o => { while (o) { if (!o.visible) return false; o = o.parent; } return true; };
     m.root.traverse(o => {
       if (!o.isMesh || !visible(o)) return;
+      try { this.bakeMesh(o, parts, v, nrm, sm, tmp, nm3); } catch (e) { throw new Error(o.name + ': ' + e.message); }
+    });
+    if (false) m.root.traverse(o => {
       const g = o.geometry, mats = Array.isArray(o.material) ? o.material : [o.material];
       const groups = g.groups.length ? g.groups : [{ start: 0, count: g.index ? g.index.count : g.attributes.position.count, materialIndex: 0 }];
       for (const gr of groups) {
@@ -1034,7 +1059,32 @@ const CrowdKit = {
     m.dispose();
     return { geo, olGeo, mat, info: parts.map(p => (p.mat.name || '?').slice(0, 14) + ':' + p.idx.length / 3 + (p.big ? '*' : '')).join(',') };
   },
+  bakeMesh(o, parts, v, nrm, sm, tmp, nm3) {
+      const g = o.geometry, mats = Array.isArray(o.material) ? o.material : [o.material];
+      const groups = g.groups.length ? g.groups : [{ start: 0, count: g.index ? g.index.count : g.attributes.position.count, materialIndex: 0 }];
+      for (const gr of groups) {
+        const mat = mats[gr.materialIndex || 0]; if (!mat || mat.isOutline || !mat.visible) continue;
+        if (o.isSkinnedMesh) o.skeleton.update();
+        const P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, I = g.index;
+        const remap = new Map(), pos = [], nor = [], uv = [], idx = [];
+        const si = g.attributes.skinIndex, sw = g.attributes.skinWeight;
+        for (let k = gr.start; k < gr.start + gr.count; k++) {
+          const vi = I ? I.getX(k) : k; let ni = remap.get(vi);
+          if (ni === undefined) {
+            ni = pos.length / 3; remap.set(vi, ni);
+            o.getVertexPosition(vi, v); v.applyMatrix4(o.matrixWorld); pos.push(v.x, v.y, v.z);
+            nrm.set(0, 1, 0); if (N) nrm.fromBufferAttribute(N, vi);
+            if (o.isSkinnedMesh && si) { sm.set(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); for (let c = 0; c < 4; c++) { const w = sw.getComponent(vi, c); if (!w) continue; const bi = si.getComponent(vi, c); tmp.multiplyMatrices(o.skeleton.bones[bi].matrixWorld, o.skeleton.boneInverses[bi]); for (let e = 0; e < 16; e++) sm.elements[e] += tmp.elements[e] * w; } tmp.multiplyMatrices(sm, o.bindMatrix); nm3.setFromMatrix4(tmp); nrm.applyMatrix3(nm3); }
+            else { nm3.getNormalMatrix(o.matrixWorld); nrm.applyMatrix3(nm3); }
+            nrm.normalize(); nor.push(nrm.x, nrm.y, nrm.z);
+            uv.push(U ? U.getX(vi) : 0.5, U ? U.getY(vi) : 0.5);
+          }
+          idx.push(ni);
+        }
+        parts.push({ pos, nor, uv, idx, mat, big: idx.length > 600 && !/Eye|Brow|Mouth|Lash|line/i.test(mat.name || ''), decal: /Eye|Brow|Mouth|Lash|line/i.test(mat.name || '') });
+      }
+  },
   texKey(t) { for (const [k, v] of VRMKit.texCache) if (v === t) return k; return ''; },
 };
 
-window.__VRMKit = VRMKit; window.__CrowdKit = CrowdKit;
+window.__VRMKit = VRMKit; window.__CrowdKit = CrowdKit; window.__VRMHumanoid = VRMHumanoid; window.__dbgLooks = () => ({ randomNoble, randomVillager, LOOK });

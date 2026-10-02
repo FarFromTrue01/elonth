@@ -167,11 +167,14 @@ class Player extends Actor {
           else if (Input.take('dodge')) this.tryDodge();
         } else { Input.take('attack'); Input.take('heavy'); Input.take('dodge'); }
       }
-      if (this.state === 'move') { this.vel.x = damp(this.vel.x, dx * want, 12, dt); this.vel.z = damp(this.vel.z, dz * want, 12, dt); }
+      if (this.state === 'move') {
+        // zayıf yürüyüş: yana hafif salınım (hız hedefine eklenir, birikmez)
+        let lx = 0, lz = 0; if (this.weakWalk && want > 0.01) { this.wobT = (this.wobT || 0) + dt; const w = Math.sin(this.wobT * 1.7) * 0.5 + Math.sin(this.wobT * 0.6) * 0.5; lx = Math.cos(this.facing) * w * 0.22; lz = -Math.sin(this.facing) * w * 0.22; }
+        this.vel.x = damp(this.vel.x, dx * want + lx, 12, dt); this.vel.z = damp(this.vel.z, dz * want + lz, 12, dt);
+      }
     }
     if (this.state === 'hitstun' || this.state === 'knock') { this.vel.x = damp(this.vel.x, 0, 8, dt); this.vel.z = damp(this.vel.z, 0, 8, dt); }
     if (G.settings.shiftLock && ctl && !G.inCine && (this.state === 'move' || this.state === 'hitstun') && !this.noShiftFace) { this.wantFacing = Cam.yaw + Math.PI; }
-    if (this.weakWalk) { this.wobT = (this.wobT || 0) + dt; const w = Math.sin(this.wobT * 1.7) * 0.5 + Math.sin(this.wobT * 0.6) * 0.5; if (this.moving) { this.vel.x += Math.cos(this.facing) * w * 0.5; this.vel.z -= Math.sin(this.facing) * w * 0.5; } }
     if (this.streak) { this.streakT += dt; if (this.streakT > 2.6) { this.streak = 0; UI.streak(0); } }
     if (G.combat && this.canFight && !G.inCine) {
       let tdx, tdz; const id = this.inputDir();

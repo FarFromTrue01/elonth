@@ -42,11 +42,16 @@ Story.def('c1_alley', { chapter: 'Bölüm 1 · Taban', title: 'Arka Sokak', sub:
   await S.say('victor', 'Bakın kim gelmiş. Mezardan dönen köylü.');
   await S.say('bram', 'Duydun mu Victor? Diyorlar ki içine iblis girmiş. Artık başka türlü konuşuyormuş.');
   await S.say('victor', 'İblis mi? Bu sefil sokakta iblis bile yaşamaz.');
-  S.walk(victor, [V3(15.6, 0, 15.9)], 1.6); await S.wait(0.9);
-  victor.model.play('push'); await S.wait(0.25); p.model.setWeapon(null); p.model.play('hit'); S.sfx('hit', 0.6);
-  const bread = new T.Mesh(prim('sphS'), TOON.mat('#c8955a', { gradientMap: TOON.gradSoft })); bread.scale.set(0.16, 0.11, 0.32); bread.castShadow = true; bread.position.set(15.0, L.h(15, 15.2) + 0.06, 15.2); bread.rotation.y = 0.7; L.add(bread);
+  await S.walk(victor, [V3(15.45, 0, 15.75)], 2.2); victor.faceTo(p);
+  victor.model.play('push'); await S.wait(0.28); p.model.setWeapon(null); p.model.play('hit'); S.sfx('hit', 0.6);
+  const bread = new T.Group(); bread.castShadow = false;
+  const bm = (c, sx, sy, sz, x, y, z) => { const m = new T.Mesh(prim('sphS'), TOON.mat(c, { gradientMap: TOON.gradSoft })); m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.castShadow = true; bread.add(m); };
+  bm('#d6c9a6', 0.3, 0.2, 0.34, 0, 0.09, 0); bm('#c8955a', 0.16, 0.12, 0.36, 0.02, 0.14, 0.08); bm('#b4a47a', 0.08, 0.08, 0.08, 0, 0.2, -0.08);
+  bread.position.set(14.95, L.h(15, 15.4) + 0.02, 15.4); bread.rotation.y = 0.7; L.add(bread);
+  const bd = (bread.userData = {}); bread.scale.setScalar(1.25);
   await S.say('victor', 'Torbada ne var? Ekmek mi? Benim köpeklerim bile bunu yemez.');
-  await S.shot(V3(13.6, 1.0, 14.6), V3(15.4, 0.9, 15.9), 0.6);
+  await S.shot(V3(13.9, 1.2, 14.3), V3(15.0, 0.25, 15.4), 0.7);
+  await S.wait(0.6);
   await S.say('joseph', 'O ekmek annemin üç günlük emeği. Yerden kaldır.');
   victor.model.play('laugh'); S.sfx('laugh');
   await S.say('victor', 'Kaldır mı? Sen bana emir mi veriyorsun, köylü?');
@@ -588,45 +593,56 @@ Story.def('c1_ceremony', { chapter: 'Bölüm 1 · Taban', title: 'Tanrı\'nın �
   await S.shot(V3(-5, 4, 4), V3(0, 3, -19), 5);
   await S.say('priest', 'Elonth\'un çocukları! On sekizinci kışınızı gördünüz. Bugün Tanrı size bakıyor.');
   await S.say('priest', 'Leydi Rosalind, Harrowmere Hanesi\'nden.');
-  await S.walk(lady, [V3(-0.6, 0, -9), V3(0, 0, E.stone.z + 2.2)], 1.6);
-  lady.faceNow(V3(0, 0, E.stone.z)); lady.model.play('reach'); lady.model.act.hold = true;
-  await S.shot(V3(3, 2.6, E.stone.z + 5), V3(0, 2.6, E.stone.z), 0.8);
+  const stand = V3(0, 0, E.stone.z + 2.2);
+  const step = async (a, wait = 0.6) => { a.stopWalk && a.stopWalk(); a.place(stand.x, stand.z, Math.PI); a.model.setStance(null); a.model.play('reach'); a.model.act.hold = true; };
+  const mark = (a, color) => { const m = new T.Mesh(prim('sph8'), new T.MeshBasicMaterial({ color })); m.scale.setScalar(0.12); m.position.set(0, -0.05, 0.02); a.model.handR.add(m); const l = new T.PointLight(color, 2, 3, 1.5); a.model.handR.add(l); setTimeout(() => { a.model.handR.remove(m); a.model.handR.remove(l); l.dispose && l.dispose(); }, a === p ? 1e9 : 1700); return m; };
+  await step(lady); lady.facing = Math.PI; lady.root.rotation.y = Math.PI;
+  await S.shot(V3(3, 2.6, E.stone.z + 5), V3(0, 2.6, E.stone.z), 0.5);
   st.color.set('#ffd27a'); st.glow = 1; S.sfx('stone');
-  await S.wait(1.6);
+  await S.wait(1.0);
   await S.say('priest', 'Enkron! Tanrı, Harrowmere Hanesi\'ni bir kez daha kutsadı!');
-  S.sfx('crowd', 1.4); st.glow = 0; st.color.set('#7aa8d8'); lady.model.act = null;
-  lady.walkTo([V3(-3.4, 0, E.stone.z + 4)], 1.5);
-  const mark = (a, color) => { const m = new T.Mesh(prim('sph8'), new T.MeshBasicMaterial({ color })); m.scale.setScalar(0.12); m.position.set(0, -0.05, 0.02); a.model.handR.add(m); const l = new T.PointLight(color, 2, 3, 1.5); a.model.handR.add(l); return m; };
-  await S.wait(0.6);
+  S.sfx('crowd', 1.4); st.glow = 0; st.color.set('#7aa8d8'); lady.model.act = null; lady.place(-3.4, E.stone.z + 4, Math.PI / 2);
   // Victor: Holloway Hanesi'nin oğlu
   await S.say('priest', 'Victor Holloway, Lord Holloway\'un oğlu.');
-  victor.model.setStance(null);
-  await S.walk(victor, [V3(1.0, 0, -7), V3(0, 0, E.stone.z + 2.2)], 1.8);
-  victor.faceNow(V3(0, 0, E.stone.z)); victor.model.play('reach'); victor.model.act.hold = true;
-  await S.shot(V3(-2.4, 2.2, E.stone.z + 4.4), V3(0, 2.2, E.stone.z + 0.6), 0.6);
-  await S.wait(0.4); st.color.set('#d8323e'); st.glow = 1.2; S.sfx('stone'); mark(victor, '#ff4050'); UI.flashEdge('#d8323e');
-  await S.wait(1.4);
+  await step(victor);
+  await S.shot(V3(-2.4, 2.2, E.stone.z + 4.4), V3(0, 2.2, E.stone.z + 0.6), 0.4);
+  await S.wait(0.3); st.color.set('#d8323e'); st.glow = 1.2; S.sfx('stone'); mark(victor, '#ff4050'); UI.flashEdge('#d8323e');
+  await S.wait(1.0);
   await S.say('priest', 'Enkron! Holloway Hanesi bu yıl da eli boş dönmüyor.');
   S.sfx('crowd', 1.3); st.glow = 0; st.color.set('#7aa8d8'); victor.model.act = null; victor.model.setExpression('smile');
   await S.say('crowd', 'Holloway\'un oğlu da kutsandı... Tanrı korusun bizi.');
-  victor.walkTo([V3(2.4, 0, -4.0)], 1.7);
-  await S.wait(0.4);
+  victor.place(2.4, -4.0, -Math.PI / 2); victor.model.setStance('crossArms');
+  // ---- hızlı seçme: on iki genç art arda taşa dokunur, kimine Enkron çıkar kimine çıkmaz
+  const names = ['Aldric', 'Wilhelmina', 'Tomas', 'Berta', 'Cedric', 'Hanna', 'Osmund', 'Elsbeth', 'Rurik', 'Maren', 'Jorin', 'Ilse'];
+  const picks = [['#7adc6a', 1], [null], [null], ['#ffb44a', 1], [null], ['#ff6a8a', 1], [null], [null], ['#b48aff', 1], [null], ['#7ad8ff', 1], [null]];
+  const queue = [];
+  for (let i = 0; i < 12; i++) { const fem = i % 3 === 1 || i === 5 || i === 7; const a = npc(rng() < 0.3 ? randomNoble(fem) : randomVillager(fem, { age: 0 }), 0, 0, Math.PI, { watch: false }); a.model.setStance(null); a.place(-9 + (i % 6) * 3.4, E.stone.z + 8 + Math.floor(i / 6) * 2.2, Math.PI); queue.push(a); }
+  await S.shot(V3(2.6, 2.2, E.stone.z + 4.6), V3(0, 2.2, E.stone.z + 0.6), 0.6);
+  S.music('hall');
+  for (let i = 0; i < 12; i++) {
+    const a = queue[i], pk = picks[i], home = V3(a.pos.x, 0, a.pos.z);
+    UI.bark(CAST.priest, pk[0] ? `${names[i]} — Enkron!` : `${names[i]} — ...Enkron yok.`, 1700);
+    await step(a); a.root.rotation.y = Math.PI;
+    await S.wait(0.35);
+    if (pk[0]) { st.color.set(pk[0]); st.glow = 1; S.sfx('stone'); mark(a, pk[0]); S.sfx('crowd', 1.1); } else { st.color.set('#5a6070'); st.glow = 0.35; S.sfx('crowd', 0.6); }
+    await S.wait(i < 4 ? 1.1 : 0.8);
+    st.glow = 0; st.color.set('#7aa8d8'); a.model.act = null; if (!pk[0]) a.model.setExpression('sad'); a.place(home.x, home.z, Math.PI);
+  }
+  UI.hideDialog();
   await S.shot(V3(1.5, 1.8, 15.5), V3(-0.4, 1.5, 17.6), 0.8);
   await S.say('leo', 'Elim terliyor. Elimin terlediğini Tanrı görür mü sizce?');
   await S.say('clara', 'Görse ne olur, Leo?');
   await S.say('leo', 'Bilmiyorum! Belki terli diye vermez!');
   await S.say('nora', 'Sessiz olun. Sıra bize geldi.');
-  victor.place(2.4, -4.0, -Math.PI / 2); victor.model.setStance('crossArms');
   const touch = async (a, color, line, crowd) => {
-    await S.walk(a, [V3(0, 0, 4), V3(0, 0, E.stone.z + 2.2)], 1.8);
-    a.faceNow(V3(0, 0, E.stone.z)); a.model.play('reach'); a.model.act.hold = true;
-    await S.shot(V3(2.6, 2.2, E.stone.z + 4.6), V3(0, 2.2, E.stone.z + 0.6), 0.6);
-    await S.wait(0.5); st.color.set(color); st.glow = 1; S.sfx('stone'); mark(a, color); UI.flashEdge(color);
-    await S.wait(1.4);
+    await step(a);
+    await S.shot(V3(2.6, 2.2, E.stone.z + 4.6), V3(0, 2.2, E.stone.z + 0.6), 0.4);
+    await S.wait(0.4); st.color.set(color); st.glow = 1; S.sfx('stone'); mark(a, color); UI.flashEdge(color);
+    await S.wait(1.1);
     await S.say('priest', line);
     S.sfx('crowd', 1.2); if (crowd) await S.say('crowd', crowd);
     st.glow = 0; st.color.set('#7aa8d8'); a.model.act = null;
-    a.walkTo([V3(a === nora ? -2.0 : a === leo ? 2.0 : -1.2, 0, E.stone.z + 4.8)], 1.6);
+    a.place(a === nora ? -2.0 : a === leo ? 2.0 : -1.2, E.stone.z + 4.8, Math.PI);
   };
   await S.say('priest', 'Nora, Eros köyünden.');
   await touch(nora, '#ff7a3a', 'Enkron!', 'Köylü bir kız mı? Köylü bir kızın Enkron\'u mu var?');
@@ -634,6 +650,7 @@ Story.def('c1_ceremony', { chapter: 'Bölüm 1 · Taban', title: 'Tanrı\'nın �
   await touch(leo, '#7adc6a', 'Enkron!', 'Bir tane daha! Aynı köyden!');
   await S.say('priest', 'Clara, Tüccar Aldous\'un kızı.');
   await touch(clara, '#7ad8ff', 'Enkron! Tanrı bu yıl cömert!', 'Aynı köyden üç Enkron! Böylesi görülmedi!');
+  for (const a of queue) a.remove && a.remove();
   await S.shot(V3(1.4, 1.7, 15.0), V3(0.6, 1.5, 17.6), 0.8);
   await S.say('priest', 'Joseph, Eros köyünden.');
   await S.think('Bu an için sekiz yıl bekledim.');
@@ -695,9 +712,11 @@ Story.def('c1_walk', { chapter: 'Bölüm 1 · Taban', title: 'Eve Dönüş', sub
   const clara = S.cast('clara', npc(LOOK.clara(18), -1, -35, 0, { stance: 'lantern', weapon: 'lantern', watch: false }));
   const lanternL = new T.PointLight('#ffb860', 4, 10, 1.6); lanternL.position.set(0, -0.1, 0.1); clara.model.handR.add(lanternL);
   for (const a of [nora, leo]) { a.solid = false; a.collides = false; }
+  let hdg = p.facing;
   G.onFrame = dt => {
-    const f = p.facing, c = Math.cos(f), s = Math.sin(f);
-    nora.pos.set(p.pos.x + c * 0.55, p.pos.y, p.pos.z - s * 0.55); leo.pos.set(p.pos.x - c * 0.55, p.pos.y, p.pos.z + s * 0.55);
+    hdg += angDiff(hdg, p.facing) * Math.min(1, dt * 4);
+    const f = hdg, c = Math.cos(f), s = Math.sin(f);
+    nora.pos.set(p.pos.x + c * 0.52, p.pos.y, p.pos.z - s * 0.52); leo.pos.set(p.pos.x - c * 0.52, p.pos.y, p.pos.z + s * 0.52);
     nora.facing = leo.facing = f; nora.vel.copy(p.vel); leo.vel.copy(p.vel);
     for (const a of [nora, leo]) { a.root.position.copy(a.pos); a.root.rotation.y = f; }
   };
@@ -755,7 +774,7 @@ Story.def('c1_walk', { chapter: 'Bölüm 1 · Taban', title: 'Eve Dönüş', sub
 Story.def('c1_system', { chapter: 'Bölüm 1 · Taban', title: 'Sistem', sub: 'O gece', kind: 'Hikâye' }, async S => {
   const L = await S.level(() => buildHut('dark'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true, hemi: 0.7, sun: 0.8 });
   S.amb('interior'); S.music('none');
-  const p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.solid = false; p.collides = false;
+  const p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.455; p.solid = false; p.collides = false;
   const lily = npc(LOOK.lily(18), 2.6, -1.85, 0, { stance: 'lie', watch: false }); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false; lily.collides = false; S.cast('lily', lily);
   S.cine(true);
   Screen.set({ vig: 0.7, sat: 0.7 }, true);

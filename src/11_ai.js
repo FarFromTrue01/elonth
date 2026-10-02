@@ -68,8 +68,8 @@ class Fighter extends Actor {
       case 'windup': {
         this.wantFacing = Math.atan2(dx, dz);
         const u = this.stateT / this.atk.windup; const pulse = 0.4 + 0.6 * Math.abs(Math.sin(this.stateT * 18));
-        for (const m of this.model.allMats) m.emissive.setRGB(0.6 * u * pulse, 0.25 * u * pulse, 0);
-        if (this.stateT >= this.atk.windup) { for (const m of this.model.allMats) m.emissive.set('#000'); this.removeRing(); this.state = 'attack'; this.stateT = 0; this.hitDone = false; this.model.play(this.atk.anim, ACTIONS[this.atk.anim].dur / this.atk.dur); Audio.sfx('whoosh', 0.9); }
+        for (const m of this.model.allMats) m.emissive && m.emissive.setRGB(0.6 * u * pulse, 0.25 * u * pulse, 0);
+        if (this.stateT >= this.atk.windup) { for (const m of this.model.allMats) m.emissive && m.emissive.set('#000'); this.removeRing(); this.state = 'attack'; this.stateT = 0; this.hitDone = false; this.model.play(this.atk.anim, ACTIONS[this.atk.anim].dur / this.atk.dur); Audio.sfx('whoosh', 0.9); }
         break;
       }
       case 'attack': {

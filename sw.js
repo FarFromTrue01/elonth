@@ -1,5 +1,5 @@
 // Elonth service worker: oyun sayfası her zaman ağdan (güncellemeler hemen gelsin), diğerleri önbellekten.
-const VER = 'elonth-0.3.0';
+const VER = 'elonth-0.4.0';
 const CORE = ['./', './index.html', './vendor/three.r160.js', './vendor/three-vrm.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VER).then(c => c.addAll(CORE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VER).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

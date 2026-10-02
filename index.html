@@ -96,7 +96,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 #dialog .badge { font-family: var(--f-sys); font-weight: 600; font-size: 12px; line-height: 1; padding: 3px 6px; border: 1px solid currentColor; letter-spacing: .06em; }
 #dialog .dtext { font-size: clamp(18px, 2.2vw, 23px); line-height: 1.5; min-height: 2.4em; color: var(--parch); text-wrap: pretty; }
 #dialog.thought .dtext { font-style: italic; color: #d2c6ac; }
-#dialog.narr { background: transparent; border: 0; box-shadow: none; text-align: center; }
+#dialog.narr { z-index: 42; background: transparent; border: 0; box-shadow: none; text-align: center; }
 #dialog.narr .dtext { font-family: var(--f-display); font-size: clamp(22px, 2.8vw, 30px); letter-spacing: .03em; text-shadow: 0 2px 10px #000; }
 #dialog.narr .dname { display: none; }
 #dialog .dnext { position: absolute; right: 18px; bottom: 6px; color: var(--gold); font-size: 18px; opacity: 0; }
@@ -329,7 +329,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 <script src="vendor/three-vrm.js"></script>
 <script>window.ELONTH_PWA=true;</script>
 <script>(function(){'use strict';
-const BUILD="0.3.0";
+const BUILD="0.4.0";
 
 // ==== 00_util.js ====
 // ---------- Temel yardımcılar ----------
@@ -1094,7 +1094,7 @@ const STANCES = {
 
 // Poz bileşimi (yürüme, duruş, aksiyon, bakış): Humanoid ve VRMHumanoid ortak kullanır
 class PoseRig {
-  setStance(name, instant) { if (name === this.stanceName) return; this.prevStance = this.stance; this.prevW = this.stanceW; this.stance = name ? STANCES[name] : null; this.stanceName = name; this.stanceW = instant ? 1 : 0; if (instant) this.prevW = 0; }
+  setStance(name, instant) { if (name === this.stanceName) return; this.prevStance = this.stance; this.prevW = this.stanceW; this.stance = name ? ((this.vrm && VSTANCES[name]) || STANCES[name]) : null; this.stanceName = name; this.stanceW = instant ? 1 : 0; if (instant) this.prevW = 0; }
   setUpper(name) { this.upperSt = name; this.upperW = 0; }
   play(name, speedMul = 1) { const a = ACTIONS[name]; if (!a) return 0; this.act = { a, t: 0, dur: a.dur / speedMul, name }; return this.act.dur; }
   stop() { this.act = null; }
@@ -1148,7 +1148,7 @@ class PoseRig {
     const blendIn = (src, w, keepLegs) => { for (const k in src) { if (keepLegs && speed > 0.05 && (k[0] === 'l' || k[0] === 'k' || k === 'lift')) continue; P[k] = lerp(P[k], src[k] + (k === 'spX' || k === 'hdX' ? p[k] * 0.3 : 0), w); } };
     if (this.prevStance && this.prevW > 0) { this.prevW = Math.max(0, this.prevW - dt * 4); blendIn(this.prevStance.p, smooth(this.prevW) * (1 - smooth(this.stanceW)), !this.prevStance.full); }
     if (st) blendIn(st.p, smooth(this.stanceW), !st.full);
-    if (this.upperSt) { this.upperW = Math.min(1, (this.upperW || 0) + dt * 4); const up = STANCES[this.upperSt].p, w = smooth(this.upperW); for (const k in up) { if (k[0] === 'l' || k[0] === 'k' || k === 'roll' || k === 'rollZ') continue; P[k] = lerp(P[k], up[k] + (k === 'lift' ? P.lift : 0), w); } }
+    if (this.upperSt) { this.upperW = Math.min(1, (this.upperW || 0) + dt * 4); const up = ((this.vrm && VSTANCES[this.upperSt]) || STANCES[this.upperSt]).p, w = smooth(this.upperW); for (const k in up) { if (k[0] === 'l' || k[0] === 'k' || k === 'roll' || k === 'rollZ') continue; P[k] = lerp(P[k], up[k] + (k === 'lift' ? P.lift : 0), w); } }
     // aksiyon
     if (this.act) {
       const A = this.act; A.t += dt; const u = clamp(A.t / A.dur, 0, 1);
@@ -1195,7 +1195,7 @@ class PoseRig {
     if (type === 'bowl') { add(C(10), '#8a6a48', mtx(0, -0.06, 0.06, 0.18, 0.07, 0.18)); }
     if (type === 'book') { add(B(), '#6b2b2b', mtx(0, -0.05, 0.05, 0.16, 0.04, 0.22)); }
     if (type === 'cup') { add(C(10), '#9a8a70', mtx(0, -0.05, 0.03, 0.08, 0.1, 0.08)); }
-    if (type === 'bread') { add(Sp(), '#c8955a', mtx(0, -0.05, 0.06, 0.14, 0.11, 0.3)); }
+    if (type === 'bread') { add(Sp(), '#d6c9a6', mtx(0, -0.07, 0.05, 0.22, 0.19, 0.26)); add(Sp(), '#c8955a', mtx(0, -0.01, 0.13, 0.12, 0.1, 0.28)); add(Sp(), '#b4a47a', mtx(0, 0.04, -0.02, 0.07, 0.07, 0.07)); }
     if (type === 'jar') { add(C(10), '#b8c8a8', mtx(0, -0.06, 0.04, 0.09, 0.11, 0.09)); add(C(10), '#6a5038', mtx(0, 0.0, 0.04, 0.1, 0.03, 0.1)); }
     if (type === 'pouch') { add(Sp(), '#7a5a3a', mtx(0, -0.07, 0.05, 0.13, 0.12, 0.13)); }
     if (type === 'apple') { add(Sp(), '#c83a2a', mtx(0, -0.05, 0.05, 0.08, 0.08, 0.08)); }
@@ -1529,6 +1529,13 @@ function randomVillager(female, opts = {}) {
   if (female) o.extras.push({ t: 'dress', c: pick(['#7a6a55', '#6a5a70', '#7a5040', '#5a6a5a', '#8a7a60']) }), rng() < 0.5 && o.extras.push({ t: 'apron', c: '#cfc4ad' });
   else { if (rng() < 0.35) o.extras.push({ t: 'beard', c: o.hair }); if (rng() < 0.3) o.extras.push({ t: 'hat', c: '#c9a86a' }); if (rng() < 0.4) o.extras.push({ t: 'vest', c: pick(['#5a4a3a', '#4a4030']) }); }
   o.extras.push({ t: 'belt', c: '#3a2a1e', buckle: '#6a5a40' });
+  // yaş çeşitliliği: ~%20 yaşlı, ~%25 orta yaşlı
+  const ar = rng(); const age = opts.age !== undefined ? opts.age : ar < 0.2 ? rnd(0.65, 1) : ar < 0.45 ? rnd(0.25, 0.45) : 0;
+  if (age > 0) {
+    o.age = age; o.scale *= 1 - 0.05 * age;
+    if (age > 0.55) { o.hair = pick(['#d6d2ca', '#c4c0b8', '#e2dfd8']); o.sleeves = 'long'; if (!female && !o.extras.some(e => e.t === 'beard') && rng() < 0.6) o.extras.push({ t: 'beard', c: o.hair }); if (!female && o.hairStyle === 'bald') o.hairStyle = 'short'; o.extras = o.extras.filter(e => e.t !== 'hat' || rng() < 0.6); }
+    else if (!female && rng() < 0.4) o.extras.push({ t: 'beard', c: o.hair });
+  }
   return Object.assign(o, opts);
 }
 function randomNoble(female, opts = {}) {
@@ -1626,10 +1633,10 @@ const VRMKit = {
     B.height = box.max.y; B.hipY = B.bp.hips.y; B.headY = B.bp.head.y;
     this.prepBody(B);
     // çocuk bedeni: göğüs önünü düzleştir (kadın tabanları için); konum tabanlı, kıyafet ve vücutta aynı
-    if (key !== 'm') {
+    {
       const bp = B.bp, cz = B.dims.chest.cz, y0 = bp.chest.y - 0.1, y1 = bp.upperChest.y + 0.08, F = B.F;
-      B.flatAt = (x, y, z) => { if (y < y0 || y > y1) return z; const w = Math.sin((y - y0) / (y1 - y0) * Math.PI); const zf = z * F; if (zf <= cz) return z; return (cz + (zf - cz) * (1 - 0.6 * w * clamp(1 - Math.abs(x) / 0.16, 0, 1))) * F; };
-      B.childFlat = g => { const a = g.attributes.position; for (let i = 0; i < a.count; i++) a.setZ(i, B.flatAt(a.getX(i), a.getY(i), a.getZ(i))); a.needsUpdate = true; g.computeBoundingSphere(); };
+      B.flatAt = (x, y, z) => { if (y < y0 || y > y1) return z; const w = Math.sin((y - y0) / (y1 - y0) * Math.PI); const zf = z * F; if (zf <= cz) return z; return (cz + (zf - cz) * (1 - 0.68 * w * clamp(1 - Math.abs(x) / 0.17, 0, 1))) * F; };
+      B.childFlat = g => { const a = g.attributes.position; for (let i = 0; i < a.count; i++) a.setZ(i, B.flatAt(a.getX(i), a.getY(i), a.getZ(i))); a.needsUpdate = true; g.computeVertexNormals(); g.computeBoundingSphere(); };
     }
     this.prepColors(B);
     // geniş sınır küresi: yatarken/otururken yanlışlıkla kırpılmasın
@@ -1732,6 +1739,49 @@ const VRMKit = {
     }
     x.putImageData(id, 0, 0);
     const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.flipY = tex.flipY; t.wrapS = tex.wrapS; t.wrapT = tex.wrapT; t.anisotropy = 2;
+    this.texCache.set(k, t); return t;
+  },
+
+  // Yüz çıkartması: yaş çizgileri, göz altı, çil, yara. Yüz derisi üçgenlerine düzlemsel UV ile oturur.
+  decalGeo(B, fm) {
+    if (B.decalGeo !== undefined) return B.decalGeo;
+    const og = fm.geometry, pos = og.attributes.position, idx = og.index; B.decalGeo = null; if (!idx) return null;
+    fm.updateMatrixWorld(true);
+    const hd = B.head, W = 0.3, cx = 0, cy = hd.c.y, v = V3(), P = new Float32Array(pos.count * 3), uv = new Float32Array(pos.count * 2);
+    for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i); fm.applyBoneTransform(i, v); v.applyMatrix4(fm.matrixWorld); const x = v.x * B.F, z = v.z * B.F; P[i * 3] = x; P[i * 3 + 1] = v.y; P[i * 3 + 2] = z; uv[i * 2] = 0.5 + (x - cx) / W; uv[i * 2 + 1] = 0.5 + (v.y - cy) / W; }
+    const cz = hd.c.z * 1, keep = []; const gr = og.groups && og.groups[0]; const a0 = gr ? gr.start : 0, a1 = gr ? gr.start + gr.count : idx.count;
+    for (let t = a0; t < a1; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (P[a * 3 + 2] > cz + 0.01 && P[b * 3 + 2] > cz + 0.01 && P[c * 3 + 2] > cz + 0.01) keep.push(a, b, c); }
+    if (!keep.length) return null;
+    const g = og.clone(); g.setAttribute('uv', new T.BufferAttribute(uv, 2)); g.groups = []; g.setIndex(keep);
+    if (g.attributes.uv1) g.deleteAttribute('uv1');
+    return B.decalGeo = g;
+  },
+  decalTex(B, V) {
+    const k = 'decal|' + B.key + '|' + (V.age || 0).toFixed(2) + '|' + (V.freckles || 0) + '|' + (V.scar ? 1 : 0) + '|' + (V.seed || 0);
+    if (this.texCache.has(k)) return this.texCache.get(k);
+    const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'); const rr = mulberry32(Math.floor((V.seed || 0) * 99991) + 17);
+    const hd = B.head, W = 0.3, hw = hd.size.x, hy0 = hd.min.y, hh = hd.size.y, ey = (B.bp.leftEye ? B.bp.leftEye.y : hy0 + hh * 0.56), ex = B.bp.leftEye ? Math.abs(B.bp.leftEye.x) : hw * 0.17;
+    const X = m => (0.5 + m / W) * S, Y = m => (1 - (0.5 + (m - hd.c.y) / W)) * S;
+    x.lineCap = 'round'; x.strokeStyle = '#3a1c12';
+    const line = (pts, a, w) => { x.globalAlpha = a; x.lineWidth = w; x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(X(p[0]), Y(p[1])) : x.moveTo(X(p[0]), Y(p[1]))); x.stroke(); };
+    const age = V.age || 0, u = hh / 0.25;
+    if (age > 0.12) {
+      const a = 0.12 + age * 0.4;
+      for (let i = 0; i < 3; i++) { const yy = ey + (0.056 + i * 0.016) * u, hw2 = (0.052 - i * 0.008) * u; line([[-hw2, yy], [-hw2 * 0.4, yy + 0.004 * u], [hw2 * 0.4, yy + 0.004 * u], [hw2, yy]], a * (0.7 + rr() * 0.4), 2.2); }
+      for (const sx of [-1, 1]) {
+        for (let i = 0; i < 3; i++) line([[sx * (ex + 0.036 * u), ey - 0.004 * u], [sx * (ex + (0.05 + i * 0.004) * u), ey + (0.012 - i * 0.013) * u]], a * 0.9, 1.8);
+        if (age > 0.3) { line([[sx * (ex + 0.02 * u), ey - 0.03 * u], [sx * (ex + 0.0 * u), ey - 0.036 * u], [sx * (ex - 0.016 * u), ey - 0.03 * u]], a * 0.8, 3.2); line([[sx * (ex + 0.03 * u), ey - 0.04 * u], [sx * (ex + 0.01 * u), ey - 0.048 * u]], a * 0.5, 2); }
+        if (age > 0.25) line([[sx * 0.03 * u, ey - 0.052 * u], [sx * 0.044 * u, ey - 0.085 * u], [sx * 0.05 * u, ey - 0.115 * u]], a * 1.0, 2.6);
+        if (age > 0.55) line([[sx * 0.06 * u, ey - 0.1 * u], [sx * 0.058 * u, ey - 0.135 * u]], a * 0.6, 2);
+      }
+      if (age > 0.4) line([[-0.012 * u, ey + 0.032 * u], [0, ey + 0.026 * u], [0.012 * u, ey + 0.032 * u]], a * 0.5, 2);
+    }
+    if (V.freckles) {
+      x.fillStyle = '#8a4a2a';
+      for (const sx of [-1, 1]) for (let i = 0; i < 26 * V.freckles; i++) { const px = sx * (0.012 + rr() * 0.05) * u, py = ey - (0.012 + rr() * 0.04) * u; x.globalAlpha = 0.22 + rr() * 0.3; x.beginPath(); x.arc(X(px), Y(py), 1.1 + rr() * 1.2, 0, 7); x.fill(); }
+    }
+    if (V.scar) { x.strokeStyle = '#c47a6a'; line([[ex + 0.02 * u, ey + 0.035 * u], [ex + 0.045 * u, ey - 0.012 * u], [ex + 0.05 * u, ey - 0.05 * u]], 0.7, 2.6); x.strokeStyle = '#e8b8a8'; line([[ex + 0.02 * u, ey + 0.035 * u], [ex + 0.045 * u, ey - 0.012 * u], [ex + 0.05 * u, ey - 0.05 * u]], 0.45, 1); for (let i = 0; i < 4; i++) { const t = i / 3, px = lerp(ex + 0.027 * u, ex + 0.049 * u, t), py = lerp(ey + 0.025 * u, ey - 0.04 * u, t); x.strokeStyle = '#c47a6a'; line([[px - 0.007 * u, py], [px + 0.007 * u, py]], 0.5, 1.4); }}
+    const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 2;
     this.texCache.set(k, t); return t;
   },
   // Kumaş dokuları (gri, malzeme rengiyle çarpılır)
@@ -2007,6 +2057,18 @@ const R2D_Li = R2D_L.clone().invert(), R2D_Ri = R2D_R.clone().invert();
 const FINGERS = ['Index', 'Middle', 'Ring', 'Little'], PHAL = ['Proximal', 'Intermediate', 'Distal'];
 const OLD_H = (o) => { const ch = o.child || 0, hk = 1 + 0.3 * ch, lk = 1 - 0.07 * ch; return { hip: (0.44 + 0.43) * lk + 0.06, height: (0.44 + 0.43) * lk + 0.06 + 0.06 + 0.53 * (1 - 0.05 * ch) + 0.07 + 0.265 * hk }; };
 
+// VRM iskeleti için ters kinematikle bulunmuş kol pozları (eller gövdeye girmesin, havada kalmasın)
+const VSTANCES = {
+  hips: { full: false, p: { shLx: 1.18, shLy: -0.32, shLz: 1.13, elL: -1.59, shRx: 1.18, shRy: 0.32, shRz: -1.13, elR: -1.6 } },
+  crossArms: { full: false, p: { shLx: -0.13, shLy: -1.28, shLz: 0.28, elL: -1.37, shRx: -0.23, shRy: 1.33, shRz: -0.42, elR: -1.39 } },
+  think: { full: false, p: { shRx: -0.57, shRy: 0.52, shRz: -0.58, elR: -2.13, shLx: -0.61, shLy: -1.16, shLz: -0.22, elL: -1.05, hdX: 0.1, hdZ: 0.12 } },
+  support: { full: false, p: { shRx: 1.55, shRy: -0.4, shRz: -1.18, elR: -1.54 } },
+  supportL: { full: false, p: { shLx: 1.54, shLy: 0.4, shLz: 1.17, elL: -1.54 } },
+  carried: { full: false, p: { spX: 0.25, hdX: 0.45, shLx: 1.05, shLy: 0.45, shLz: 1.31, elL: -1.05, shRx: 1.05, shRy: -0.46, shRz: -1.31, elR: -1.06, knL: 0.3, knR: 0.3, lift: -0.06 } },
+  cry: { full: false, p: { shLx: -0.8, shLy: -0.52, shLz: 0.6, elL: -2.02, shRx: -0.8, shRy: 0.53, shRz: -0.62, elR: -2.02, hdX: 0.45, spX: 0.25 } },
+  behind: { full: false, p: { shLx: 1.12, shLy: -0.61, shLz: 0.28, elL: -1.08, shRx: 1.12, shRy: 0.62, shRz: -0.28, elR: -1.08 } },
+};
+
 class VRMHumanoid extends PoseRig {
   constructor(o) {
     super();
@@ -2041,9 +2103,13 @@ class VRMHumanoid extends PoseRig {
     this.raw = {}; for (const hn in hb) this.raw[hn] = hb[hn].node;
     // kafa ve vücut oranları
     if (this.headK !== 1) this.raw.head.scale.setScalar(this.headK);
+    if (V.headScale && V.headScale !== 1) this.raw.head.scale.multiplyScalar(V.headScale);
+    if (V.shoulder) for (const side of ['left', 'right']) { const ua = this.raw[side + 'UpperArm']; if (ua && Math.abs(ua.position.x) > 0.01) ua.position.x += Math.sign(ua.position.x) * V.shoulder; }
+    if (V.chestW && V.chestW !== 1) { const ch = this.raw.upperChest || this.raw.chest; if (ch) ch.scale.set(V.chestW, 1, lerp(1, V.chestW, 0.5)); for (const s of ['leftShoulder', 'rightShoulder', 'neck']) if (this.raw[s]) this.raw[s].scale.set(1 / V.chestW, 1, 1 / lerp(1, V.chestW, 0.5)); }
     if (V.wide && V.wide !== 1) { this.raw.spine.scale.set(V.wide, 1, lerp(1, V.wide, 0.6)); for (const s of ['leftShoulder', 'rightShoulder', 'neck']) if (this.raw[s]) this.raw[s].scale.set(1 / V.wide, 1, 1 / lerp(1, V.wide, 0.6)); }
     // malzemeler: örnek başına kopya + renklendirme
     this.setupMaterials();
+    this.setupDecal();
     // saç
     this.setupHair();
     if (V.hairTrim) this.trimHair(V.hairTrim);
@@ -2072,6 +2138,18 @@ class VRMHumanoid extends PoseRig {
     // sınır küreleri (kırpılma hatasını önle)
     const hgt = B.height; sc.traverse(m => { if (m.isSkinnedMesh) { m.boundingSphere = new T.Sphere(V3(0, hgt * 0.5, 0), hgt * 0.8); } });
     this.olVis = true;
+  }
+  setupDecal() {
+    const V = this.V, B = this.B;
+    if (this.o.noDecal || !((V.age || 0) > 0.12 || V.freckles || V.scar)) return;
+    let fm = null; this.sc.traverse(m => { if (!fm && m.isSkinnedMesh && m.userData.role === 'face' && /^Face/.test(m.name)) fm = m; });
+    if (!fm) return;
+    const bm = B.meshes.find(x => x.name === fm.name); if (!bm) return;
+    const geo = VRMKit.decalGeo(B, bm); if (!geo) return;
+    const mat = new T.MeshBasicMaterial({ map: VRMKit.decalTex(B, V), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, color: new T.Color(this.o.skin).lerp(new T.Color('#ffffff'), 0.55).multiplyScalar(0.8) });
+    const d = new T.SkinnedMesh(geo, mat); d.name = 'faceDecal'; d.userData.role = 'decal'; d.frustumCulled = false; d.renderOrder = 2;
+    fm.parent.add(d); d.bind(fm.skeleton, fm.bindMatrix); d.morphTargetInfluences = fm.morphTargetInfluences; d.morphTargetDictionary = fm.morphTargetDictionary;
+    this.decalMat = mat; // allMats dışında: emissive yok
   }
   // ---- malzemeler ----
   setupMaterials() {
@@ -2195,7 +2273,7 @@ class VRMHumanoid extends PoseRig {
   }
   // ---- kıyafetler ----
   setupGarments() {
-    const B = this.B, V = this.V, child = (this.o.child || 0) > 0.4;
+    const B = this.B, V = this.V, child = (this.o.child || 0) > 0.4 || !this.o.female;
     const list = V.garments || [];
     // kıyafet iskeleti: vücut kemikleri (+ pelerin kemiği)
     const bones = B.skelNames.map(n => this.nodes.get(n));
@@ -2268,11 +2346,21 @@ class VRMHumanoid extends PoseRig {
     const mkGroups = (Bsrc, find) => (Bsrc.colGroups || []).map(cols => ({ colliders: cols.map(c => { const p = find(c.parent); if (!p) return null; const k = p.uuid + '|' + c.pos.toArray().join(',') + '|' + (c.shape.radius || 0); if (colCache.has(k)) return colCache.get(k); const co = new VRMLib.VRMSpringBoneCollider(scaled(c.shape, ws * (underHead(p) ? this.headK : 1))); co.position.copy(c.pos); co.quaternion.copy(c.q); p.add(co); colCache.set(k, co); return co; }).filter(Boolean), name: '' }));
     const add = (Bsrc, find, filter) => {
       const groups = mkGroups(Bsrc, find);
+      const sset = new Set(Bsrc.springs.map(x => x.bone));
       for (const s of Bsrc.springs) {
         if (!filter(s)) continue;
         const bone = find(s.bone); if (!bone) continue;
         const child = s.child ? find(s.child) : null;
-        const j = new VRMLib.VRMSpringBoneJoint(bone, child, Object.assign({}, s.settings, { gravityDir: s.settings.gravityDir.clone(), hitRadius: (s.settings.hitRadius || 0) * ws * (underHead(bone) ? this.headK : 1) }), s.groups.map(i => groups[i]).filter(Boolean));
+        const st = Object.assign({}, s.settings, { gravityDir: s.settings.gravityDir.clone(), hitRadius: (s.settings.hitRadius || 0) * ws * (underHead(bone) ? this.headK : 1) });
+        if (Bsrc.hairBones && Bsrc.hairBones.has(s.bone)) {
+          // saç: kökler kafaya yapışık, yalnızca uçlar hafifçe savrulsun
+          let depth = 0; for (let q = bone.parent; q; q = q.parent) if (sset.has(q.name)) depth++;
+          const f = Math.min(1, depth / 2.5);
+          st.stiffness = lerp(Math.max(st.stiffness || 0, 5), Math.max(st.stiffness || 0, 1.1), f);
+          st.dragForce = lerp(Math.max(st.dragForce || 0, 0.92), Math.max(st.dragForce || 0, 0.6), f);
+          st.gravityPower = (st.gravityPower || 0) * lerp(0.15, 0.7, f);
+        }
+        const j = new VRMLib.VRMSpringBoneJoint(bone, child, st, s.groups.map(i => groups[i]).filter(Boolean));
         mgr.addJoint(j);
       }
     };
@@ -2334,13 +2422,14 @@ class VRMHumanoid extends PoseRig {
       case 'surprised': want.surprised = 0.85; break;
       case 'relaxed': want.relaxed = 0.7; break;
     }
+    const fx = this.V.faceMix; if (fx) for (const k in fx) if (k !== 'blink' && want[k] !== undefined) want[k] = Math.max(want[k], fx[k] * (this.curExpr() === 'neutral' || this.curExpr() === 'relaxed' ? 1 : 0.4));
     for (const k in want) this.exprW[k] = damp(this.exprW[k] || 0, want[k], 8, dt);
     let blink = 0;
     if (this.closedEyes) blink = 1; else if (this.blinkT < 0.13 && this.blinkT > 0) blink = Math.sin((0.13 - this.blinkT) / 0.13 * Math.PI);
     if (this.blinkT < 0) this.blinkT = frand(2, 5.5);
     if (this.curExpr() === 'pain') blink = Math.max(blink, 0.45);
     blink *= 1 - clamp((this.exprW.happy || 0) * 1.4, 0, 1) * (this.closedEyes ? 0 : 1);
-    this.blinkW = this.closedEyes ? 1 : blink;
+    this.blinkW = this.closedEyes ? 1 : Math.max(blink, (this.V.lid || 0) * (1 - clamp((this.exprW.surprised || 0) * 2, 0, 1)));
     let aa = 0, oh = 0, ih = 0;
     if (this.talking) { this.talkT += dt; const t = this.talkT; const v = Math.max(0, Math.sin(t * 13) * 0.6 + Math.sin(t * 7.3) * 0.4); aa = v * 0.75; oh = Math.max(0, Math.sin(t * 5.1)) * 0.3 * v; ih = Math.max(0, Math.sin(t * 3.7 + 1)) * 0.25; }
     this.mouthW = damp(this.mouthW, aa, 20, dt);
@@ -2351,26 +2440,32 @@ class VRMHumanoid extends PoseRig {
     for (const k in want) put(k, this.exprW[k]);
     put('blink', this.blinkW); put('aa', this.mouthW); put('oh', oh); put('ih', ih * (this.talking ? 1 : 0));
     // uzakta kontur kapalı
-    if (G.camera && (this._olT = (this._olT || 0) + dt) > 0.4) { this._olT = 0; const far = G.camera.position.distanceTo(this.root.getWorldPosition(_v3a)) > 30; if (far === this.olVis) { this.olVis = !far; for (const m of this.outlines) m.visible = !far; } }
+    if (G.camera && (this._olT = (this._olT || 0) + dt) > 0.4) { this._olT = 0; const far = G.camera.position.distanceTo(this.root.getWorldPosition(_v3a)) > 17; if (far === this.olVis) { this.olVis = !far; for (const m of this.outlines) m.visible = !far; } }
   }
   flash(color = '#ffffff', t = 0.12) { this.flashT = t; for (const m of this.allMats) if (m.emissive) m.emissive.set(color).multiplyScalar(0.6); }
   // normalleştirilmiş kemiğe model uzayında (yüz +Z) dönüş ver
   // (three-vrm, VRM0 modellerinin normalize iskeletini de yüz +Z kuralına çevirir)
   setN(name, q) { const n = this.nb[name]; if (n) n.quaternion.copy(q); }
   apply(P, dt, speed) {
+    // uzaktaki karakterler: kemik güncellemesini seyrelt (tablet CPU/GPU yükü)
+    if ((this._camT = (this._camT || 0) - dt) <= 0) { this._camT = 0.3; this.camD = G.camera ? G.camera.position.distanceTo(this.root.position) : 0; }
+    const cd = this.camD || 0;
+    if (cd > 38 && !this.noLod) { this._lodN = (this._lodN || 0) + 1; this._lodAcc = (this._lodAcc || 0) + dt; if (this._lodN % 3) return; dt = this._lodAcc; this._lodAcc = 0; }
     const r = this.hipRatio;
     this.pivot.rotation.set(P.roll, 0, P.rollZ);
     this.pivot.position.y = this.PV + P.lift * r;
     this.body.position.y = -this.PV + P.bob * r;
     const E = (x, y, z) => _q1.setFromEuler(_e1.set(x, y, z, 'XYZ'));
     this.setN('hips', E(0, P.hipY, 0));
-    const qs = E(P.spX, P.spY, P.spZ).clone();
+    const stoop = this.V.stoop || 0, qs = E(P.spX + stoop, P.spY, P.spZ).clone();
     this.setN('spine', _q2.slerpQuaternions(_qI, qs, 0.42)); this.setN('chest', _q2.slerpQuaternions(_qI, qs, 0.3)); this.setN('upperChest', _q2.slerpQuaternions(_qI, qs, 0.28));
-    const qh = E(P.hdX, P.hdY, P.hdZ).clone();
+    const qh = E(P.hdX - stoop * 0.6, P.hdY, P.hdZ).clone();
     this.setN('neck', _q2.slerpQuaternions(_qI, qh, 0.35)); this.setN('head', _q2.slerpQuaternions(_qI, qh, 0.65));
     // kollar: T-pozdan aşağı sarkan kola, sonra eski poz açıları
-    this.setN('leftUpperArm', E(P.shLx, P.shLy, P.shLz).multiply(R2D_L));
-    this.setN('rightUpperArm', E(P.shRx, P.shRy, P.shRz).multiply(R2D_R));
+    // kollar gövdeye gömülmesin: aşağı sarkan kolda hafif açıklık (kol kalkınca kaybolur)
+    const aL = 0.13 * clamp(1 - Math.abs(P.shLz - 0.1) * 1.2 - Math.abs(P.shLx) * 0.5, 0, 1), aR = 0.13 * clamp(1 - Math.abs(P.shRz + 0.1) * 1.2 - Math.abs(P.shRx) * 0.5, 0, 1);
+    this.setN('leftUpperArm', E(P.shLx, P.shLy, P.shLz + aL).multiply(R2D_L));
+    this.setN('rightUpperArm', E(P.shRx, P.shRy, P.shRz - aR).multiply(R2D_R));
     this.setN('leftLowerArm', _q2.copy(R2D_Li).multiply(E(P.elL, 0, 0)).multiply(R2D_L));
     this.setN('rightLowerArm', _q2.copy(R2D_Ri).multiply(E(P.elR, 0, 0)).multiply(R2D_R));
     // bilekler hafif içe
@@ -2406,12 +2501,17 @@ class VRMHumanoid extends PoseRig {
     if (this.capeBone) { this.capeSwing = damp(this.capeSwing, -Math.min(speed, 5) * 0.11 - 0.03, 4, dt); const a = -(this.capeSwing + Math.sin(G.t * 2.3) * 0.025) + P.spX * 0.6; this.capeBone.quaternion.copy(this.capeQ).multiply(_q2.setFromAxisAngle(_xAx, a)); }
     // yay fiziği: yalnızca kameraya yakınken
     if (this.springOn) {
-      const near = !G.camera || G.camera.position.distanceTo(this.root.position) < 26;
-      if (near) { if (!this._springWas) { this.sc.updateMatrixWorld(true); this.springs.reset(); } this.springs.update(Math.min(dt, 1 / 30)); }
+      const near = !G.camera || cd < 24;
+      if (near) {
+        if (!this._springWas) { this.sc.updateMatrixWorld(true); this.springs.reset(); }
+        this._sacc = (this._sacc || 0) + dt;
+        if (cd < 11 || ((this._sf = (this._sf || 0) + 1) & 1)) { this.springs.update(Math.min(this._sacc, 1 / 30)); this._sacc = 0; }
+      }
       this._springWas = near;
     }
   }
   dispose() {
+    if (this.decalMat) this.decalMat.dispose();
     for (const m of this.allMats) m.dispose();
     for (const m of this.garments) m.geometry.dispose();
     if (this.ownGeo) for (const g of this.ownGeo) g.dispose();
@@ -2444,6 +2544,19 @@ function vrmSpecFor(o) {
   if (v.eyeColor === undefined) v.eyeColor = o.eyes || '#4a3424';
   if (v.browColor === undefined) v.browColor = shade(o.hair || '#3a2a1c', 0.8);
   if (v.wide === undefined && o.wide) v.wide = o.wide;
+  // bireysellik: aynı tabandan farklı kişiler çıksın (deterministik)
+  const seed = v.seed !== undefined ? v.seed : hash2((((o.skin || '') + (o.hair || '') + (o.shirt || '') + (o.hairStyle || '') + (o.scale || '')).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 100003, 7)) % 997, 1.7); v.seed = seed;
+  const hr = (k) => hash2(Math.floor(seed * 9973) + k * 13, k + 0.37);
+  const kid = (o.child || 0) > 0.4;
+  if (v.age === undefined) v.age = o.age || 0;
+  if (v.headScale === undefined) v.headScale = 0.94 + hr(1) * 0.12;
+  if (v.shoulder === undefined) v.shoulder = !fem && !kid ? 0.022 : 0;
+  if (v.chestW === undefined && !fem && !kid) v.chestW = 1.06 + (o.wide ? 0 : 0.03);
+  if (v.stoop === undefined) v.stoop = v.age > 0.4 ? 0.08 + 0.2 * (v.age - 0.4) : 0;
+  if (v.lid === undefined) v.lid = v.age > 0.5 ? 0.16 : hr(2) < 0.3 ? 0.1 : 0;
+  if (v.faceMix === undefined) { const r = hr(3); v.faceMix = r < 0.2 ? { angry: 0.16 } : r < 0.4 ? { happy: 0.22 } : r < 0.55 ? { sad: 0.14 } : r < 0.7 ? { relaxed: 0.3 } : null; }
+  if (v.freckles === undefined && hr(4) < 0.18 && v.age < 0.4) v.freckles = 0.6 + hr(5) * 0.8;
+    if (v.age > 0.3 && o.hair) { const g = new T.Color(v.hairColor || o.hair).lerp(new T.Color('#d4d0c8'), clamp((v.age - 0.2) * 1.1, 0, v.age > 0.75 ? 0.95 : 0.55)); if (!v.greyed) { v.hairColor = '#' + g.getHexString(); v.browColor = v.browColor || '#' + g.clone().multiplyScalar(0.8).getHexString(); v.greyed = 1; } }
   if (!v.garments) {
     const gs = [], ex = (o.extras || []).map(e => typeof e === 'string' ? { t: e } : e), has = t => ex.find(e => e.t === t);
     const longDress = has('dress') && (!has('dress').len || has('dress').len > 0.75) || has('robe');
@@ -2481,7 +2594,7 @@ const CrowdKit = {
   cache: new Map(), outlineMat: null,
   classOf(o) {
     const ex = (o.extras || []).map(e => typeof e === 'string' ? e : e.t);
-    return (ex.includes('armor') ? 'guard' : ex.includes('trim') ? 'noble' : 'vill') + (o.female ? 'F' : 'M');
+    return (ex.includes('armor') ? 'guard' : ex.includes('trim') ? 'noble' : 'vill') + (o.female ? 'F' : 'M') + ((o.age || 0) > 0.55 ? 'O' : '');
   },
   // seviye kurulurken: bakeHumanoid çağrılarını topla
   queue(b, opts, stance, x, y, z, ry, extraPose) { (b.crowd || (b.crowd = [])).push({ opts, stance, m: b.top.clone().multiply(new T.Matrix4().compose(V3(x, y, z), new T.Quaternion().setFromAxisAngle(V3(0, 1, 0), ry), V3(1, 1, 1))) }); },
@@ -2516,7 +2629,7 @@ const CrowdKit = {
   },
   // Bir varyantı pişir: poz ver, köşeleri dünyaya çevir, sadeleştir, dokuları atlasa topla
   bake(look, stance) {
-    const m = new VRMHumanoid(look);
+    const m = new VRMHumanoid(Object.assign({}, look, { noDecal: true }));
     m.springOn = false;
     if (stance) m.setStance(stance, true); m.stanceW = 1;
     m.root.updateMatrixWorld(true); m.update(0.016, 0); m.update(0.016, 0);
@@ -2645,6 +2758,132 @@ const CrowdKit = {
 };
 
 window.__VRMKit = VRMKit; window.__CrowdKit = CrowdKit; window.__VRMHumanoid = VRMHumanoid; window.__dbgLooks = () => ({ randomNoble, randomVillager, LOOK });
+
+
+// ==== 05c_creature.js ====
+// ---------- Yaratıklar: fare, örümcek, Fare Kralı (prosedürel, Humanoid ile aynı arayüz) ----------
+ACTIONS.bite = { dur: 0.4, keys: [{ t: 0 }, { t: 1 }] };
+ACTIONS.leap = { dur: 0.5, keys: [{ t: 0 }, { t: 1 }] };
+ACTIONS.swipe = { dur: 0.5, keys: [{ t: 0 }, { t: 1 }] };
+const CREATURE_KINDS = {
+  rat: { fur: '#6b5c4e', belly: '#a89a88', skin: '#c89a96', eye: '#1a0c0c', scale: 0.55, legs: 4 },
+  sewer: { fur: '#4a4038', belly: '#8a7e70', skin: '#b08682', eye: '#2a0808', scale: 0.62, legs: 4 },
+  king: { fur: '#5a4a44', belly: '#8a7468', skin: '#b87a78', eye: '#ff3a2a', scale: 1.75, legs: 4, king: true },
+  spider: { fur: '#2c2430', belly: '#4a3a48', skin: '#5a4a58', eye: '#ff4a4a', scale: 0.62, legs: 8 },
+};
+class CreatureModel {
+  constructor(kind = 'rat', o = {}) {
+    const K = this.K = Object.assign({}, CREATURE_KINDS[kind] || CREATURE_KINDS.rat, o);
+    this.kind = kind; this.o = { scale: K.scale * (o.sizeMul || 1) }; this.D = { height: 0.45 * this.o.scale, headH: 0.2 * this.o.scale };
+    this.allMats = []; this.outlines = []; this.talking = false; this.closedEyes = false; this.lookTarget = null; this.expr = 'neutral';
+    const root = this.root = new T.Group(); const body = this.body = new T.Group(); root.add(body);
+    const mats = {}; const parts = new Map();
+    const mat = c => mats[c] || (mats[c] = (() => { const dbl = c.endsWith('|2'); const m = TOON.mat(c.replace('|2', ''), dbl ? { side: T.DoubleSide } : {}); this.allMats.push(m); return m; })());
+    const add = (grp, geo, col, m) => { let g = parts.get(grp); if (!g) parts.set(grp, g = {}); (g[col] = g[col] || []).push({ geo, m }); };
+    const S = sphGeo(14, 10), S2 = sphGeo(8, 6);
+    this.legs = []; this.phase = Math.random() * 6; this.t = Math.random() * 10; this.act = null; this.lieW = 0; this.knockT = -1; this.hitT = 0;
+    if (kind === 'spider') this.buildSpider(K, body, add, S, S2);
+    else this.buildRat(K, body, add, S, S2);
+    for (const [grp, cols] of parts) for (const col in cols) {
+      const geo = mergeParts(cols[col]); const mesh = new T.Mesh(geo, mat(col)); mesh.castShadow = true; mesh.receiveShadow = true; grp.add(mesh);
+      if (!col.endsWith('|2')) { const ol = new T.Mesh(geo, TOON.outline); ol.userData.outline = true; grp.add(ol); this.outlines.push(ol); }
+    }
+    root.scale.setScalar(1);
+    body.position.y = this.baseY = kind === 'spider' ? 0.2 : 0.17;
+    for (const m of this.allMats) { m.emissive = m.emissive || new T.Color(0, 0, 0); }
+  }
+  buildRat(K, body, add, S, S2) {
+    const k = K.scale;
+    // gövde + kalça
+    add(body, S, K.fur, mtx(0, 0, 0, 0.32, 0.28, 0.62)); add(body, S, K.fur, mtx(0, 0.01, -0.22, 0.36, 0.32, 0.4)); add(body, S, K.belly, mtx(0, -0.07, 0.02, 0.24, 0.16, 0.5));
+    // kafa
+    const head = this.head = new T.Group(); head.position.set(0, 0.04, 0.34); body.add(head);
+    add(head, S, K.fur, mtx(0, 0.0, 0.08, 0.22, 0.2, 0.3)); add(head, S, K.fur, mtx(0, -0.025, 0.24, 0.12, 0.11, 0.22));
+    add(head, S2, K.skin, mtx(0, -0.01, 0.35, 0.05, 0.045, 0.045));
+    for (const sx of [-1, 1]) {
+      add(head, S2, K.eye, mtx(sx * 0.075, 0.06, 0.16, 0.04, 0.045, 0.04));
+      add(head, S, K.skin, mtx(sx * 0.1, 0.12, 0.0, 0.1, 0.11, 0.025, 0, sx * 0.35, 0));
+      add(head, S2, '#e8dcc8', mtx(sx * 0.014, -0.06, 0.3, 0.015, 0.045, 0.012));
+      for (let i = 0; i < 3; i++) add(head, S2, '#d8d0c0', mtx(sx * 0.1, -0.02 + (i - 1) * 0.02, 0.3, 0.2, 0.004, 0.004, 0, 0, sx * (0.2 - i * 0.2)));
+    }
+    if (K.king) {
+      // taç: altın halka ve sivri uçlar; yırtık kulak; çapraz yara
+      add(head, new T.CylinderGeometry(0.5, 0.5, 0.18, 10, 1, true), '#d8b04a|2', mtx(0, 0.14, 0.05, 0.22, 1, 0.22));
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; add(head, new T.ConeGeometry(0.5, 1, 5), '#e8c45a', mtx(Math.sin(a) * 0.11, 0.25, 0.05 + Math.cos(a) * 0.11, 0.04, 0.12, 0.04)); }
+      add(head, S2, '#8a2020', mtx(0.06, 0.07, 0.2, 0.012, 0.1, 0.012, 0, 0, 0.8));
+      add(head, S2, '#ff6a40', mtx(-0.08, 0.06, 0.16, 0.055, 0.06, 0.05));
+    }
+    // bacaklar
+    const legs = [[0.13, 0.22, 0], [-0.13, 0.22, 0], [0.15, -0.2, 1], [-0.15, -0.2, 1]];
+    for (const [x, z, back] of legs) {
+      const g = new T.Group(); g.position.set(x, -0.04, z); body.add(g);
+      add(g, capsGeo(back ? 0.065 : 0.05, 0.04, 0.2, 8), K.fur, mtx(0, -0.08, back ? -0.02 : 0));
+      add(g, S2, K.skin, mtx(0, -0.17, 0.04, 0.07, 0.03, 0.12));
+      this.legs.push(g);
+    }
+    // kuyruk: üç eklem
+    const tail = this.tail = new T.Group(); tail.position.set(0, 0.0, -0.42); body.add(tail);
+    add(tail, capsGeo(0.022, 0.012, 0.3, 6), K.skin, mtx(0, 0, -0.13, 1, 1, 1, Math.PI / 2, 0, 0));
+    const t2 = this.tail2 = new T.Group(); t2.position.set(0, 0, -0.28); tail.add(t2); add(t2, capsGeo(0.012, 0.006, 0.3, 6), K.skin, mtx(0, 0, -0.14, 1, 1, 1, Math.PI / 2, 0, 0));
+  }
+  buildSpider(K, body, add, S, S2) {
+    add(body, S, K.fur, mtx(0, 0.06, -0.2, 0.46, 0.4, 0.55)); add(body, S, K.belly, mtx(0, 0.09, 0.09, 0.28, 0.2, 0.3));
+    add(body, S2, '#b02a2a', mtx(0, 0.26, -0.22, 0.12, 0.012, 0.18));
+    const head = this.head = new T.Group(); head.position.set(0, 0.07, 0.3); body.add(head);
+    add(head, S, K.fur, mtx(0, 0, 0, 0.26, 0.2, 0.22));
+    for (let i = 0; i < 6; i++) add(head, S2, K.eye, mtx((i % 3 - 1) * 0.05, 0.05 + Math.floor(i / 3) * 0.04, 0.1, 0.03, 0.03, 0.03));
+    for (const sx of [-1, 1]) add(head, new T.ConeGeometry(0.5, 1, 6), '#e8e0d0', mtx(sx * 0.045, -0.07, 0.12, 0.03, 0.12, 0.03, 0.4, 0, 0));
+    for (let i = 0; i < 8; i++) {
+      const sx = i < 4 ? 1 : -1, j = i % 4, g = new T.Group(); g.position.set(sx * 0.12, 0.08, 0.16 - j * 0.13); body.add(g);
+      const yaw = (j - 1.5) * 0.45; g.rotation.y = sx > 0 ? Math.PI / 2 - yaw : -Math.PI / 2 + yaw; g.rotation.y = (sx > 0 ? 1 : -1) * (Math.PI / 2 - (j - 1.5) * 0.4) * (sx > 0 ? 1 : 1);
+      add(g, capsGeo(0.026, 0.02, 0.32, 6), K.fur, mtx(0, 0.0, 0.16, 1, 1, 1, Math.PI / 2 - 0.5, 0, 0));
+      const k2 = new T.Group(); k2.position.set(0, 0.14, 0.3); g.add(k2);
+      add(k2, capsGeo(0.02, 0.012, 0.34, 6), K.fur, mtx(0, -0.12, 0.05, 1, 1, 1, -0.4, 0, 0));
+      this.legs.push(g);
+    }
+    this.tail = null;
+  }
+  setStance(n) { this.stance = n; this.lying = n === 'lie' || n === 'kneel2'; }
+  setUpper() { } setExpression() { } emote(e) { this.emoteE = e; } curExpr() { return 'neutral'; } setWeapon() { } stop() { this.act = null; }
+  play(name, mul = 1) {
+    const a = ACTIONS[name]; const dur = a ? a.dur / mul : 0.4;
+    if (name === 'knock') { this.knockT = 0; this.act = null; return 1.3; }
+    if (name === 'hit' || name === 'flinch') { this.hitT = 0.28; return 0.3; }
+    this.act = { name, t: 0, dur }; return dur;
+  }
+  flash(color = '#ffffff', t = 0.12) { this.flashT = t; for (const m of this.allMats) if (m.emissive) m.emissive.set(color).multiplyScalar(0.6); }
+  update(dt, speed) {
+    this.t += dt; const K = this.K, sp = Math.min(speed, 6);
+    if (this.flashT > 0) { this.flashT -= dt; if (this.flashT <= 0) for (const m of this.allMats) if (m.emissive) m.emissive.set('#000'); }
+    this.phase += dt * (4 + sp * 3.2); const ph = this.phase, a = Math.min(1, sp / 1.6);
+    const spider = this.kind === 'spider', body = this.body;
+    // yatma / yuvarlanma
+    this.lieW += ((this.lying ? 1 : 0) - this.lieW) * Math.min(1, dt * 8);
+    let roll = this.lieW * Math.PI;
+    if (this.knockT >= 0) { this.knockT += dt; const u = Math.min(1, this.knockT / 0.5); roll = Math.sin(u * Math.PI) * 1.2 + this.lieW * Math.PI; if (this.knockT > 1.3) this.knockT = -1; }
+    let lunge = 0, pitch = 0, headZ = 0;
+    if (this.act) {
+      const A = this.act; A.t += dt; const u = Math.min(1, A.t / A.dur);
+      if (A.name === 'bite') { lunge = Math.sin(u * Math.PI) * 0.22 * this.o.scale; headZ = Math.sin(u * Math.PI) * 0.12; pitch = Math.sin(u * Math.PI) * 0.25; }
+      else if (A.name === 'leap') { lunge = Math.sin(Math.min(1, u * 1.4) * Math.PI) * 0.5 * this.o.scale; body.position.y = this.baseY + Math.sin(u * Math.PI) * 0.35; pitch = -0.4 * Math.sin(u * Math.PI); }
+      else if (A.name === 'swipe') { lunge = Math.sin(u * Math.PI) * 0.35 * this.o.scale; pitch = Math.sin(u * Math.PI) * 0.4; headZ = Math.sin(u * Math.PI) * 0.18; }
+      if (A.t >= A.dur) this.act = null;
+    }
+    if (!this.act || this.act.name !== 'leap') body.position.y = this.baseY + Math.abs(Math.sin(ph)) * 0.025 * a * (spider ? 0.4 : 1) + Math.sin(this.t * 2.4) * 0.004 - this.lieW * 0.03;
+    if (this.hitT > 0) { this.hitT -= dt; pitch -= 0.35 * (this.hitT / 0.28); lunge -= 0.12 * (this.hitT / 0.28); }
+    body.rotation.z = roll; body.rotation.x = pitch * 0.6; body.position.z = lunge; if (this.head) this.head.position.z += (headZ + (spider ? 0.3 : 0.34) - this.head.position.z) * Math.min(1, dt * 20);
+    // yürüyüş
+    for (let i = 0; i < this.legs.length; i++) {
+      const g = this.legs[i];
+      if (spider) { const off = (i % 2 ? Math.PI : 0) + (i % 4) * 0.7; g.rotation.x = Math.sin(ph + off) * 0.28 * a; g.rotation.z = (i < 4 ? 1 : -1) * (this.lieW * -1.1 + Math.max(0, Math.sin(ph + off)) * 0.18 * a); }
+      else { const off = [0, Math.PI, Math.PI, 0][i]; g.rotation.x = Math.sin(ph + off) * 0.7 * a + this.lieW * (i % 2 ? 0.6 : -0.6); }
+    }
+    if (this.tail) { this.tail.rotation.y = Math.sin(this.t * 2.2 + this.phase * 0.2) * 0.35 * (0.4 + a); this.tail.rotation.x = -0.2 + Math.sin(this.t * 1.7) * 0.1; if (this.tail2) this.tail2.rotation.y = Math.sin(this.t * 2.2 - 0.9) * 0.45; }
+    if (this.head && !spider) this.head.rotation.x = Math.sin(this.t * 3.1) * 0.06 + Math.sin(ph * 2) * 0.03 * a - pitch * 0.5;
+    if (G.camera && (this._olT = (this._olT || 0) + dt) > 0.4) { this._olT = 0; const far = G.camera.position.distanceTo(this.root.position) > 22; for (const ol of this.outlines) ol.visible = !far; }
+  }
+  dispose() { for (const m of this.allMats) m.dispose(); }
+}
 
 
 // ==== 06_props.js ====
@@ -3132,8 +3371,9 @@ function hutDetails(L, W, D, H, variant) {
   b.box(COL.woodD, -2.5, 0, -2.5, 1.06, 0.9, 0.07); b.box(COL.wood, -2.5, 0.9, -2.5, 1.12, 0.06, 0.1); b.box(COL.woodD, -2.5, 0, -0.33, 1.06, 0.6, 0.07);
   for (const sx of [-1, 1]) { b.add('cylS8', COL.woodD, -2.5 + sx * 0.53, 0.5, -2.5, 0.08, 1.0, 0.08); b.add('sphS', COL.wood, -2.5 + sx * 0.53, 1.02, -2.5, 0.1, 0.1, 0.1); b.add('cylS8', COL.woodD, -2.5 + sx * 0.53, 0.33, -0.33, 0.08, 0.66, 0.08); }
   const patch = ['#8a5a4a', '#7a6a4a', '#9a6a52', '#6a5a62', '#8a7a58'];
-  for (let i = 0; i < 3; i++) for (let j = 0; j < 4; j++) b.box(patch[(i + j * 2) % 5], -2.5 + (i - 1) * 0.31, 0.6, -1.55 + j * 0.31, 0.3, 0.015, 0.3, 0, 0, 0);
-  b.add('sphS', '#efe4cc', -2.5, 0.68, -2.15, 0.62, 0.14, 0.32);
+  b.box('#c9bc9c', -2.5, 0.3, -1.42, 1.0, 0.16, 2.14);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 6; j++) b.box(patch[(i + j * 2) % 5], -2.5 + (i - 1) * 0.33, 0.46, -2.3 + j * 0.34, 0.32, 0.012, 0.33, 0, 0, 0);
+  b.add('sphS', '#efe4cc', -2.5, 0.51, -1.92, 0.56, 0.1, 0.3);
   // Lily'nin yatağı: başlık, yastık, bez bebek; yanında bacağı kırık tahta at
   b.box(COL.woodD, 2.6, 0, -2.88, 0.86, 0.72, 0.07); b.add('sphS', COL.wood, 2.6, 0.74, -2.88, 0.86, 0.08, 0.1);
   b.add('sphS', '#f0e6d0', 2.6, 0.52, -2.62, 0.5, 0.12, 0.26);
@@ -3564,6 +3804,136 @@ function buildHall() {
   L.pts = Object.assign(L.pts, { dais: V3(0, 0.9, dz + 1.2), stone: V3(0, 0, dz - 0.6), front: V3(0, 0, dz + 6), entrance: V3(0, 0, Ln / 2 - 3), lineL: V3(-1.1, 0, -1), lineR: V3(1.1, 0, -1), priest: V3(-1.6, 0.9, dz - 0.4) });
   L.finalize();
   return L;
+}
+
+
+// ==== 07b_rooms.js ====
+// ---------- Bölüm 2 mekânları: lonca salonu, değirmen, mahzen, kanal ----------
+function roomShell(L, W, D, H, o = {}) {
+  const b = L.b, wc = o.wall || '#a89a84', wd = o.wall2 || '#968872', fc = o.floor || '#6a5a48';
+  L.interior = true;
+  L.bounds = { x0: -W / 2 + 0.3, x1: W / 2 - 0.3, z0: -D / 2 + 0.3, z1: D / 2 - 0.3 };
+  L.camBox = { x0: -W / 2 + 0.4, x1: W / 2 - 0.4, y0: 0.3, y1: H - 0.2, z0: -D / 2 + 0.4, z1: D / 2 - 0.4 };
+  // zemin: karo / tahta
+  const n = Math.ceil(W / 1.0);
+  for (let i = 0; i < n; i++) for (let j = 0; j < Math.ceil(D / 1.0); j++) b.box(((i + j) & 1) ? fc : shade(fc, 0.93), -W / 2 + 0.5 + i, -0.1, -D / 2 + 0.5 + j, 1.0, 0.1, 1.0);
+  b.box(wc, 0, 0, -D / 2 - 0.1, W, H, 0.2); b.box(wd, 0, 0, D / 2 + 0.1, W, H, 0.2); b.box(wd, -W / 2 - 0.1, 0, 0, 0.2, H, D); b.box(wd, W / 2 + 0.1, 0, 0, 0.2, H, D);
+  b.box(o.ceil || '#4a3a2c', 0, H, 0, W + 0.4, 0.14, D + 0.4);
+  for (let i = -Math.floor(W / 3); i <= Math.floor(W / 3); i++) b.box(COL.beam, i * 2.2, H - 0.3, 0, 0.22, 0.3, D);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(COL.beam, sx * (W / 2 - 0.12), 0, sz * (D / 2 - 0.12), 0.24, H, 0.24);
+  // alt lambri
+  if (!o.stone) { b.box('#6e5238', 0, 0, -D / 2 + 0.02, W, 0.9, 0.05); b.box('#6e5238', -W / 2 + 0.02, 0, 0, 0.05, 0.9, D); b.box('#6e5238', W / 2 - 0.02, 0, 0, 0.05, 0.9, D); b.box('#4e3622', 0, 0.9, -D / 2 + 0.03, W, 0.07, 0.07); }
+}
+function wallTorch(L, x, y, z, ry = 0, power = 3.4) {
+  const b = L.b; b.add('box', COL.iron, x, y - 0.18, z, 0.05, 0.36, 0.05, 0, ry, 0); b.add('cyl6', '#5a4a3a', x, y, z, 0.12, 0.12, 0.12, 0, ry, 0);
+  L.gb.add('cone6', '#ff9a3a', x, y + 0.16, z, 0.14, 0.26, 0.14); L.gb.add('ico0', '#ffd27a', x, y + 0.13, z, 0.08, 0.14, 0.08);
+  const l = new T.PointLight('#ff9448', power, 11, 1.5); l.position.set(x, y + 0.4, z + (Math.abs(z) > 4 ? (z > 0 ? -0.5 : 0.5) : 0)); L.light(l);
+  const ph = Math.random() * 9; L.anims.push(() => { l.intensity = power + Math.sin(G.t * 11 + ph) * 0.45 + Math.sin(G.t * 23.7 + ph) * 0.3; });
+  return l;
+}
+function sackPile(L, x, z, n = 4, c = '#c8b890') {
+  const b = L.b; for (let i = 0; i < n; i++) { const a = rnd(0, TAU), r = rnd(0, 0.35); b.add('sphS', pick([c, shade(c, 0.9), shade(c, 1.06)]), x + Math.cos(a) * r, 0.2 + (i > 2 ? 0.3 : 0), z + Math.sin(a) * r, 0.55, 0.42, 0.42, 0, rnd(0, 3), rnd(-0.2, 0.2)); b.add('sphS', '#a89868', x + Math.cos(a) * r, 0.42 + (i > 2 ? 0.3 : 0), z + Math.sin(a) * r, 0.12, 0.1, 0.12); }
+  L.addCircle(x, z, 0.55);
+}
+function barrelStack(L, x, z, n = 3) {
+  const b = L.b; for (let i = 0; i < n; i++) { const bx = x + (i % 2) * 0.62 - (n > 2 ? 0.3 : 0), bz = z + (i > 1 ? 0.5 : 0); b.add('cylS8', '#7a5434', bx, 0.4, bz, 0.62, 0.8, 0.62); b.add('torus', COL.iron, bx, 0.22, bz, 0.62, 0.62, 0.08, Math.PI / 2, 0, 0); b.add('torus', COL.iron, bx, 0.6, bz, 0.62, 0.62, 0.08, Math.PI / 2, 0, 0); }
+  L.addBox(x, z + 0.1, 0.65, 0.55 + (n > 1 ? 0.3 : 0));
+}
+function webCorner(L, x, y, z, ry) {
+  const g = new T.Mesh(new T.PlaneGeometry(1.3, 1.3), new T.MeshBasicMaterial({ map: webTex(), transparent: true, depthWrite: false, side: T.DoubleSide, opacity: 0.5, fog: true }));
+  g.position.set(x, y, z); g.rotation.set(0, ry, 0); L.add(g);
+}
+let _webTex = null;
+function webTex() {
+  if (_webTex) return _webTex;
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.strokeStyle = 'rgba(235,235,240,0.9)'; x.lineWidth = 1;
+  for (let i = 0; i < 7; i++) { const a = i / 6 * Math.PI / 2; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(a) * 160, Math.sin(a) * 160); x.stroke(); }
+  for (let r = 18; r < 150; r += 20) { x.beginPath(); for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI / 2, rr = r * (0.88 + 0.12 * Math.sin(i * 2.3 + r)); const px = Math.cos(a) * rr, py = Math.sin(a) * rr; i ? x.quadraticCurveTo(px * 0.95, py * 0.9, px, py) : x.moveTo(px, py); } x.stroke(); }
+  _webTex = new T.CanvasTexture(c); _webTex.colorSpace = T.SRGBColorSpace; return _webTex;
+}
+
+// ===== Eros loncası: iç mekân =====
+function buildGuildInterior() {
+  const L = new Level('guild'); const b = L.b; seed(41);
+  const W = 18, D = 13, H = 4.6; roomShell(L, W, D, H, { wall: '#b4a58c', wall2: '#a29480', floor: '#7a6850' });
+  // kayıt tezgâhı (kuzey) ve Greta'nın arkası
+  b.box('#5a3e28', 0, 0, -D / 2 + 3.0, 7.4, 1.05, 0.9); b.box('#7a5a3a', 0, 1.05, -D / 2 + 3.0, 7.7, 0.1, 1.05); L.addBox(0, -D / 2 + 3.0, 3.85, 0.55);
+  b.box('#4a3422', 0, 0, -D / 2 + 1.1, 7.4, 0.9, 0.9); b.box('#3a2a1c', -2.6, 0.9, -D / 2 + 0.5, 1.8, 2.6, 0.3); b.box('#3a2a1c', 2.6, 0.9, -D / 2 + 0.5, 1.8, 2.6, 0.3); // arka dolaplar
+  for (let i = 0; i < 4; i++) for (const sx of [-2.6, 2.6]) { b.add('boxb', i % 2 ? '#8a6a48' : '#6a4a34', sx + (i - 1.5) * 0.4, 1.0 + (i % 2) * 0.55, -D / 2 + 0.68, 0.34, 0.3, 0.1); }
+  b.box('#c8b88a', -2.4, 1.15, -D / 2 + 3.1, 0.6, 0.02, 0.4); b.add('cyl8', '#efe6d0', 1.4, 1.2, -D / 2 + 3.0, 0.06, 0.2, 0.06); L.gb.add('cone6', '#ffd27a', 1.4, 1.34, -D / 2 + 3.0, 0.04, 0.08, 0.04);
+  b.box('#e8e0c8', 0.5, 1.15, -D / 2 + 3.1, 0.7, 0.02, 0.5); b.add('box', '#3a2a1c', 0.8, 1.17, -D / 2 + 3.1, 0.05, 0.3, 0.02, 0, 0, 0.9);
+  // pano (sol duvar), afişler
+  b.box('#5a4028', -W / 2 + 0.2, 1.0, -1.0, 0.12, 2.0, 4.4);
+  for (let i = 0; i < 7; i++) b.add('box', pick(['#e8dcc0', '#d8c8a0', '#efe6d0']), -W / 2 + 0.3, 1.5 + (i % 2) * 0.5 - (i > 3 ? 0.9 : 0), -2.4 + (i % 4) * 1.0 + rnd(-0.1, 0.1), 0.02, 0.42, 0.32, 0, 0, rnd(-0.1, 0.1));
+  L.pts.board = V3(-W / 2 + 1.6, 0, -1.0);
+  // uzun masalar ve banklar
+  for (const [x, z] of [[-4.2, 2.2], [4.2, 2.6]]) { b.box('#7a5a3a', x, 0.72, z, 3.4, 0.09, 1.1); for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box('#4a3422', x + sx * 1.5, 0, z + sz * 0.4, 0.1, 0.72, 0.1); b.box('#5a4028', x, 0, z - 0.95, 3.2, 0.42, 0.3); b.box('#5a4028', x, 0, z + 0.95, 3.2, 0.42, 0.3); b.add('cyl8', '#9a8a70', x - 0.6, 0.82, z, 0.14, 0.12, 0.14); b.add('cyl8', '#9a8a70', x + 0.7, 0.82, z + 0.2, 0.14, 0.12, 0.14); L.addBox(x, z, 1.8, 0.8); }
+  // ocak (sağ duvar)
+  b.box(COL.stone, W / 2 - 0.6, 0, 1.0, 1.0, 1.4, 2.2); b.box(COL.stoneD, W / 2 - 0.7, 1.4, 1.0, 0.8, 2.6, 1.6); b.box('#1a1410', W / 2 - 1.12, 0.1, 1.0, 0.06, 0.8, 1.2); L.addBox(W / 2 - 0.7, 1.0, 0.6, 1.2);
+  L.gb.add('ico0', '#ff9a3a', W / 2 - 1.2, 0.3, 1.0, 0.6, 0.4, 0.6); L.gb.add('ico0', '#ffd27a', W / 2 - 1.2, 0.36, 1.05, 0.3, 0.3, 0.3);
+  const fire = new T.PointLight('#ff9a48', 4.5, 12, 1.4); fire.position.set(W / 2 - 1.8, 0.9, 1.0); L.light(fire); L.anims.push(() => { fire.intensity = 4.2 + Math.sin(G.t * 11) * 0.5 + Math.sin(G.t * 23.7) * 0.3; });
+  // merdiven (üst kat), pencere, bayraklar
+  banner(L, -5.5, -D / 2 + 0.3, 0, '#1f3a6a', 3.6, COL.gold); banner(L, 5.5, -D / 2 + 0.3, 0, '#1f3a6a', 3.6, COL.gold);
+  // pencereler: ışık huzmesi
+  for (const x of [-6, 6]) { b.box('#e6d8b0', x, 1.4, D / 2 - 0.02, 1.2, 1.8, 0.04); b.box(COL.beam, x, 1.4, D / 2 - 0.05, 0.08, 1.8, 0.06); b.box(COL.beam, x, 2.2, D / 2 - 0.05, 1.2, 0.08, 0.06); }
+  lightShaft(L, [[-6.6, 3.2, D / 2], [-5.4, 3.2, D / 2], [-5.4, 1.4, D / 2], [-6.6, 1.4, D / 2]], [0.25, -0.8, -1], '#ffeecc', 0.08);
+  wallTorch(L, -W / 2 + 0.3, 2.6, 4.5, 0, 2.0); wallTorch(L, W / 2 - 0.3, 2.6, -4.5, 0, 2.0);
+  L.pts = Object.assign(L.pts, { door: V3(0, 0, D / 2 - 1.2), desk: V3(0, 0, -D / 2 + 4.3), greta: V3(0, 0, -D / 2 + 1.9), table1: V3(-4.2, 0, 2.2), table2: V3(4.2, 0, 2.6), hearth: V3(W / 2 - 2.2, 0, 1.0) });
+  L.finalize(); return L;
+}
+
+// ===== Dipte: değirmen, mahzen, kanal =====
+function buildDungeon(kind = 'mill') {
+  const L = new Level('dungeon_' + kind); const b = L.b; seed(kind.length * 31 + 5);
+  if (kind === 'mill') {
+    const W = 18, D = 16, H = 5.2; roomShell(L, W, D, H, { wall: '#b0a088', wall2: '#a09078', floor: '#7a6a56' });
+    // değirmen taşı + mil
+    b.add('cyl8', '#9a948a', 0, 0.35, -2.5, 3.2, 0.5, 3.2); b.add('cyl8', '#8a847a', 0, 0.85, -2.5, 3.0, 0.4, 3.0); b.add('cyl8', COL.woodD, 0, 2.6, -2.5, 0.4, 3.6, 0.4); L.addCircle(0, -2.5, 1.75);
+    for (let i = 0; i < 8; i++) { const a = i / 8 * TAU; b.add('box', '#7a5a3a', Math.cos(a) * 1.2, 1.15, -2.5 + Math.sin(a) * 1.2, 0.1, 0.1, 0.5, 0, -a, 0); }
+    b.box(COL.woodD, 0, 4.0, -2.5, 8, 0.4, 0.4); b.box(COL.woodD, 0, 4.0, -2.5, 0.4, 0.4, 8);
+    // çuvallar, un tozu, merdiven, kepçe
+    sackPile(L, -6.8, -5.5, 6); sackPile(L, -7.2, 4.8, 5); sackPile(L, 6.9, -6.0, 6); sackPile(L, 7.0, 5.5, 4, '#d4c8a0'); sackPile(L, 2.4, 6.5, 3);
+    b.box(COL.woodD, 6.6, 0, 0, 1.4, 1.2, 2.4); b.box('#c8b88a', 6.6, 1.2, 0, 1.5, 0.1, 2.5); L.addBox(6.6, 0, 0.8, 1.3);
+    for (let i = 0; i < 6; i++) b.box('#6a4a32', -W / 2 + 0.5 + i * 0.01, i * 0.45, 7.0 - i * 0.55, 1.0, 0.45, 0.55);
+    barrelStack(L, 3.6, -6.8, 3); barrelStack(L, -3.5, 6.6, 2);
+    for (const x of [-5, 5]) { b.box('#e6d8b0', x, 2.0, -D / 2 + 0.02, 1.2, 1.6, 0.04); }
+    lightShaft(L, [[-5.6, 3.6, -D / 2], [-4.4, 3.6, -D / 2], [-4.4, 2.0, -D / 2], [-5.6, 2.0, -D / 2]], [0.35, -0.85, 1], '#fff0d0', 0.12);
+    lightShaft(L, [[4.4, 3.6, -D / 2], [5.6, 3.6, -D / 2], [5.6, 2.0, -D / 2], [4.4, 2.0, -D / 2]], [-0.3, -0.85, 1], '#fff0d0', 0.12);
+    wallTorch(L, -W / 2 + 0.3, 2.8, 0, 0, 2.2); wallTorch(L, W / 2 - 0.3, 2.8, 0, 0, 2.2);
+    L.pts = { door: V3(0, 0, D / 2 - 1.2), arena: V3(0, 0, 1.5) }; L.arenaR = 6.4;
+  } else if (kind === 'cellar') {
+    const W = 20, D = 16, H = 3.6; roomShell(L, W, D, H, { wall: '#7e766a', wall2: '#6e665a', floor: '#58504a', stone: true, ceil: '#3a342e' });
+    for (let i = -3; i <= 3; i++) { b.box('#6a6258', i * 2.8, 0, -D / 2 + 0.2, 0.5, H, 0.5); }
+    for (const x of [-6, 0, 6]) { for (const z of [-3.5, 3.5]) { b.box('#847c70', x, 0, z, 0.8, H, 0.8); L.addCircle(x, z, 0.6); } }
+    barrelStack(L, -8.5, -5, 3); barrelStack(L, -8.5, 1.5, 3); barrelStack(L, 8.5, -4.5, 3); barrelStack(L, 8.4, 2.5, 3); barrelStack(L, 2.5, -6.6, 2);
+    for (const sx of [-1, 1]) { b.box('#5a4028', sx * 9.3, 0.0, 6.2, 0.5, 2.3, 3.2); for (let i = 0; i < 4; i++) b.add('cyl8', pick(['#7a5a40', '#6a7a6a', '#8a6a48']), sx * 9.25, 0.6 + i * 0.5, 5.4 + (i % 3) * 0.7, 0.2, 0.3, 0.2); L.addBox(sx * 9.3, 6.2, 0.35, 1.6); }
+    b.box('#6a5a48', 0, 0, 7.0, 3.2, 0.9, 1.2); L.addBox(0, 7.0, 1.6, 0.6);
+    for (const [x, y, z, ry] of [[-9.6, 3.3, -7.6, 0], [9.6, 3.3, -7.6, 1.6], [-9.6, 3.3, 7.6, 1.6], [9.6, 3.3, 7.6, 0], [0, 3.4, -7.7, 0]]) webCorner(L, x, y, z, ry);
+    wallTorch(L, -W / 2 + 0.3, 2.3, -1.5, 0, 3.0); wallTorch(L, W / 2 - 0.3, 2.3, -1.5, 0, 3.0); wallTorch(L, 0, 2.3, -D / 2 + 0.3, 0, 2.6);
+    L.pts = { door: V3(0, 0, D / 2 - 1.2), arena: V3(0, 0, 0.5) }; L.arenaR = 6.8;
+  } else { // canal
+    const W = 18, D = 40, H = 5.0; roomShell(L, W, D, H, { wall: '#625c56', wall2: '#585250', floor: '#4a4540', stone: true, ceil: '#2a2622' });
+    // orta su kanalı (x -3..3), iki yanda yürüme yolu
+    const water = new T.Mesh(new T.PlaneGeometry(6, D - 1), MAT.water); water.rotation.x = -Math.PI / 2; water.position.set(0, -0.28, 0); L.add(water);
+    b.box('#38332e', -3.3, -0.4, 0, 0.5, 0.4, D); b.box('#38332e', 3.3, -0.4, 0, 0.5, 0.4, D); b.box('#2a2622', 0, -0.9, 0, 6.2, 0.6, D);
+    for (let i = 0; i < 7; i++) { const z = -D / 2 + 3 + i * 5.6; b.box('#6a645c', -3.7, 0, z, 0.5, 4.4, 0.7); b.box('#6a645c', 3.7, 0, z, 0.5, 4.4, 0.7); b.add('cylS8', '#6a645c', 0, 4.4, z, 7.4, 0.9, 0.9, 0, 0, Math.PI / 2); }
+    for (const [x, z] of [[-6.5, -8], [6.5, 4], [-6.5, 12], [6.8, -14], [-7, 0]]) { barrelStack(L, x, z, 2); }
+    for (let i = 0; i < 6; i++) b.add('sphS', '#8a8278', rnd(-8, 8), 0.1, rnd(-18, 18), rnd(0.2, 0.5), 0.15, rnd(0.2, 0.5));
+    // kuzey ucunda savak: kapak, çark, kol
+    b.box('#4a3a2c', 0, 0.0, -D / 2 + 1.3, 7.2, 3.4, 0.6); b.box('#2a2622', 0, 0.2, -D / 2 + 1.55, 5.6, 2.6, 0.12);
+    for (let i = 0; i < 6; i++) b.box('#3a2e24', -2.5 + i, 0.2, -D / 2 + 1.62, 0.08, 2.6, 0.06);
+    b.add('torus', COL.iron, 0, 3.0, -D / 2 + 1.7, 1.2, 1.2, 0.16, 0, 0, 0); for (let i = 0; i < 4; i++) b.add('box', COL.iron, 0, 3.0, -D / 2 + 1.7, 0.1, 1.2, 0.1, 0, 0, i * Math.PI / 4);
+    // kol: sağ yürüme yolu
+    b.box('#6a5a48', 5.6, 0, -D / 2 + 3.2, 0.8, 0.5, 0.8); b.add('box', COL.iron, 5.6, 0.95, -D / 2 + 3.2, 0.1, 1.0, 0.1, 0, 0, 0.5); b.add('sph8', '#c84a3a', 5.9, 1.4, -D / 2 + 3.2, 0.2, 0.2, 0.2); L.addCircle(5.6, -D / 2 + 3.2, 0.5);
+    // tuzak levhası: paslı çivili tahta (kanalın solunda)
+    L.pts.lever = V3(5.6, 0, -D / 2 + 4.3);
+    for (const [x, z] of [[-6, -6], [6, 9], [-6, 16]]) wallTorch(L, x > 0 ? 8.7 : -8.7, 2.4, z, 0, 2.6);
+    wallTorch(L, -8.7, 2.4, -D / 2 + 3, 0, 3.0);
+    for (const [x, y, z, ry] of [[-8.6, 4.0, -18, 1.57], [8.6, 4.0, 18, -1.57], [-8.6, 4.0, 6, 1.57]]) webCorner(L, x, y, z, ry);
+    L.waterZ = { x0: -3, x1: 3 };
+    L.pts = Object.assign(L.pts, { door: V3(-6.5, 0, D / 2 - 1.5), arena: V3(0, 0, 2), nest: V3(5.8, 0, 6), trap: V3(0, 0, -6) }); L.arenaR = 8;
+  }
+  L.finalize(); return L;
 }
 
 
@@ -4001,11 +4371,14 @@ class Player extends Actor {
           else if (Input.take('dodge')) this.tryDodge();
         } else { Input.take('attack'); Input.take('heavy'); Input.take('dodge'); }
       }
-      if (this.state === 'move') { this.vel.x = damp(this.vel.x, dx * want, 12, dt); this.vel.z = damp(this.vel.z, dz * want, 12, dt); }
+      if (this.state === 'move') {
+        // zayıf yürüyüş: yana hafif salınım (hız hedefine eklenir, birikmez)
+        let lx = 0, lz = 0; if (this.weakWalk && want > 0.01) { this.wobT = (this.wobT || 0) + dt; const w = Math.sin(this.wobT * 1.7) * 0.5 + Math.sin(this.wobT * 0.6) * 0.5; lx = Math.cos(this.facing) * w * 0.22; lz = -Math.sin(this.facing) * w * 0.22; }
+        this.vel.x = damp(this.vel.x, dx * want + lx, 12, dt); this.vel.z = damp(this.vel.z, dz * want + lz, 12, dt);
+      }
     }
     if (this.state === 'hitstun' || this.state === 'knock') { this.vel.x = damp(this.vel.x, 0, 8, dt); this.vel.z = damp(this.vel.z, 0, 8, dt); }
     if (G.settings.shiftLock && ctl && !G.inCine && (this.state === 'move' || this.state === 'hitstun') && !this.noShiftFace) { this.wantFacing = Cam.yaw + Math.PI; }
-    if (this.weakWalk) { this.wobT = (this.wobT || 0) + dt; const w = Math.sin(this.wobT * 1.7) * 0.5 + Math.sin(this.wobT * 0.6) * 0.5; if (this.moving) { this.vel.x += Math.cos(this.facing) * w * 0.5; this.vel.z -= Math.sin(this.facing) * w * 0.5; } }
     if (this.streak) { this.streakT += dt; if (this.streakT > 2.6) { this.streak = 0; UI.streak(0); } }
     if (G.combat && this.canFight && !G.inCine) {
       let tdx, tdz; const id = this.inputDir();
@@ -4170,8 +4543,8 @@ class Fighter extends Actor {
       case 'windup': {
         this.wantFacing = Math.atan2(dx, dz);
         const u = this.stateT / this.atk.windup; const pulse = 0.4 + 0.6 * Math.abs(Math.sin(this.stateT * 18));
-        for (const m of this.model.allMats) m.emissive.setRGB(0.6 * u * pulse, 0.25 * u * pulse, 0);
-        if (this.stateT >= this.atk.windup) { for (const m of this.model.allMats) m.emissive.set('#000'); this.removeRing(); this.state = 'attack'; this.stateT = 0; this.hitDone = false; this.model.play(this.atk.anim, ACTIONS[this.atk.anim].dur / this.atk.dur); Audio.sfx('whoosh', 0.9); }
+        for (const m of this.model.allMats) m.emissive && m.emissive.setRGB(0.6 * u * pulse, 0.25 * u * pulse, 0);
+        if (this.stateT >= this.atk.windup) { for (const m of this.model.allMats) m.emissive && m.emissive.set('#000'); this.removeRing(); this.state = 'attack'; this.stateT = 0; this.hitDone = false; this.model.play(this.atk.anim, ACTIONS[this.atk.anim].dur / this.atk.dur); Audio.sfx('whoosh', 0.9); }
         break;
       }
       case 'attack': {
@@ -4341,6 +4714,21 @@ function makeDummy(L, x, z) {
   };
   L.anims.push(dt => { d.t += dt; d.wobble = Math.max(0, d.wobble - dt * 1.6); d.top.rotation.z = Math.sin(d.t * 18) * 0.25 * d.wobble; d.top.rotation.x = Math.cos(d.t * 13) * 0.15 * d.wobble; });
   return d;
+}
+
+
+// ==== 11c_creature_ai.js ====
+// ---------- Yaratık saldırıları ve üretici ----------
+Object.assign(AI_ATK, {
+  bite: { anim: 'bite', windup: 0.42, dur: 0.36, hit: 0.12, range: 0.95, arc: 1.7, dmg: 4, knock: 1.4 },
+  leap: { anim: 'leap', windup: 0.7, dur: 0.5, hit: 0.2, range: 1.7, arc: 1.2, dmg: 7, knock: 3.5, heavy: false },
+  swipe: { anim: 'swipe', windup: 0.85, dur: 0.5, hit: 0.2, range: 2.6, arc: 2.0, dmg: 14, knock: 6, heavy: true },
+  slam: { anim: 'leap', windup: 1.1, dur: 0.6, hit: 0.28, range: 2.9, arc: 6.2, dmg: 18, knock: 8, heavy: true },
+});
+function creature(kind, x, z, f, o = {}) {
+  const model = new CreatureModel(kind, o.model || {});
+  const e = new Fighter(Object.assign({ model, radius: kind === 'king' ? 1.0 : kind === 'spider' ? 0.4 : 0.32, walkSpeed: 2 }, o));
+  e.place(x, z, f); e.creature = kind; return e;
 }
 
 
@@ -4752,6 +5140,9 @@ const CAST = {
   crowd: { name: 'Kalabalık', color: '#a89c88' },
   noble: { name: 'Soylu bir kadın', color: '#d8b0c0' },
   villager: { name: 'Köylü kadın', color: '#c8b498' },
+  mira: { name: 'Mira', color: '#9fdcc4', rank: 'E' },
+  greta: { name: 'Greta', color: '#d0c4a8' },
+  garrick: { name: 'Garrick', color: '#c89868', rank: 'D' },
   sys: { name: 'SİSTEM', color: '#74d8ff' },
 };
 const AGE = { 10: { scale: 0.72, child: 1 }, 12: { scale: 0.79, child: 0.82 }, 15: { scale: 0.91, child: 0.42 }, 17: { scale: 0.98, child: 0.12 }, 18: { scale: 1.0, child: 0 } };
@@ -4776,29 +5167,35 @@ const LOOK = {
   guard() { return { scale: 1.02, skin: SKIN.light, hair: '#2a1d14', hairStyle: 'short', shirt: '#5a6a7a', pants: '#3a3a40', boots: true, shoes: '#2a2a2a', extras: [{ t: 'armor', c: '#9aa2ac', trim: '#6a7480' }, { t: 'cape', c: '#2f5a3a', len: 1.1 }] }; },
   knight() { return { scale: 1.02, skin: SKIN.light, hair: '#3a2a1c', hairStyle: 'short', shirt: '#2f5a3a', pants: '#2a2e2a', boots: true, shoes: '#8a9098', gloves: '#8a9098', sleeves: 'long', extras: [{ t: 'armor', c: '#b8bec8', trim: '#d8b060' }, { t: 'cape', c: '#2f5a3a', collar: '#d8b060' }, { t: 'sheath' }] }; },
   priest() { return { scale: 0.98, skin: SKIN.light, hair: '#e8e4dc', hairStyle: 'bald', shirt: '#ece4d0', pants: '#d8d0bc', sleeves: 'long', extras: [{ t: 'robe', c: '#e8e0cc' }, { t: 'sash', c: '#c9a85a' }, { t: 'beard', c: '#f0ece4' }, { t: 'cape', c: '#c9a85a', len: 1.6 }] }; },
+  greta() { return { female: true, scale: 0.93, skin: '#c0987a', hair: '#cfcac2', hairStyle: 'bun', shirt: '#4a4a52', pants: '#3a3a40', sleeves: 'long', shoes: '#2a2420', extras: [{ t: 'dress', c: '#4e4c58', len: 0.95 }, { t: 'apron', c: '#a8a290' }, { t: 'necklace', c: '#a8a08a' }] }; },
+  mira() { return { female: true, scale: 0.96, skin: '#dcb694', hair: '#8c5c38', hairStyle: 'bob', shirt: '#d4c9a4', pants: '#4a4034', boots: true, shoes: '#4a3424', sleeves: 'short', extras: [{ t: 'vest', c: '#7a5a3a' }, { t: 'belt', c: '#2e2218' }, { t: 'satchel', c: '#8a6a44' }, { t: 'scarf', c: '#5a8a7a' }] }; },
+  garrick() { return { scale: 1.1, skin: '#b88a64', hair: '#2a1c14', hairStyle: 'short', shirt: '#5a4636', pants: '#3a3430', boots: true, shoes: '#2a2018', wide: 1.18, sleeves: 'short', extras: [{ t: 'armor', c: '#8e949c', trim: '#6a7078' }, { t: 'beard', c: '#2a1c14' }, { t: 'belt', c: '#2a1e16' }, { t: 'sheath' }] }; },
   kid(f) { const o = randomVillager(f); o.scale = rnd(0.55, 0.68); o.child = 1; o.extras = o.extras.filter(e => e.t !== 'beard' && e.t !== 'hat'); return o; },
 };
 
 // VRM (anime model) seçimleri: yüz tabanı, saç modeli ve renkleri. Kıyafetler eski tanımlardan türetilir.
 const VRM_CAST = {
-  joseph: { base: 'm', hair: 'm', hairColor: '#17110e', eyeColor: '#1c1410', browColor: '#120d0a' },
-  lily: { base: 'fa', hair: 'fa', hairColor: '#1c1412', eyeColor: '#3a2418', browColor: '#1a1210' },
-  marta: { base: 'fg', hair: 'fg', hairTrim: 0.24, hairColor: '#241914', eyeColor: '#3a2a1e', browColor: '#1c1412' },
-  daniel: { base: 'm', hair: 'm', hairColor: '#21180f', eyeColor: '#3a2a18', browColor: '#1a1410', heightMul: 1.02 },
-  nora: { base: 'fa', hair: 'm', hairColor: '#a8401c', eyeColor: '#b8742a', browColor: '#6a2a14' },
-  leo: { base: 'm', hair: 'fa', hairColor: '#a87e44', eyeColor: '#4f7a3a', browColor: '#6a4e2a' },
-  clara: { base: 'fa', hair: 'fg', hairColor: '#e2c27a', eyeColor: '#3a6aaa', browColor: '#a08048' },
-  selen: { base: 'fa', hair: 'fa', hairColor: '#a87e44', eyeColor: '#4f7a3a', browColor: '#6a4e2a' },
-  victor: { base: 'm', hair: 'm', hairColor: '#e0c88e', eyeColor: '#5a7aa8', browColor: '#a8905a' },
-  bram: { base: 'm', hair: 'm', hairColor: '#4a3020', eyeColor: '#3a2a1a' },
-  osric: { base: 'm', hair: 'm', hairColor: '#2a1d14', eyeColor: '#2a2a2a' },
-  elder: { base: 'm', hair: 'm', hairColor: '#dcd8d0', hairGain: 1.15, eyeColor: '#4a4a52', browColor: '#e0dcd4' },
-  isolde: { base: 'fg', hair: 'fa', hairColor: '#ece2c8', eyeColor: '#7a9ac8', browColor: '#c8bc9a' },
-  seraphine: { base: 'fg', hair: 'fg', hairColor: '#16121c', eyeColor: '#8a6ad8', browColor: '#141016' },
-  rowena: { base: 'fa', hair: 'fg', hairTrim: 0.2, hairColor: '#b8481e', eyeColor: '#6a8a3a', browColor: '#7a2e14' },
-  guard: { base: 'm', hair: 'none', extraAcc: [{ t: 'helmet', c: '#9aa2ac' }] },
-  knight: { base: 'm', hair: 'none', extraAcc: [{ t: 'helmet', c: '#b8bec8' }] },
-  priest: { base: 'm', hair: 'm', hairColor: '#ece8e0', hairGain: 1.15, eyeColor: '#5a5048', browColor: '#e8e4dc' },
+  joseph: { base: 'm', hair: 'm', hairColor: '#17110e', eyeColor: '#1c1410', browColor: '#120d0a', headScale: 0.98, chestW: 1.1, shoulder: 0.03, faceMix: { relaxed: 0.18 }, lid: 0.08, seed: 0.77 },
+  lily: { base: 'fa', hair: 'fa', headScale: 1.04, freckles: 0.7, hairColor: '#1c1412', eyeColor: '#3a2418', browColor: '#1a1210' },
+  marta: { base: 'fg', hair: 'fg', hairTrim: 0.24, age: 0.3, headScale: 1.02, hairColor: '#241914', eyeColor: '#3a2a1e', browColor: '#1c1412' },
+  daniel: { base: 'm', hair: 'm', hairColor: '#2a2018', eyeColor: '#3a2a18', browColor: '#1a1410', heightMul: 1.03, age: 0.5, headScale: 1.06, chestW: 1.12, shoulder: 0.035, faceMix: { angry: 0.12 }, seed: 0.31 },
+  nora: { base: 'fa', hair: 'm', freckles: 1.1, faceMix: { happy: 0.2 }, headScale: 0.98, hairColor: '#a8401c', eyeColor: '#b8742a', browColor: '#6a2a14' },
+  leo: { base: 'm', hair: 'fa', headScale: 1.0, faceMix: { happy: 0.28 }, freckles: 0.5, chestW: 1.0, shoulder: 0.0, hairColor: '#a87e44', eyeColor: '#4f7a3a', browColor: '#6a4e2a' },
+  clara: { base: 'fa', hair: 'fg', headScale: 0.97, faceMix: { relaxed: 0.25 }, hairColor: '#e2c27a', eyeColor: '#3a6aaa', browColor: '#a08048' },
+  selen: { base: 'fa', hair: 'fa', headScale: 1.0, faceMix: { angry: 0.1 }, scar: 1, hairColor: '#a87e44', eyeColor: '#4f7a3a', browColor: '#6a4e2a' },
+  victor: { base: 'm', hair: 'm', faceMix: { angry: 0.2 }, lid: 0.18, headScale: 0.97, chestW: 1.04, hairColor: '#e0c88e', eyeColor: '#5a7aa8', browColor: '#a8905a' },
+  bram: { base: 'm', hair: 'm', headScale: 1.1, chestW: 1.15, shoulder: 0.04, faceMix: { angry: 0.15 }, scar: 1, hairColor: '#4a3020', eyeColor: '#3a2a1a' },
+  osric: { base: 'm', hair: 'm', headScale: 0.93, chestW: 0.98, shoulder: 0, lid: 0.22, hairColor: '#2a1d14', eyeColor: '#2a2a2a' },
+  elder: { base: 'm', hair: 'm', age: 1, hairColor: '#dcd8d0', hairGain: 1.15, hairTrim: 0.28, chestW: 0.96, shoulder: 0, eyeColor: '#4a4a52', browColor: '#e0dcd4' },
+  isolde: { base: 'fg', hair: 'fa', headScale: 0.97, faceMix: { relaxed: 0.2 }, lid: 0.1, hairColor: '#ece2c8', eyeColor: '#7a9ac8', browColor: '#c8bc9a' },
+  seraphine: { base: 'fg', hair: 'fg', headScale: 1.01, lid: 0.2, hairColor: '#16121c', eyeColor: '#8a6ad8', browColor: '#141016' },
+  rowena: { base: 'fa', hair: 'fg', freckles: 0.9, faceMix: { happy: 0.18 }, hairTrim: 0.2, hairColor: '#b8481e', eyeColor: '#6a8a3a', browColor: '#7a2e14' },
+  greta: { base: 'fg', hair: 'fg', hairTrim: 0.3, age: 0.9, headScale: 1.0, eyeColor: '#4a5058', browColor: '#b8b4ac', lid: 0.14, faceMix: { angry: 0.2 } },
+  mira: { base: 'fa', hair: 'fa', hairColor: '#9a6a40', eyeColor: '#6a8a5a', browColor: '#6a4a2a', headScale: 1.02, faceMix: { happy: 0.3 }, freckles: 0.5 },
+  garrick: { base: 'm', hair: 'm', hairColor: '#2a1c14', age: 0.4, scar: 1, headScale: 1.1, chestW: 1.22, shoulder: 0.045, eyeColor: '#3a2a1a', browColor: '#1a1410', faceMix: { angry: 0.2 } },
+  guard: { base: 'm', hair: 'none', age: 0.25, scar: 1, chestW: 1.12, extraAcc: [{ t: 'helmet', c: '#9aa2ac' }] },
+  knight: { base: 'm', hair: 'none', age: 0.1, chestW: 1.14, extraAcc: [{ t: 'helmet', c: '#b8bec8' }] },
+  priest: { base: 'm', hair: 'm', age: 0.8, hairColor: '#ece8e0', hairGain: 1.15, chestW: 1.0, eyeColor: '#5a5048', browColor: '#e8e4dc' },
 };
 for (const k in VRM_CAST) { const f = LOOK[k]; LOOK[k] = (...a) => { const o = f(...a); o.vrm = Object.assign({}, VRM_CAST[k], o.vrm || {}); return o; }; }
 
@@ -4965,7 +5362,7 @@ Story.def('p_crash', { chapter: 'Prolog', title: 'Yağmur', sub: 'Son gece', kin
 Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir beden', kind: 'Hikâye' }, async S => {
   const L = await S.level(() => buildHut('day'), 'interior', { sunDir: [0.25, 0.55, -0.8], noSky: true });
   S.amb('interior'); S.amb('fire');
-  const p = spawnJoseph(10, -2.5, -1.25, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.model.closedEyes = true; p.solid = false; p.collides = false;
+  const p = spawnJoseph(10, -2.5, -1.25, 0); p.model.setStance('lie', true); p.lockY = 0.455; p.model.closedEyes = true; p.solid = false; p.collides = false;
   const marta = S.cast('marta', npc(LOOK.marta(), -1.55, -1.45, -Math.PI / 2, { stance: 'kneel', watch: false }));
   marta.model.setUpper('cry'); marta.pinned = true;
   const lily = S.cast('lily', npc(LOOK.lily(10), -2.45, 0.05, Math.PI, { watch: false }));
@@ -5019,7 +5416,7 @@ Story.def('p_wake', { chapter: 'Prolog', title: 'Uyanış', sub: 'Yabancı bir b
   await S.say('daniel', 'Bak şuna, Marta. Bize bakıyor. Gerçekten bakıyor.');
   // doğrul
   await S.fadeOut(0.5);
-  p.place(-2.12, -1.3, Math.PI / 2); p.model.setStance('sit', true); p.lockY = 0.21;
+  p.place(-2.12, -1.3, Math.PI / 2); p.model.setStance('sit', true); p.lockY = 0.17;
   lily.place(-1.3, 0.2, -2.3); marta.place(-1.25, -1.9, -1.1); marta.model.setStance(null, true); marta.pinned = false;
   daniel.place(-0.9, -0.9, -1.6);
   for (const a of [lily, marta, daniel]) a.lookAt(p.root);
@@ -5299,11 +5696,16 @@ Story.def('c1_alley', { chapter: 'Bölüm 1 · Taban', title: 'Arka Sokak', sub:
   await S.say('victor', 'Bakın kim gelmiş. Mezardan dönen köylü.');
   await S.say('bram', 'Duydun mu Victor? Diyorlar ki içine iblis girmiş. Artık başka türlü konuşuyormuş.');
   await S.say('victor', 'İblis mi? Bu sefil sokakta iblis bile yaşamaz.');
-  S.walk(victor, [V3(15.6, 0, 15.9)], 1.6); await S.wait(0.9);
-  victor.model.play('push'); await S.wait(0.25); p.model.setWeapon(null); p.model.play('hit'); S.sfx('hit', 0.6);
-  const bread = new T.Mesh(prim('sphS'), TOON.mat('#c8955a', { gradientMap: TOON.gradSoft })); bread.scale.set(0.16, 0.11, 0.32); bread.castShadow = true; bread.position.set(15.0, L.h(15, 15.2) + 0.06, 15.2); bread.rotation.y = 0.7; L.add(bread);
+  await S.walk(victor, [V3(15.45, 0, 15.75)], 2.2); victor.faceTo(p);
+  victor.model.play('push'); await S.wait(0.28); p.model.setWeapon(null); p.model.play('hit'); S.sfx('hit', 0.6);
+  const bread = new T.Group(); bread.castShadow = false;
+  const bm = (c, sx, sy, sz, x, y, z) => { const m = new T.Mesh(prim('sphS'), TOON.mat(c, { gradientMap: TOON.gradSoft })); m.scale.set(sx, sy, sz); m.position.set(x, y, z); m.castShadow = true; bread.add(m); };
+  bm('#d6c9a6', 0.3, 0.2, 0.34, 0, 0.09, 0); bm('#c8955a', 0.16, 0.12, 0.36, 0.02, 0.14, 0.08); bm('#b4a47a', 0.08, 0.08, 0.08, 0, 0.2, -0.08);
+  bread.position.set(14.95, L.h(15, 15.4) + 0.02, 15.4); bread.rotation.y = 0.7; L.add(bread);
+  const bd = (bread.userData = {}); bread.scale.setScalar(1.25);
   await S.say('victor', 'Torbada ne var? Ekmek mi? Benim köpeklerim bile bunu yemez.');
-  await S.shot(V3(13.6, 1.0, 14.6), V3(15.4, 0.9, 15.9), 0.6);
+  await S.shot(V3(13.9, 1.2, 14.3), V3(15.0, 0.25, 15.4), 0.7);
+  await S.wait(0.6);
   await S.say('joseph', 'O ekmek annemin üç günlük emeği. Yerden kaldır.');
   victor.model.play('laugh'); S.sfx('laugh');
   await S.say('victor', 'Kaldır mı? Sen bana emir mi veriyorsun, köylü?');
@@ -5845,45 +6247,56 @@ Story.def('c1_ceremony', { chapter: 'Bölüm 1 · Taban', title: 'Tanrı\'nın �
   await S.shot(V3(-5, 4, 4), V3(0, 3, -19), 5);
   await S.say('priest', 'Elonth\'un çocukları! On sekizinci kışınızı gördünüz. Bugün Tanrı size bakıyor.');
   await S.say('priest', 'Leydi Rosalind, Harrowmere Hanesi\'nden.');
-  await S.walk(lady, [V3(-0.6, 0, -9), V3(0, 0, E.stone.z + 2.2)], 1.6);
-  lady.faceNow(V3(0, 0, E.stone.z)); lady.model.play('reach'); lady.model.act.hold = true;
-  await S.shot(V3(3, 2.6, E.stone.z + 5), V3(0, 2.6, E.stone.z), 0.8);
+  const stand = V3(0, 0, E.stone.z + 2.2);
+  const step = async (a, wait = 0.6) => { a.stopWalk && a.stopWalk(); a.place(stand.x, stand.z, Math.PI); a.model.setStance(null); a.model.play('reach'); a.model.act.hold = true; };
+  const mark = (a, color) => { const m = new T.Mesh(prim('sph8'), new T.MeshBasicMaterial({ color })); m.scale.setScalar(0.12); m.position.set(0, -0.05, 0.02); a.model.handR.add(m); const l = new T.PointLight(color, 2, 3, 1.5); a.model.handR.add(l); setTimeout(() => { a.model.handR.remove(m); a.model.handR.remove(l); l.dispose && l.dispose(); }, a === p ? 1e9 : 1700); return m; };
+  await step(lady); lady.facing = Math.PI; lady.root.rotation.y = Math.PI;
+  await S.shot(V3(3, 2.6, E.stone.z + 5), V3(0, 2.6, E.stone.z), 0.5);
   st.color.set('#ffd27a'); st.glow = 1; S.sfx('stone');
-  await S.wait(1.6);
+  await S.wait(1.0);
   await S.say('priest', 'Enkron! Tanrı, Harrowmere Hanesi\'ni bir kez daha kutsadı!');
-  S.sfx('crowd', 1.4); st.glow = 0; st.color.set('#7aa8d8'); lady.model.act = null;
-  lady.walkTo([V3(-3.4, 0, E.stone.z + 4)], 1.5);
-  const mark = (a, color) => { const m = new T.Mesh(prim('sph8'), new T.MeshBasicMaterial({ color })); m.scale.setScalar(0.12); m.position.set(0, -0.05, 0.02); a.model.handR.add(m); const l = new T.PointLight(color, 2, 3, 1.5); a.model.handR.add(l); return m; };
-  await S.wait(0.6);
+  S.sfx('crowd', 1.4); st.glow = 0; st.color.set('#7aa8d8'); lady.model.act = null; lady.place(-3.4, E.stone.z + 4, Math.PI / 2);
   // Victor: Holloway Hanesi'nin oğlu
   await S.say('priest', 'Victor Holloway, Lord Holloway\'un oğlu.');
-  victor.model.setStance(null);
-  await S.walk(victor, [V3(1.0, 0, -7), V3(0, 0, E.stone.z + 2.2)], 1.8);
-  victor.faceNow(V3(0, 0, E.stone.z)); victor.model.play('reach'); victor.model.act.hold = true;
-  await S.shot(V3(-2.4, 2.2, E.stone.z + 4.4), V3(0, 2.2, E.stone.z + 0.6), 0.6);
-  await S.wait(0.4); st.color.set('#d8323e'); st.glow = 1.2; S.sfx('stone'); mark(victor, '#ff4050'); UI.flashEdge('#d8323e');
-  await S.wait(1.4);
+  await step(victor);
+  await S.shot(V3(-2.4, 2.2, E.stone.z + 4.4), V3(0, 2.2, E.stone.z + 0.6), 0.4);
+  await S.wait(0.3); st.color.set('#d8323e'); st.glow = 1.2; S.sfx('stone'); mark(victor, '#ff4050'); UI.flashEdge('#d8323e');
+  await S.wait(1.0);
   await S.say('priest', 'Enkron! Holloway Hanesi bu yıl da eli boş dönmüyor.');
   S.sfx('crowd', 1.3); st.glow = 0; st.color.set('#7aa8d8'); victor.model.act = null; victor.model.setExpression('smile');
   await S.say('crowd', 'Holloway\'un oğlu da kutsandı... Tanrı korusun bizi.');
-  victor.walkTo([V3(2.4, 0, -4.0)], 1.7);
-  await S.wait(0.4);
+  victor.place(2.4, -4.0, -Math.PI / 2); victor.model.setStance('crossArms');
+  // ---- hızlı seçme: on iki genç art arda taşa dokunur, kimine Enkron çıkar kimine çıkmaz
+  const names = ['Aldric', 'Wilhelmina', 'Tomas', 'Berta', 'Cedric', 'Hanna', 'Osmund', 'Elsbeth', 'Rurik', 'Maren', 'Jorin', 'Ilse'];
+  const picks = [['#7adc6a', 1], [null], [null], ['#ffb44a', 1], [null], ['#ff6a8a', 1], [null], [null], ['#b48aff', 1], [null], ['#7ad8ff', 1], [null]];
+  const queue = [];
+  for (let i = 0; i < 12; i++) { const fem = i % 3 === 1 || i === 5 || i === 7; const a = npc(rng() < 0.3 ? randomNoble(fem) : randomVillager(fem, { age: 0 }), 0, 0, Math.PI, { watch: false }); a.model.setStance(null); a.place(-9 + (i % 6) * 3.4, E.stone.z + 8 + Math.floor(i / 6) * 2.2, Math.PI); queue.push(a); }
+  await S.shot(V3(2.6, 2.2, E.stone.z + 4.6), V3(0, 2.2, E.stone.z + 0.6), 0.6);
+  S.music('hall');
+  for (let i = 0; i < 12; i++) {
+    const a = queue[i], pk = picks[i], home = V3(a.pos.x, 0, a.pos.z);
+    UI.bark(CAST.priest, pk[0] ? `${names[i]} — Enkron!` : `${names[i]} — ...Enkron yok.`, 1700);
+    await step(a); a.root.rotation.y = Math.PI;
+    await S.wait(0.35);
+    if (pk[0]) { st.color.set(pk[0]); st.glow = 1; S.sfx('stone'); mark(a, pk[0]); S.sfx('crowd', 1.1); } else { st.color.set('#5a6070'); st.glow = 0.35; S.sfx('crowd', 0.6); }
+    await S.wait(i < 4 ? 1.1 : 0.8);
+    st.glow = 0; st.color.set('#7aa8d8'); a.model.act = null; if (!pk[0]) a.model.setExpression('sad'); a.place(home.x, home.z, Math.PI);
+  }
+  UI.hideDialog();
   await S.shot(V3(1.5, 1.8, 15.5), V3(-0.4, 1.5, 17.6), 0.8);
   await S.say('leo', 'Elim terliyor. Elimin terlediğini Tanrı görür mü sizce?');
   await S.say('clara', 'Görse ne olur, Leo?');
   await S.say('leo', 'Bilmiyorum! Belki terli diye vermez!');
   await S.say('nora', 'Sessiz olun. Sıra bize geldi.');
-  victor.place(2.4, -4.0, -Math.PI / 2); victor.model.setStance('crossArms');
   const touch = async (a, color, line, crowd) => {
-    await S.walk(a, [V3(0, 0, 4), V3(0, 0, E.stone.z + 2.2)], 1.8);
-    a.faceNow(V3(0, 0, E.stone.z)); a.model.play('reach'); a.model.act.hold = true;
-    await S.shot(V3(2.6, 2.2, E.stone.z + 4.6), V3(0, 2.2, E.stone.z + 0.6), 0.6);
-    await S.wait(0.5); st.color.set(color); st.glow = 1; S.sfx('stone'); mark(a, color); UI.flashEdge(color);
-    await S.wait(1.4);
+    await step(a);
+    await S.shot(V3(2.6, 2.2, E.stone.z + 4.6), V3(0, 2.2, E.stone.z + 0.6), 0.4);
+    await S.wait(0.4); st.color.set(color); st.glow = 1; S.sfx('stone'); mark(a, color); UI.flashEdge(color);
+    await S.wait(1.1);
     await S.say('priest', line);
     S.sfx('crowd', 1.2); if (crowd) await S.say('crowd', crowd);
     st.glow = 0; st.color.set('#7aa8d8'); a.model.act = null;
-    a.walkTo([V3(a === nora ? -2.0 : a === leo ? 2.0 : -1.2, 0, E.stone.z + 4.8)], 1.6);
+    a.place(a === nora ? -2.0 : a === leo ? 2.0 : -1.2, E.stone.z + 4.8, Math.PI);
   };
   await S.say('priest', 'Nora, Eros köyünden.');
   await touch(nora, '#ff7a3a', 'Enkron!', 'Köylü bir kız mı? Köylü bir kızın Enkron\'u mu var?');
@@ -5891,6 +6304,7 @@ Story.def('c1_ceremony', { chapter: 'Bölüm 1 · Taban', title: 'Tanrı\'nın �
   await touch(leo, '#7adc6a', 'Enkron!', 'Bir tane daha! Aynı köyden!');
   await S.say('priest', 'Clara, Tüccar Aldous\'un kızı.');
   await touch(clara, '#7ad8ff', 'Enkron! Tanrı bu yıl cömert!', 'Aynı köyden üç Enkron! Böylesi görülmedi!');
+  for (const a of queue) a.remove && a.remove();
   await S.shot(V3(1.4, 1.7, 15.0), V3(0.6, 1.5, 17.6), 0.8);
   await S.say('priest', 'Joseph, Eros köyünden.');
   await S.think('Bu an için sekiz yıl bekledim.');
@@ -5952,9 +6366,11 @@ Story.def('c1_walk', { chapter: 'Bölüm 1 · Taban', title: 'Eve Dönüş', sub
   const clara = S.cast('clara', npc(LOOK.clara(18), -1, -35, 0, { stance: 'lantern', weapon: 'lantern', watch: false }));
   const lanternL = new T.PointLight('#ffb860', 4, 10, 1.6); lanternL.position.set(0, -0.1, 0.1); clara.model.handR.add(lanternL);
   for (const a of [nora, leo]) { a.solid = false; a.collides = false; }
+  let hdg = p.facing;
   G.onFrame = dt => {
-    const f = p.facing, c = Math.cos(f), s = Math.sin(f);
-    nora.pos.set(p.pos.x + c * 0.55, p.pos.y, p.pos.z - s * 0.55); leo.pos.set(p.pos.x - c * 0.55, p.pos.y, p.pos.z + s * 0.55);
+    hdg += angDiff(hdg, p.facing) * Math.min(1, dt * 4);
+    const f = hdg, c = Math.cos(f), s = Math.sin(f);
+    nora.pos.set(p.pos.x + c * 0.52, p.pos.y, p.pos.z - s * 0.52); leo.pos.set(p.pos.x - c * 0.52, p.pos.y, p.pos.z + s * 0.52);
     nora.facing = leo.facing = f; nora.vel.copy(p.vel); leo.vel.copy(p.vel);
     for (const a of [nora, leo]) { a.root.position.copy(a.pos); a.root.rotation.y = f; }
   };
@@ -6012,7 +6428,7 @@ Story.def('c1_walk', { chapter: 'Bölüm 1 · Taban', title: 'Eve Dönüş', sub
 Story.def('c1_system', { chapter: 'Bölüm 1 · Taban', title: 'Sistem', sub: 'O gece', kind: 'Hikâye' }, async S => {
   const L = await S.level(() => buildHut('dark'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true, hemi: 0.7, sun: 0.8 });
   S.amb('interior'); S.music('none');
-  const p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.47; p.solid = false; p.collides = false;
+  const p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.455; p.solid = false; p.collides = false;
   const lily = npc(LOOK.lily(18), 2.6, -1.85, 0, { stance: 'lie', watch: false }); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false; lily.collides = false; S.cast('lily', lily);
   S.cine(true);
   Screen.set({ vig: 0.7, sat: 0.7 }, true);
@@ -6055,6 +6471,542 @@ Story.def('c1_system', { chapter: 'Bölüm 1 · Taban', title: 'Sistem', sub: 'O
   await S.think('Yarın. Yarın kalkacağım.');
   await S.wait(1);
   await S.fadeOut(2.5);
+});
+
+
+// ==== 15c_ch2.js ====
+// ---------- Bölüm 2 · Dipten (Arc 1: 4–7. bölümler) ----------
+const SYS = {
+  row: (a, b, cls = '') => `<div class="row ${cls}"><span>${a}</span><b>${b}</b></div>`,
+  head: t => `<div class="h">${t}</div>`,
+  dim: t => `<div class="dim">${t}</div>`,
+  warn: t => `<div class="warn">${t}</div>`,
+  stats: (s, d = {}) => '<div class="stats">' + ['STR', 'AGI', 'VIT', 'PER', 'INT'].map(k => `<div><small>${k}</small><b>${s[k] || 0}${d[k] ? ' <i style="color:#7ad87a;font-style:normal">+' + d[k] + '</i>' : ''}</b></div>`).join('') + '</div>',
+};
+// Dövüş döngüsü: kaybedersen tekrar dene
+async function fightLoop(S, p, setup, isWin, o = {}) {
+  while (true) {
+    const st = setup();
+    S.cine(false); S.music(o.music || 'battle'); combatOn(S, p, o.combat || {}); p.noDeath = true; p.downs = 0; p.hp = p.maxHp; p.stamina = p.staminaMax;
+    if (o.objective) S.objective(o.objective);
+    let res = 'lose';
+    await S.until(() => { if (o.tick) o.tick(st); if (isWin(st)) { res = 'win'; return true; } if (p.downs > 0) return true; return false; });
+    if (res === 'win') { combatOff(p); p.noDeath = false; S.clearObjective(); return st; }
+    combatOff(p); S.clearObjective(); for (const e of [...G.enemies]) { e.removeRing && e.removeRing(); e.remove && e.remove(); } G.enemies.length = 0;
+    S.sfx('fail'); await retryPrompt(S, o.failText || 'Yeniden denemeliyim.');
+    S.cine(false); p.place(...(o.respawn || [p.pos.x, p.pos.z])); Screen.reset();
+  }
+}
+const RAT_AI = (o = {}) => Object.assign({ moves: ['bite', 'bite', 'leap'], aggr: 1.1, speed: 3.3, circleR: 1.7, maxTokens: 2, cooldown: [0.9, 1.7], windMul: 1.05, poise: 0 }, o);
+
+// ===== 4. Ceza =====
+Story.def('c2_penalty', { chapter: 'Bölüm 2 · Dipten', title: 'Ceza', sub: '18 yaş · Tören sonrası', kind: 'Hikâye' }, async S => {
+  let L = await S.level(() => buildHut('dark'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true, hemi: 0.7, sun: 0.8 });
+  S.amb('interior'); S.music('none');
+  let p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.455; p.solid = false; p.collides = false;
+  const lily = S.cast('lily', npc(LOOK.lily(18), 2.6, -1.85, 0, { stance: 'lie', watch: false })); lily.lockY = 0.38; lily.model.closedEyes = true; lily.solid = false; lily.collides = false;
+  S.cine(true); Screen.set({ vig: 0.8, sat: 0.6 }, true);
+  await S.shot(V3(-1.6, 2.3, -0.1), V3(-2.5, 0.6, -1.6), 0);
+  await S.fadeIn(2.5);
+  UI.title('Bölüm 2', 'Dipten', 'Ceza');
+  await S.wait(3.5);
+  await S.think('Gün doğuyor. Görevin süresi dolmak üzere ve ben bir parmağımı bile oynatamadım.');
+  await S.shot(V3(-1.9, 1.0, -1.0), V3(-2.45, 0.75, -1.6), 2);
+  await S.think('Dün gece denedim. Dirseğimi kaldırdım, kol geri düştü. Sanki içine kurşun dökmüşler.');
+  await S.wait(0.6);
+  await UI.system([
+    SYS.warn('GÖREV BAŞARISIZ'), SYS.row('Bedenin Uyanışı', '0 / 4', 'warn'), SYS.dim('Reddedilen görevlerin bedeli ödenir.'),
+    SYS.row('Ceza', 'UYGULANIYOR', 'warn'),
+  ], { glitch: true, speed: 420 });
+  S.sfx('collapse'); Screen.set({ blur: 3, gray: 0.5, vig: 1, wobble: 0.5 });
+  p.model.setStance('lie'); await S.wait(1.4);
+  await UI.system([
+    SYS.head('İKİNCİ CEZA'), SYS.row('Bedensel kapasite', '%25', 'warn'), SYS.row('Durum', 'AĞIR ZAYIFLIK', 'warn'),
+    SYS.stats({}), SYS.dim('Yürümek için destek gerekebilir.'), SYS.row('Sınır', 'YOK', 'reveal'),
+  ], { speed: 380 });
+  await S.think('Bir önceki cezanın yarısı kadar güçlüyüm. Bir kuru yaprak kadar.');
+  await S.think('Tamam. Anladım. Bu şey beni pazarlığa çağırmıyor. Dayatıyor.');
+  await S.fadeOut(2);
+  // ---- çorba
+  Screen.reset(); Screen.set({ vig: 0.5, sat: 0.8 }, true);
+  L = await S.level(() => buildHut('day'), 'interior', { sunDir: [0.25, 0.55, -0.8], noSky: true });
+  S.amb('interior'); S.amb('fire'); S.music('sad');
+  p = spawnJoseph(18, -2.5, -1.15, 0); p.model.setStance('lie', true); p.lockY = 0.455; p.solid = false; p.collides = false;
+  const lily2 = S.cast('lily', npc(LOOK.lily(18), -1.7, -0.75, Math.PI / 2, { stance: 'sit', watch: false })); lily2.lockY = 0.22; lily2.solid = false; lily2.collides = false; lily2.model.setWeapon('cup');
+  const marta = S.cast('marta', npc(LOOK.marta(), 0.4, 1.1, Math.PI, { watch: false })); marta.model.setUpper('cry');
+  S.cine(true);
+  await S.shot(V3(-0.6, 1.5, 0.2), V3(-2.3, 0.7, -1.2), 0);
+  await S.fadeIn(2);
+  await S.say('lily', 'Abi, çorba. Annem sabah erkenden yaptı. Bir kaşık, sadece bir kaşık.');
+  await S.say('joseph', '...Kolum kalkmıyor, Lily.');
+  await S.say('lily', 'O zaman ben içiririm. Sen uyurken de ben içirmiştim, hatırlamazsın.');
+  await S.shot(V3(-1.2, 1.0, -0.4), V3(-1.9, 0.75, -1.0), 1.5);
+  lily2.model.play('reach'); S.sfx('ui');
+  await S.say('lily', 'Tören günü senin yere düştüğünü gördüm. Herkes güldü. Ben bağıracaktım. Annem elimi tuttu.');
+  await S.say('lily', 'Annem hiç ağlamaz abi. Dün gece ağladı.');
+  await S.think('Dokuz yıl önce kimsem yoktu. Şimdi bu çocuğun elleri titriyor çünkü ben kalkamıyorum.');
+  await S.think('Tamam. Tamam, Sistem. İster ceza de, ister dava. Kabul ediyorum.');
+  await UI.system([SYS.head('GÜNLÜK GÖREV · Yenilendi'), SYS.row('Koşu', '0 / 10 km'), SYS.row('Şınav', '0 / 100'), SYS.row('Mekik', '0 / 100'), SYS.row('Squat', '0 / 100'), SYS.dim('Kalan süre: 23:59:59')], { speed: 320, auto: 4 });
+  await S.say('joseph', 'Lily. Yarın sabah erken kalkacağım. Beni kapıya kadar götür.');
+  await S.say('lily', 'Abi... kalkamıyorsun ki?');
+  await S.say('joseph', 'O zaman sürünürüm.');
+  await S.fadeOut(1.8);
+  Screen.reset();
+  // ---- sürünerek koşu
+  L = await S.level(() => buildVillage({}), 'morning');
+  S.amb('wind');
+  const hd = L.pts.homeDoor;
+  p = spawnJoseph(18, hd.x + 0.8, hd.z, Math.PI / 2); p.speedMul = 0.32; p.allowRun = false; p.weakWalk = true; p.model.setStance('weak');
+  const lily3 = S.cast('lily', npc(LOOK.lily(18), hd.x + 0.6, hd.z + 1.4, Math.PI / 2, { stance: 'sitGround', watch: false }));
+  S.cine(true);
+  await S.shot(V3(hd.x + 4, 1.7, hd.z - 2.4), V3(hd.x + 0.8, 0.9, hd.z), 0);
+  await S.fadeIn(1.2);
+  UI.title('Ertesi sabah', 'Sürünerek', '');
+  await S.wait(2.6);
+  await S.say('lily', 'Abi, yavaş ol. Ben buradayım. Sayacağım, sen sadece yürü.');
+  S.cine(false); Cam.yaw = Math.PI / 2 + Math.PI; Cam.dist = 4.6;
+  const route = [V3(hd.x + 9, 0, hd.z - 2), V3(hd.x + 18, 0, hd.z + 2), V3(hd.x + 26, 0, hd.z - 1)];
+  const lines = [['Kalk. Kalk. Bir adım daha.', 'Kustum. Çok iyi. Hâlâ nefes alıyorum, demek ki yapıyorum.'], ['Yirmi adım. Dün on yedi.', 'Dizlerim çözüldü. Yerde yatan bir adam hiç böyle kararlı görünmemiştir.'], ['Rakip kendi dünün. Eski dünyada bunu söyleyenlere gülerdim.', 'Bitti. Bu gün bitti. Yarın daha uzağa.']];
+  for (let i = 0; i < route.length; i++) {
+    const cp = checkpointMesh(L, route[i]); S.objective(`Yürü (${i}/${route.length})`, route[i]);
+    if (i === 0) S.tip('Joystick\'le yavaşça ilerle. Beden titriyor; ağır yürüyor.', 5000);
+    await S.until(() => distXZ(p.pos, route[i]) < 1.7); cp.parent.remove(cp); S.clearObjective(); S.sfx('checkpoint');
+    S.cine(true); p.model.setStance('lieFace'); S.sfx('collapse'); p.weakWalk = false;
+    await S.shot(V3(p.pos.x - 1.6, 0.7, p.pos.z + 1.6), V3(p.pos.x, 0.3, p.pos.z), 0.8);
+    await S.think(lines[i][0]); S.sfx('gasp'); await S.wait(0.7); await S.think(lines[i][1]);
+    p.model.setStance('weak'); p.weakWalk = true; S.cine(false); Cam.dist = 4.6;
+  }
+  S.cine(true); p.model.setStance('lieFace'); await S.shot(V3(p.pos.x + 2, 1.4, p.pos.z + 2.5), V3(p.pos.x, 0.4, p.pos.z), 1.2);
+  await S.wait(1.5); await S.fadeOut(1.5);
+  // ---- üç hafta
+  L = await S.level(() => buildVillage({}), 'day');
+  const p4 = spawnJoseph(18, 0, 3, Math.PI);
+  const nora = S.cast('nora', npc(LOOK.nora(18), -1.4, 0.4, 0, { watch: false })), leo = S.cast('leo', npc(LOOK.leo(18), 1.6, 0.8, 0, { watch: false })), clara = S.cast('clara', npc(LOOK.clara(18), -0.2, -0.6, 0, { watch: false }));
+  S.cine(true);
+  await S.shot(V3(0.4, 1.6, 7), V3(0, 1.3, 1.6), 0);
+  await S.fadeIn(1.2);
+  UI.title('Üç hafta sonra', 'Normal bir insan', '');
+  await S.wait(3);
+  await UI.system([SYS.head('SİSTEM · DEĞERLENDİRME'), SYS.row('Bedensel kapasite', '%100', 'reveal'), SYS.row('Durum', 'ZAYIFLAMA KALKTI'), SYS.dim('Artık sıradan bir insan kadar güçlüsün.'), SYS.stats({})], { speed: 380 });
+  await S.say('nora', 'Bir bakıyorum yürüyorsun, bir bakıyorum koşuyorsun. Ne yedin sen?');
+  await S.say('joseph', 'Kendi yediğimi. Acı.');
+  await S.say('leo', 'Hepimiz tören günü çok korktuk, biliyor musun? Clara iki gün konuşmadı.');
+  await S.say('clara', 'Konuşmadım çünkü Tanrı\'yı suçlamak istemedim. Ama kızdım.');
+  await S.say('joseph', 'Dinleyin. Üçünüzün de Enkron\'u var. Lonca sizi bekler. Kaydolun.');
+  await S.say('nora', 'Sen?');
+  await S.say('joseph', 'Ben gelirim. Bir gün. Ama benim yolum biraz daha uzun.');
+  await S.say('nora', 'Yalnız mı çalışacaksın? Kafayı yedin mi sen?');
+  await S.say('joseph', 'İşim bu, Nora. Sizi de bu işe bulaştırmak istemiyorum.');
+  await S.think('Tek başına çalışmanın tek faydası var: yalnızca kendi yenilgilerinden sorumlu olursun.');
+  await S.fadeOut(1.4);
+});
+
+// ===== 5. On Gümüş =====
+Story.def('c2_fee', { chapter: 'Bölüm 2 · Dipten', title: 'On Gümüş', sub: '18 yaş · Kayıt', kind: 'Hikâye' }, async S => {
+  let L = await S.level(() => buildHut('night'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true });
+  S.amb('interior'); S.amb('fire'); S.music('sad');
+  let p = spawnJoseph(18, 0.3, 1.9, Math.PI); p.speedMul = 0.8;
+  const daniel = S.cast('daniel', npc(LOOK.daniel(), -0.9, 0.9, -Math.PI / 2, { watch: false }));
+  const marta = S.cast('marta', npc(LOOK.marta(), 1.5, 0.6, Math.PI / 2, { watch: false }));
+  const lily = S.cast('lily', npc(LOOK.lily(18), 0.4, 0.2, 0, { watch: false }));
+  S.cine(true); await S.shot(V3(0.9, 1.9, 3.3), V3(0.3, 0.9, 0.9), 0); await S.fadeIn(1.2);
+  await S.think('Ceza bitti. Para bitmedi.');
+  await S.say('joseph', 'Beş gümüşüm var. Bu ay işlerden iki gümüş daha çıktı. Yedi.');
+  await S.say('daniel', 'Üç gümüş de benden. Ödünç. Faiz yok.');
+  await S.say('joseph', 'Baba... bu sizin kışlık odun parası.');
+  await S.say('daniel', 'Odunu yakacak başka bir şey buluruz. Oğlum, ben bunu sana borç olarak vermiyorum. Yatırım yapıyorum. Benim de avukatlığım olur arada.');
+  lily.walkTo([V3(0.2, 0, 1.3)], 2);
+  await S.say('lily', 'Benim de var. Okul parası. Abi, itiraz edemezsin! Bu sefer ben aldım kararı.');
+  await S.say('joseph', 'Lily, ben...');
+  await S.say('marta', 'Al, oğlum. Bu bir çocuğun hayali. Ona hayır demek hakkını sana vermiyoruz.');
+  S.sfx('coin');
+  await UI.system([SYS.head('KESE'), SYS.row('Birikim', '5 gümüş'), SYS.row('İşler', '+2 gümüş'), SYS.row('Daniel', '+3 gümüş'), SYS.row('Lily', '+2 gümüş (okul)'), SYS.row('Toplam', '12 gümüş', 'reveal')], { speed: 380, auto: 4 });
+  await S.think('On iki gümüş. Eskiden bir dilim kekin bahşişi bundan fazlaydı. Şimdi bir ailenin kışı.');
+  await S.fadeOut(1.5);
+  // ---- Eros
+  L = await S.level(() => buildEros({}), 'day');
+  S.amb('crowd'); S.music('village');
+  p = spawnJoseph(18, 0, 29, Math.PI);
+  seed(15);
+  for (let i = 0; i < 8; i++) { const w = new Wanderer({ look: rng() < 0.3 ? randomNoble(rng() < 0.5) : randomVillager(rng() < 0.5) }); const x = rnd(-14, 14), z = rnd(-6, 22); w.place(x, z, rnd(0, TAU)); w.home = V3(x, 0, z); w.homeR = 5; }
+  S.cine(true); await S.shot(V3(6, 3.5, 33), V3(0, 3, 0), 0); await S.fadeIn(1);
+  await S.think('Onlarca basamak, onlarca yüz. Hepsi bir şey almaya geliyor. Ben ise bir şeye girmeye.');
+  S.cine(false); Cam.yaw = 0;
+  S.objective('Lonca kapısına git', L.pts.guildDoor);
+  await S.reach(L.pts.guildDoor, 2.2);
+  S.clearObjective(); S.cine(true); await S.fadeOut(0.8);
+  // ---- lonca iç
+  L = await S.level(buildGuildInterior, 'interior', { sunDir: [0.3, 0.6, -0.4], noSky: true });
+  S.amb('crowd'); S.music('village');
+  p = spawnJoseph(18, 0, 4.8, Math.PI); p.speedMul = 0.85;
+  const greta = S.cast('greta', npc(LOOK.greta(), 0, -4.6, 0, { watch: false, stance: 'behind' }));
+  const garrick = S.cast('garrick', npc(LOOK.garrick(), 4.2, 3.4, Math.PI, { watch: false, stance: 'sit' })); garrick.lockY = 0; garrick.solid = false;
+  const mira = S.cast('mira', npc(LOOK.mira(), -4.4, 3.2, 0, { watch: false, stance: 'sit' })); mira.lockY = 0; mira.solid = false;
+  for (let i = 0; i < 5; i++) { const w = new Wanderer({ look: randomVillager(i % 2 === 0) }); w.place(rnd(-7, 7), rnd(-1, 4), rnd(0, TAU)); w.home = V3(rnd(-6, 6), 0, rnd(0, 4)); w.homeR = 2.2; }
+  await S.shot(V3(0, 2.4, 6.2), V3(0, 1.4, -4), 0); await S.fadeIn(1);
+  S.cine(false); Cam.yaw = Math.PI;
+  S.objective('Greta\'ya git', L.pts.desk);
+  await S.talkTo(greta, 'Konuş', 2.6);
+  S.clearObjective(); S.cine(true); p.faceNow(greta); greta.faceTo(p);
+  await S.shot(V3(1.4, 1.7, -1.5), V3(0, 1.4, -4.4), 0.8);
+  await S.say('greta', 'Bir köylü çocuk daha. Ne istiyorsun?');
+  await S.say('joseph', 'Kaydolmak istiyorum.');
+  await S.say('greta', 'On gümüş. Peşin.');
+  S.sfx('coin'); p.model.setWeapon('pouch');
+  await S.say('greta', 'On iki var burada. İkisi fazla.');
+  await S.say('joseph', 'Kalan iki gümüş yarın işe başlarken lazım olacak. Ekipman. Çizme.');
+  greta.model.play('nod');
+  await S.say('greta', 'Bu paranın arkasında kimler var, biliyorum evlat. Bir çiftçinin kışlık odunu. Bir kızın okulu. Saymama gerek yok.');
+  await S.say('greta', 'Kayıt tamam. Rütben G. Panoda hep iş var; para azdır, çünkü senin gibi çok kişi bu kapıdan girdi ve kimse bir şey sormadı.');
+  await S.say('greta', 'Bir kural: Kendinden büyük işleri alma. Ölenleri defterden silmek zorunda kalıyorum, ve ben bu işten nefret ediyorum.');
+  p.model.setWeapon(null);
+  await S.shot(V3(-2.0, 1.5, 3.2), V3(4.2, 1.0, 3.4), 1.0);
+  garrick.lookAt(p.root); garrick.model.play('laugh');
+  await S.say('garrick', 'Bir G daha. Kaç gün dayanır dersin, Mira?');
+  mira.lookAt(p.root);
+  await S.say('mira', 'Garrick, yeter. Herkes bir yerden başladı. Sen de bir zamanlar ahırlarda çöp taşıyordun.');
+  await S.say('garrick', '...Ahır değil. Kışla.');
+  await S.say('mira', 'İyi, kışla. Hoş geldin! Ben Mira. Lonca kapısında kimse yalnız dolaşmasın diye varım.');
+  await S.shot(V3(p.pos.x + 1.0, 1.6, p.pos.z - 1.4), V3(p.pos.x, 1.3, p.pos.z), 0.8);
+  S.sfx('system');
+  await UI.system([SYS.head('LONCA KAYDI'), SYS.row('Rütbe', 'G'), SYS.row('Kayıt', 'Tamam'), SYS.dim('İlk Başarı: Tabandan girdin.'), SYS.stats({}, { STR: 1, VIT: 1 }), SYS.row('Seviye', '1  ·  XP 40 / 100')], { speed: 380 });
+  await S.think('G rütbe. Zincirin en alt halkası. Ama zincir şimdi benim.');
+  await S.fadeOut(1.5);
+});
+
+// ===== 6. G Görevleri =====
+function chorePile(L, x, z, kind) {
+  const g = new T.Group(); const box = (c, sx, sy, sz, px, py, pz, ry = 0) => { const m = new T.Mesh(prim('boxb'), TOON.mat(c, { gradientMap: TOON.gradSoft })); m.scale.set(sx, sy, sz); m.position.set(px, py, pz); m.rotation.y = ry; m.castShadow = true; g.add(m); };
+  if (kind === 'hay') { for (let i = 0; i < 6; i++) box(pick(['#d4b45a', '#c8a84a', '#dcc070']), 0.9, 0.45, 0.5, (i % 3) * 0.95 - 0.95, Math.floor(i / 3) * 0.45, (i % 2) * 0.3); box('#6a4a2a', 3.4, 0.9, 0.12, 0, 0, -0.7); box('#6a4a2a', 0.12, 0.9, 1.5, -1.7, 0, -0.1); }
+  if (kind === 'butcher') { box('#6a4a2a', 2.6, 0.9, 1.2, 0, 0, 0); box('#8a2a2a', 2.4, 0.04, 1.1, 0, 0.9, 0); for (let i = 0; i < 3; i++) { box('#4a3422', 0.08, 1.6, 0.08, -1.0 + i, 0, -1.0); box('#c8706a', 0.3, 0.7, 0.2, -1.0 + i, 0.6, -1.0); } box('#7a5a3a', 0.8, 0.55, 0.8, 1.6, 0, 0.8); }
+  if (kind === 'step') { box('#9a9080', 3.0, 0.2, 1.4, 0, 0, 0); box('#a89e8e', 2.6, 0.2, 1.1, 0, 0.2, -0.1); box('#5a3e28', 1.2, 2.0, 0.12, 0, 0.4, -0.7); for (let i = 0; i < 5; i++) { const m = new T.Mesh(new T.CircleGeometry(0.12, 6), new T.MeshBasicMaterial({ color: '#8a7a3a' })); m.rotation.x = -Math.PI / 2; m.position.set(rnd(-1, 1), 0.41, rnd(0, 0.5)); g.add(m); } }
+  g.position.set(x, L.h(x, z), z); L.add(g); L.addBox(x, z, 1.6, kind === 'step' ? 0.8 : 0.9); return g;
+}
+Story.def('c2_chores', { chapter: 'Bölüm 2 · Dipten', title: 'G Görevleri', sub: '18 yaş · İlk iş', kind: 'Oynanış' }, async S => {
+  const L = await S.level(() => buildEros({}), 'day');
+  S.amb('crowd'); S.music('village');
+  const p = spawnJoseph(18, 0, -10, 0); p.speedMul = 0.9;
+  seed(25);
+  for (let i = 0; i < 9; i++) { const w = new Wanderer({ look: rng() < 0.3 ? randomNoble(rng() < 0.5) : randomVillager(rng() < 0.5) }); const x = rnd(-14, 14), z = rnd(-6, 22); w.place(x, z, rnd(0, TAU)); w.home = V3(x, 0, z); w.homeR = 5; }
+  const spots = { hay: V3(-14, 0, 13), butcher: V3(14, 0, 12), step: V3(-13.4, 0, -10) };
+  chorePile(L, spots.hay.x, spots.hay.z, 'hay'); chorePile(L, spots.butcher.x, spots.butcher.z, 'butcher'); chorePile(L, spots.step.x, spots.step.z, 'step');
+  S.cine(true); await S.shot(V3(3, 2.2, -6.5), V3(6.2, 1.5, -13.2), 0); await S.fadeIn(1);
+  UI.title('Bölüm 2', 'G Görevleri', 'Eros loncası panosu');
+  await S.wait(3.2);
+  await S.think('Pano: Ahır temizliği, on beş bronz. Kasap avlusu, yirmi bronz. Kapı önü, on bronz.');
+  await S.think('Toplam kırk beş bronz. Bir gün. Eski hayatımda bu rakamı bir kahveye bile bırakmazdım.');
+  S.cine(false); Cam.yaw = 0;
+  let earned = 0;
+  const work = async (spot, label, n, cname) => {
+    S.objective(cname, spot); await S.reach(spot, 2.4);
+    for (let i = 0; i < n; i++) {
+      UI.counter(`${cname} · ${i}/${n}`);
+      await S.interact(V3(spot.x + (i % 2 ? 0.7 : -0.7), 0, spot.z + 1.4), label, 1.6);
+      p.faceNow(V3(spot.x, 0, spot.z)); p.model.play('pickup'); S.sfx(cname.includes('süpür') ? 'whoosh' : 'wood');
+      await S.wait(1.0);
+    }
+    UI.counter(null); S.clearObjective();
+  };
+  // ahır
+  await work(spots.hay, 'Samanı yığ', 4, 'Ahır temizliği');
+  earned += 15; UI.toast('+15 bronz  ·  Toplam ' + earned, 2400); S.sfx('coin');
+  // kasap avlusu: Victor
+  S.objective('Kasap avlusu', spots.butcher); await S.reach(spots.butcher, 3.0);
+  S.cine(true);
+  const victor = S.cast('victor', npc(LOOK.victor(18), spots.butcher.x - 6, spots.butcher.z + 5, Math.PI * 0.7, { watch: false })), bram = S.cast('bram', npc(LOOK.bram(18), spots.butcher.x - 6.8, spots.butcher.z + 6, 1.2, { watch: false })), osric = S.cast('osric', npc(LOOK.osric(18), spots.butcher.x - 5.4, spots.butcher.z + 6.3, 0.6, { watch: false }));
+  await S.shot(V3(spots.butcher.x + 3, 1.7, spots.butcher.z + 4.5), V3(spots.butcher.x - 4, 1.4, spots.butcher.z + 4), 0.8);
+  await S.say('victor', 'Bak, bak. Köylünün lonca tulumu da kasap önlüğüne dönüşmüş.');
+  await S.say('bram', 'Ne kadar da yakışmış.');
+  victor.walkTo([V3(spots.butcher.x - 1.8, 0, spots.butcher.z + 2.4)], 1.8);
+  await S.wait(1.6);
+  await S.say('victor', 'G rütbe. Evet duydum. Isolde\'nin gölgesine bile yaklaşamazsın, dilersen bana bir kova su getir de başlayalım.');
+  await S.say('joseph', 'Kovalar kasabın. Bana kasap ödüyor, sen değil.');
+  victor.model.play('push'); await S.wait(0.3); S.sfx('hit', 0.6); S.sfx('splash');
+  await S.say('victor', 'Ah. Dökülmüş. Bir daha sil bakalım.');
+  victor.walkTo([V3(spots.butcher.x - 7, 0, spots.butcher.z + 6)], 2.1);
+  await S.think('Sakin. Sakin ol. Avukat olsaydım, bu sahneyi mahkemede anlatırdım ve haklı çıkardım. Ama burada mahkeme yok.');
+  S.cine(false); Cam.yaw = 0;
+  await work(spots.butcher, 'Avluyu yıka', 3, 'Kasap avlusu');
+  earned += 20; UI.toast('+20 bronz  ·  Toplam ' + earned, 2400); S.sfx('coin');
+  // kapı önü: Mira
+  S.objective('Soylu evi kapı önü', spots.step); await S.reach(spots.step, 3.0);
+  S.cine(true);
+  const mira = S.cast('mira', npc(LOOK.mira(), spots.step.x + 5, spots.step.z + 4, Math.PI * 1.2, { watch: false }));
+  mira.walkTo([V3(spots.step.x + 1.8, 0, spots.step.z + 3.2)], 1.8);
+  S.cine(false);
+  await work(spots.step, 'Süpür', 3, 'Kapı önü süpür');
+  S.cine(true);
+  await S.shot(V3(spots.step.x + 3, 1.6, spots.step.z + 5), V3(spots.step.x + 0.8, 1.3, spots.step.z + 2.4), 0.8);
+  await S.say('mira', 'Su iç. Üç saattir fırçayla uğraşıyorsun, güneşin altında. Kimse susuzluktan ölmemeli.');
+  mira.model.setWeapon('cup'); mira.model.play('reach'); await S.wait(0.8);
+  await S.say('joseph', 'Teşekkür ederim. Yani... teşekkür ederim.');
+  await S.say('mira', 'Mira Ashford. E rütbeyim. Küçük işlerden başlayanları not alırım; bazıları büyüyor, bazıları vazgeçiyor. Sen ne olacaksın?');
+  await S.say('joseph', 'Henüz bilmiyorum. Ama vazgeçmeyeceğim.');
+  await S.say('mira', 'Bunu herkes söylüyor. Neyse. Çok şanslısın, çünkü bu kapının sahibi iyi bir adam. Her akşam çorbayı ona getiririm.');
+  earned += 10; UI.toast('+10 bronz  ·  Toplam ' + earned, 2400); S.sfx('coin');
+  await UI.system([SYS.head('GÖREV TAMAM · G Görevleri'), SYS.row('Kazanç', '45 bronz'), SYS.dim('Küçük bir kaleden büyük bir ev yapılır.'), SYS.row('XP', '+50'), SYS.row('Seviye', '1  ·  XP 90 / 100')], { speed: 380, auto: 3.5 });
+  await S.think('Kırk beş bronz. Yarın üçünü birden alırsam altmış. Altmış, Lily\'nin bir aylık defteri.');
+  await S.fadeOut(1.5);
+});
+
+// ===== 7. Fareler =====
+Story.def('c2_rats', { chapter: 'Bölüm 2 · Dipten', title: 'Fareler', sub: '18 yaş · Üç sözleşme', kind: 'Savaş' }, async S => {
+  let L = await S.level(buildGuildInterior, 'interior', { sunDir: [0.3, 0.6, -0.4], noSky: true });
+  S.amb('crowd'); S.music('village');
+  let p = spawnJoseph(18, -5.4, -1.0, -Math.PI / 2); p.speedMul = 0.9;
+  const greta = S.cast('greta', npc(LOOK.greta(), 0, -4.6, 0, { watch: false, stance: 'behind' }));
+  const garrick = S.cast('garrick', npc(LOOK.garrick(), 4.2, 3.4, Math.PI, { watch: false, stance: 'sit' })); garrick.lockY = 0; garrick.solid = false;
+  const mira = S.cast('mira', npc(LOOK.mira(), 4.9, 2.4, Math.PI, { watch: false, stance: 'sit' })); mira.lockY = 0; mira.solid = false;
+  S.cine(true); await S.shot(V3(-2.6, 1.7, 3.0), V3(-7.8, 1.5, -1.0), 0); await S.fadeIn(1.2);
+  UI.title('Bölüm 2', 'Fareler', 'Değirmen, mahzen, kanal');
+  await S.wait(3);
+  await S.think('G pano. Üç sözleşme: Değirmen fareleri, altmış bronz. Mahzen örümcekleri, seksen bronz. Kanal fare yuvası, bir gümüş yirmi bronz.');
+  await S.think('Seviye iki, üç, dört. Fareler benim ilk basamak taşlarım.');
+  const iso = S.cast('isolde', npc(LOOK.isolde(), 0, 6.0, Math.PI, { watch: false })), row = S.cast('rowena', npc(LOOK.rowena(), 1.2, 6.8, Math.PI, { watch: false }));
+  S.sfx('door');
+  await S.shot(V3(-4.4, 1.7, -1.4), V3(0, 1.5, 5.4), 1);
+  S.walk(iso, [V3(-1.4, 0, 2.2), V3(-3.6, 0, -0.4)], 1.5); S.walk(row, [V3(-0.2, 0, 3.0), V3(-4.2, 0, -1.2)], 1.5);
+  await S.wait(2.0);
+  await S.say('rowena', 'Hah! Bak, Isolde, bizim G\'miz fare avına çıkıyor. Kulübe iyi bir isim olur: "Kasap Kediler".');
+  await S.say('isolde', 'Fareler, kanal fareleri, mahzen örümcekleri. Sabırsız bir beden yerine temkinli bir akıl gerek. Sende hangisi var?');
+  await S.say('joseph', 'Önce ikisini deneyeceğim. Üçüncüsüne hazır olduğumda gideceğim.');
+  await S.say('isolde', '...İlginç. Hayatta kalırsan konuşuruz.');
+  iso.walkTo([V3(0, 0, 4.4), V3(0, 0, 10)], 1.5); row.walkTo([V3(1.2, 0, 6.8), V3(1.2, 0, 11)], 1.5);
+  await S.say('mira', 'Dikkat et. Mahzen örümcekleri küçük görünür ama ısırığı iki gün ateş verir. Al şu merhemi, Greta\'dan emanet.');
+  await S.say('greta', 'Sözleşme imzalandı. Üçünü birden alırsan, kimse yardım etmez. Biliyorsun değil mi?');
+  await S.say('joseph', 'Biliyorum.');
+  await S.fadeOut(1.0);
+  // ---- değirmen
+  Screen.reset();
+  L = await S.level(() => buildDungeon('mill'), 'interior', { sunDir: [0.3, 0.6, 0.6], noSky: true });
+  S.amb('wind');
+  p = spawnJoseph(18, 0, 6.2, Math.PI); p.speedMul = 0.95; p.stamina = p.staminaMax;
+  S.cine(true); await S.shot(V3(3.8, 2.4, 6.8), V3(0, 1.0, -2), 0); await S.fadeIn(1);
+  await S.think('Değirmen. Un tozu, çürük tahıl kokusu. Ve sesler. Kemirme sesleri.');
+  S.tip('SALDIR: art arda dokun. KAÇ: yerde halka belirince yuvarlan.', 5200);
+  L.arena = { x: 0, z: 1.5, r: 6.6 };
+  let st = await fightLoop(S, p, () => {
+    const rs = []; for (let i = 0; i < 4; i++) { const a = i / 4 * TAU + 0.5; const r = creature('rat', Math.cos(a) * 3.2, Math.sin(a) * 3.2 - 1.2, a + Math.PI, { hp: 18, name: 'Fare', ai: RAT_AI() }); rs.push(r); r.activate(); }
+    return { rs, wave2: false };
+  }, st => {
+    if (!st.wave2 && st.rs.filter(r => r.alive).length <= 1) { st.wave2 = true; for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 1.2; const r = creature('rat', Math.cos(a) * 4.8, Math.sin(a) * 4.8 + 0.5, a + Math.PI, { hp: 18, name: 'Fare', ai: RAT_AI({ speed: 3.6 }) }); st.rs.push(r); r.activate(); } UI.toast('Daha fazlası geliyor!', 1800); }
+    return st.rs.every(r => !r.alive);
+  }, { objective: 'Fareleri temizle', failText: 'Daha dikkatli olmalıyım. Onlar sayıca üstün.', respawn: [0, 6.2] });
+  S.cine(true); await S.wait(0.6); G.enemies.length = 0;
+  S.sfx('coin'); UI.toast('+60 bronz', 2200);
+  await UI.system([SYS.head('SÖZLEŞME TAMAM · Değirmen'), SYS.row('Ödül', '60 bronz'), SYS.row('XP', '+70'), SYS.row('Seviye', '2', 'reveal'), SYS.stats({ VIT: 1 }, { STR: 1, AGI: 1 }), SYS.dim('Her seviye 1 stat puanı. Dağıtım otomatik.')], { speed: 380, auto: 4 });
+  await S.think('Seviye iki. Küçücük bir adım. Ama attığım ilk adım değil; sekizinci.');
+  await S.fadeOut(1);
+  // ---- mahzen
+  L = await S.level(() => buildDungeon('cellar'), 'interior', { sunDir: [0.3, 0.6, 0.6], noSky: true, hemi: 0.85, sun: 0.7 });
+  S.amb('interior');
+  p = spawnJoseph(18, 0, 6.2, Math.PI); p.speedMul = 0.95;
+  S.cine(true); await S.shot(V3(3.0, 2.0, 6.8), V3(0, 1.0, 0), 0); await S.fadeIn(1);
+  await S.think('Mahzen. Örümcek ağları ışıkta yalpalıyor. Ağ varsa, hemen yakınlarda bir avcı da var.');
+  L.arena = { x: 0, z: 0.5, r: 6.8 };
+  st = await fightLoop(S, p, () => {
+    const rs = []; for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 0.3; const r = creature('spider', Math.cos(a) * 3.8, Math.sin(a) * 3.8, a + Math.PI, { hp: 30, name: 'Örümcek', ai: RAT_AI({ moves: ['bite', 'leap'], speed: 2.8, heavyMove: 'leap', heavyChance: 0.3, circleR: 2.0, maxTokens: 2, cooldown: [1.2, 2.2], poise: 25 }) }); rs.push(r); r.activate(); }
+    return { rs };
+  }, st => st.rs.every(r => !r.alive), { objective: 'Örümcekleri temizle', failText: 'Isırıkları saymayı unuttum. Dikkat.', respawn: [0, 6.2] });
+  S.cine(true); await S.wait(0.6); G.enemies.length = 0;
+  S.sfx('coin'); UI.toast('+80 bronz', 2200);
+  await UI.system([SYS.head('SÖZLEŞME TAMAM · Mahzen'), SYS.row('Ödül', '80 bronz'), SYS.row('XP', '+90'), SYS.row('Seviye', '3', 'reveal'), SYS.stats({ STR: 1, AGI: 1, VIT: 1 }, { VIT: 1, PER: 1 })], { speed: 380, auto: 4 });
+  await S.fadeOut(1);
+  // ---- kanal fare yuvası + Victor tehdidi
+  L = await S.level(() => buildDungeon('canal'), 'interior', { sunDir: [0.3, 0.6, 0.6], noSky: true, hemi: 0.85, sun: 0.7 });
+  S.amb('interior');
+  p = spawnJoseph(18, -6.5, 17.5, Math.PI); p.speedMul = 0.95;
+  S.cine(true); await S.shot(V3(-4.5, 2.4, 18.4), V3(0, 1.0, 4), 0); await S.fadeIn(1);
+  await S.think('Kanal. Su akıntısı, rutubet, çürümüş ağaç. Ve fareler. Yuvanın ağzı sağ tarafta.');
+  L.arena = { x: 1.5, z: 5.5, r: 8.2 };
+  st = await fightLoop(S, p, () => {
+    const rs = []; for (let i = 0; i < 6; i++) { const r = creature(i % 3 === 2 ? 'sewer' : 'rat', 5.2 + rnd(-0.8, 0.8), 6.5 + rnd(-2, 2), -2.0, { hp: 20, name: 'Kanal faresi', ai: RAT_AI({ speed: 3.5, maxTokens: 2 }) }); rs.push(r); if (i < 3) r.activate(); else r.waitT = 5 + i; }
+    return { rs, t0: G.t };
+  }, st => { for (const r of st.rs) if (r.alive && !r.active && G.t - st.t0 > r.waitT) r.activate(); return st.rs.every(r => !r.alive); },
+    { objective: 'Yuvayı temizle', failText: 'Sayıca fazlalar. Yuvanın ağzında durmamalıyım.', respawn: [-6.5, 17.5] });
+  S.cine(true); await S.wait(0.6); G.enemies.length = 0;
+  S.sfx('coin'); UI.toast('+1 gümüş 20 bronz', 2400);
+  await UI.system([SYS.head('SÖZLEŞME TAMAM · Kanal'), SYS.row('Ödül', '1 gümüş 20 bronz'), SYS.row('XP', '+110'), SYS.row('Seviye', '4', 'reveal'), SYS.stats({ STR: 2, AGI: 2, VIT: 2, PER: 1 }, { STR: 1, AGI: 1, PER: 1 }), SYS.dim('Bu bölümde 3 yeni seviye.')], { speed: 380, auto: 5 });
+  await S.think('Seviye dört. Bir fare bile bana güç veriyor. Ama ne kadar süre?');
+  await S.fadeOut(1.2);
+  // ---- Eros kapısında: Victor
+  L = await S.level(() => buildEros({}), 'dusk');
+  S.amb('crowd'); S.music('village');
+  p = spawnJoseph(18, 0, -8.5, 0);
+  const nora = S.cast('nora', npc(LOOK.nora(18), -2.6, -10.2, 0.6, { watch: false })), vic = S.cast('victor', npc(LOOK.victor(18), 4.2, -9.6, -1.8, { watch: false })), bram = S.cast('bram', npc(LOOK.bram(18), 5.0, -9.0, -1.9, { watch: false }));
+  S.cine(true); await S.shot(V3(0.4, 1.7, -4.2), V3(0, 1.4, -10.2), 0); await S.fadeIn(1);
+  await S.say('nora', 'Joseph! Sen... iki gümüş bile bu kadar çabuk kazanamaz! Ben ilk F görevimde bir buçuk gün uğraştım.');
+  await S.say('joseph', 'Sen bir başka sıradasın, Nora. Ben bodrum katından geliyorum.');
+  await S.say('nora', 'Ben... ilk F görevim kurtlardı. İki gümüş. Kurtlar... Joseph, ben bugün ilk kez farkı hissettim. Seninle benim aramdaki fark değil. Benimle Isolde\'nin arasındaki fark.');
+  vic.walkTo([V3(1.6, 0, -9.2)], 1.8); await S.wait(1.4);
+  await S.say('victor', 'Hah! Köylü kız bir F alınca Isolde\'ye mi eş oldu? Ve sen, köylü, fareleri öldürüyormuşsun. Ne cesur.');
+  await S.say('victor', 'Bak. Ben bir şey öğrendim: bir G\'nin parası benim sokağımda dolaşmaz. Yanlış bir gün, yanlış bir sokak...');
+  await S.say('nora', 'Defol, Victor.');
+  await S.say('victor', 'Enkron\'um bu gece uyanıyor, Nora. Yarın bana "defol" dediğine pişman olabilirsin.');
+  S.sfx('laugh'); vic.walkTo([V3(8, 0, -3)], 2.2); bram.walkTo([V3(8, 0, -2)], 2.2);
+  await S.think('Victor\'un Enkron\'u. Hepimiz gördük, kırmızı parlamıştı. Ne yaptığını bilmiyoruz. Bilmeyen kazanır mı, kaybeder mi?');
+  await S.say('nora', 'Dikkat et, Joseph.');
+  await S.fadeOut(1.4);
+});
+
+// ===== 8. Fare Kralı =====
+Story.def('c2_king', { chapter: 'Bölüm 2 · Dipten', title: 'Fare Kralı', sub: '18 yaş · Final', kind: 'Savaş' }, async S => {
+  let L = await S.level(buildGuildInterior, 'interior', { sunDir: [0.3, 0.6, -0.4], noSky: true });
+  S.amb('crowd'); S.music('village');
+  let p = spawnJoseph(18, 0, 3.4, Math.PI); p.speedMul = 0.9;
+  const greta = S.cast('greta', npc(LOOK.greta(), 0, -4.6, 0, { watch: false, stance: 'behind' }));
+  const garrick = S.cast('garrick', npc(LOOK.garrick(), 4.2, 3.4, Math.PI, { watch: false, stance: 'sit' })); garrick.lockY = 0; garrick.solid = false;
+  const iso = S.cast('isolde', npc(LOOK.isolde(), -4.4, 2.2, 0.3, { watch: false })), row = S.cast('rowena', npc(LOOK.rowena(), -5.4, 1.4, 0.5, { watch: false })), ser = S.cast('seraphine', npc(LOOK.seraphine(), 6.8, -2.0, -1.4, { watch: false }));
+  for (let i = 0; i < 4; i++) { const w = new Wanderer({ look: randomVillager(i % 2 === 0) }); w.place(rnd(-7, 7), rnd(-1, 4), rnd(0, TAU)); w.home = V3(rnd(-6, 6), 0, rnd(0, 3)); w.homeR = 2.2; }
+  S.cine(true); await S.shot(V3(0, 2.2, 5.6), V3(0, 1.4, -4), 0); await S.fadeIn(1.2);
+  UI.title('Bölüm 2 · Final', 'Fare Kralı', 'Kanalın altında');
+  await S.wait(3.2);
+  await S.say('greta', 'Fare Kralı. Köpek büyüklüğünde, akıllı. Aylardır kimse almıyor. İki G sakatlandı. Ödül üç gümüş.');
+  await S.say('garrick', 'Üç gümüş mü? Ben bile almam. Bir köylü almaz, almamalı.');
+  await S.say('joseph', 'Alıyorum.');
+  greta.model.play('nod'); await S.wait(0.5);
+  await S.say('greta', '...Kaşımı kaldırdım, değil mi? Evet. Peki. Kaydı yazıyorum.');
+  iso.lookAt(p.root); row.lookAt(p.root);
+  await S.say('rowena', 'Ödül üç gümüş, cenaze masrafı sekiz. Hesaplayan var mı?');
+  await S.say('isolde', 'Bu iş eğlence değil, Rowena. Gülmüyorum.');
+  await S.shot(V3(5.6, 1.7, 1.0), V3(6.8, 1.5, -2.0), 1);
+  ser.lookAt(p.root); await S.wait(1.2);
+  await S.say('seraphine', '...');
+  await S.think('Seraphine bana bakıyor. Yalnızca bakıyor. Ne düşündüğünü okuyamıyorum. Ve bu yüzden ürkütücü.');
+  await S.fadeOut(1.0);
+  // ---- hazırlık: gözlem
+  Screen.reset();
+  L = await S.level(() => buildDungeon('canal'), 'interior', { sunDir: [0.3, 0.6, 0.6], noSky: true, hemi: 0.85, sun: 0.7 });
+  S.amb('interior');
+  p = spawnJoseph(18, -6.5, 17.5, Math.PI); p.speedMul = 0.95;
+  const trapC = V3(1.0, 0, -14.2), trapR = 3.0, leverP = L.pts.lever;
+  // tuzak levhası: paslı, çivili tahta
+  const plate = new T.Group(); { const m = new T.Mesh(new T.CylinderGeometry(trapR, trapR, 0.05, 20), TOON.mat('#4a3a2a')); m.position.y = 0.03; plate.add(m); for (let i = 0; i < 30; i++) { const a = rnd(0, TAU), r = rnd(0.4, trapR - 0.3), n = new T.Mesh(new T.ConeGeometry(0.07, 0.24, 5), TOON.mat('#7a6a5a')); n.position.set(Math.cos(a) * r, 0.14, Math.sin(a) * r); plate.add(n); } plate.position.set(trapC.x, 0, trapC.z); L.add(plate); }
+  const glow = new T.Mesh(new T.RingGeometry(trapR - 0.15, trapR, 32), new T.MeshBasicMaterial({ color: '#ff6a3a', transparent: true, opacity: 0.0, side: T.DoubleSide, depthWrite: false })); glow.rotation.x = -Math.PI / 2; glow.position.set(trapC.x, 0.06, trapC.z); L.add(glow);
+  // yükselen su (vana açılınca)
+  const flood = new T.Mesh(new T.PlaneGeometry(9, 12), MAT.water); flood.rotation.x = -Math.PI / 2; flood.position.set(trapC.x, 0.04, trapC.z); flood.visible = false; L.add(flood);
+  S.cine(true); await S.shot(V3(-4.5, 2.6, 18.4), V3(0, 1.0, 2), 0); await S.fadeIn(1.2);
+  await S.think('Kral... Ben çocukken kitapta okurdum: büyük bir hayvan, gücüyle değil alışkanlığıyla yenilir.');
+  await S.shot(V3(-5.2, 2.0, 10.0), V3(0, 1.2, -3), 3);
+  await S.think('Girişte kuru ayak izleri: sağ taraftan çıkıyor, kanalın ortasındaki tahta levhaya kadar yürüyor.');
+  await S.think('Her seferinde levhanın üstünden geçmiş. Çünkü ışığı oradan görüyor. Bir alışkanlık.');
+  await S.shot(V3(5.6, 2.2, -10), V3(5.6, 1.0, -16.8), 2);
+  await S.think('Şu vana. Çarkı açarsam üst kanaldan su dolar. Kral levhanın üstündeyken açarsam...');
+  await S.think('Beni takip etsin. Levhanın üstünden geçsin. Ben kolun yanında durayım.');
+  S.cine(false); Cam.yaw = Math.PI; S.tip('Kolun yanında dur. Kral tuzak levhasına girince kol kendiliğinden çekilir. Üç kez!', 7000);
+  // ---- savaş
+  const king = (() => { const k = creature('king', 4.0, -6.0, 0, { hp: 260, name: 'Fare Kralı', ai: { moves: ['bite', 'swipe'], heavyMove: 'slam', heavyChance: 0.3, aggr: 1.0, speed: 2.6, circleR: 2.6, maxTokens: 1, cooldown: [1.6, 2.6], windMul: 1.1, poise: 90 } }); return k; })();
+  king.hpBar = false;
+  S.objective('Kral\'ı tuzak levhasına çek'); 
+  L.arena = { x: 0, z: 3, r: 10.5 };
+  let fails = 0, hits = 0, kingPhase = 0, rats = [], lastRatT = 0, trapT = 0, resolved = false;
+  const fightWin = async () => {
+    S.cine(false); S.music('battle'); combatOn(S, p); p.noDeath = true; p.downs = 0; p.hp = p.maxHp; p.stamina = p.staminaMax; Cam.dist = 7;
+    UI.boss('Fare Kralı', 1); king.activate();
+    glow.material.opacity = 0.0;
+    const t0 = G.t; lastRatT = G.t;
+    const lowAt = king.maxHp * 0.12;
+    await S.until(() => {
+      UI.boss('', king.hp / king.maxHp);
+      glow.material.opacity = 0.25 + Math.sin(G.t * 5) * 0.12;
+      // yardımcı fareler
+      if (G.t - lastRatT > 22 && king.alive && rats.filter(r => r.alive).length < 3) { lastRatT = G.t; for (let i = 0; i < 2; i++) { const r = creature('rat', trapC.x + rnd(-5, 5), -9 + rnd(-2, 2), 0, { hp: 14, name: 'Fare', ai: RAT_AI({ speed: 3.4 }) }); rats.push(r); r.activate(); } UI.toast('Kral yardım çağırıyor!', 1600); }
+      // tuzak: oyuncu kolun yanında ve Kral levhada
+      trapT -= 1 / 60;
+      const near = distXZ(p.pos, leverP) < 1.9, inTrap = king.alive && distXZ(king.pos, trapC) < trapR + 0.2;
+      if (hits < 3 && near && inTrap && G.t - (king._flooded || -99) > 8) {
+        hits++; king._flooded = G.t; flood.visible = true; flood.scale.set(1, 1, 1); flood.position.y = 0.04; S.sfx('splash'); S.sfx('hitHeavy'); Screen.addShake(0.7); UI.flashEdge('#7ad8ff');
+        king.hp = Math.max(king.maxHp * 0.06, king.hp - king.maxHp * 0.28); king.state = 'down'; king.stateT = 0; king.model.play('knock'); king.kv.set(0, 0, 0);
+        FX.text(V3(king.pos.x, king.pos.y + 2.4, king.pos.z), 'TUZAK!', 'perfect'); UI.toast(`Tuzak çalıştı! (${hits}/3)`, 2000);
+        let a = 0; L.anims.push(dt => { a += dt; flood.position.y = 0.04 + Math.min(1, a * 1.2) * 0.35 * (a < 2 ? 1 : Math.max(0, 1 - (a - 2) * 1.2)); if (a > 3.4) flood.visible = false; });
+      }
+      return !king.alive || (hits >= 3 && king.hp <= lowAt) || p.downs > 0;
+    });
+    return king.alive && p.downs > 0 ? 'lose' : 'win';
+  };
+  let result = await fightWin();
+  while (result === 'lose') {
+    combatOff(p); UI.boss(null); for (const r of rats) { r.removeRing && r.removeRing(); r.remove && r.remove(); } rats = []; G.enemies.length = 0; G.enemies.push(king); king.removeRing && king.removeRing();
+    S.sfx('fail'); await retryPrompt(S, 'Kral çok güçlü. Levhayı kullanmalıyım; kolu doğru anda çekmeliyim.');
+    S.cine(false); Screen.reset(); king.hp = king.maxHp; king.state = 'idle'; king.alive = true; king.corpse = false; king.untargetable = false; king.place(4.0, -6.0, 0); king.model.setStance(null); king.model.lieW = 0; hits = 0; king.active = false; p.place(-6.5, 17.5, Math.PI);
+    result = await fightWin();
+  }
+  combatOff(p); UI.boss(null); S.clearObjective(); for (const r of rats) { r.active = false; if (r.alive) r.takeHit(999, p, { heavy: true }); } plate.visible = false; glow.visible = false;
+  S.cine(true); G.enemies.length = 0; Screen.reset();
+  // ---- son darbe
+  king.active = false; king.alive = false; king.untargetable = true; king.state = 'yield'; king.model.setStance('lie');
+  await S.shot(V3(p.pos.x - 1.5, 1.4, p.pos.z + 2.2), V3(king.pos.x, 0.6, king.pos.z), 1.2);
+  S.sfx('hitHeavy'); Screen.addShake(0.5); p.model.setStance(null); p.model.play('swing', 1.2); G.hitstop = 0.2;
+  await S.wait(1.2);
+  await S.think('Nefesimi toparlayamıyorum. Ama o artık kalkmıyor.');
+  S.sfx('system');
+  await UI.system([
+    SYS.head('BAŞARI'), SYS.row('Kendinden güçlü bir yaratığı yendin', '', 'reveal'),
+    SYS.row('Ödül', 'İlk yetenek açıldı'), SYS.row('İKİNCİ NEFES', 'Pasif', 'reveal'), SYS.dim('Yorgunken dayanıklılık yenilenir. Seviye 1.'),
+    SYS.row('Seviye', '5'), SYS.stats({ STR: 3, AGI: 3, VIT: 2, PER: 2 }, { VIT: 1, INT: 1 }),
+  ], { speed: 400 });
+  await S.think('Güçle değil, sabırla. Bu bir avukatın zaferi.');
+  await S.fadeOut(1.4);
+  // ---- lonca: ödül kesintisi, Seraphine
+  L = await S.level(buildGuildInterior, 'interior', { sunDir: [0.3, 0.6, -0.4], noSky: true });
+  S.amb('crowd'); S.music('sad');
+  p = spawnJoseph(18, 0, 4.4, Math.PI);
+  const g2 = S.cast('greta', npc(LOOK.greta(), 0, -4.6, 0, { watch: false, stance: 'behind' }));
+  const ser2 = S.cast('seraphine', npc(LOOK.seraphine(), 5.8, -0.8, -1.5, { watch: false }));
+  const gar2 = S.cast('garrick', npc(LOOK.garrick(), -4.2, 2.6, 0.6, { watch: false }));
+  const iso2 = S.cast('isolde', npc(LOOK.isolde(), -5.2, 1.8, 0.4, { watch: false }));
+  S.cine(true); await S.shot(V3(0, 2.0, 6.0), V3(0, 1.4, -3), 0); await S.fadeIn(1.2);
+  await S.say('greta', 'Fare Kralı\'nın kuyruğu burada. Gerçek. Bunu nasıl yaptın?');
+  await S.say('joseph', 'Kanalda bir tuzak var. İşi ben değil, su yaptı.');
+  await S.say('greta', 'Düzensiz teslim. Ödül: 1 gümüş 50 bronz.');
+  await S.say('joseph', 'Sözleşme üç gümüştü.');
+  await S.say('greta', 'Düzensiz teslim, dedim. Kesinti: ceza ve vergi. Ben böyle yazıyorum, çünkü böyle yazmak zorundayım.');
+  gar2.lookAt(p.root); gar2.model.play('laugh');
+  await S.say('garrick', 'Bir köylü Fare Kralı\'nı yenmiş. Ben de gökyüzünde ejderha gördüm geçen yıl.');
+  await S.say('rowena', 'Yok artık! Isolde, bu çocuk gerçekten...');
+  await S.say('isolde', 'Kanıt kuyruğudur. Gerçek kuyruk. Susun.');
+  await S.shot(V3(4.0, 1.7, 0.6), V3(5.8, 1.5, -0.8), 1);
+  ser2.lookAt(p.root); await S.wait(1.4);
+  await S.think('Seraphine kuyruğa bakıyor. Sonra yaralarıma. Sonra bana. Uzun uzun.');
+  await S.say('seraphine', 'Su ve tuzak. Zekice. Ama kimse sana bunu öğretmedi.');
+  await S.say('joseph', 'Hayır. Okuyarak öğrendim.');
+  await S.say('seraphine', 'İlginç.');
+  ser2.walkTo([V3(6, 0, -8)], 1.4);
+  await S.think('Kimse bana inanmadı. Yalnızca Seraphine gözlerini kaçırmadı. Bu hem korkutucu, hem değerli.');
+  await S.fadeOut(1.4);
+  // ---- gece: Lily'nin kesesi
+  L = await S.level(() => buildHut('night'), 'interiorNight', { sunDir: [0.2, 0.5, -0.85], noSky: true });
+  S.amb('interior'); S.music('sad');
+  p = spawnJoseph(18, -1.6, -0.5, Math.PI * 0.75); p.speedMul = 0.7;
+  const lilyN = S.cast('lily', npc(LOOK.lily(18), 2.6, -1.85, 0, { stance: 'lie', watch: false })); lilyN.lockY = 0.38; lilyN.model.closedEyes = true; lilyN.solid = false; lilyN.collides = false;
+  S.cine(true); await S.shot(V3(1.0, 2.1, 1.4), V3(2.6, 0.7, -1.9), 0); await S.fadeIn(1.5);
+  await S.think('Fare Kralı\'nın bir gümüş elli bronzu. Kesinti bir yana, ilk kez bir ailenin kaybettiğinden fazlasını getirdim.');
+  p.walkTo([V3(2.1, 0, -1.2)], 1.0); await S.wait(2.8);
+  p.model.setWeapon('pouch'); S.sfx('coin'); await S.wait(0.7);
+  await S.shot(V3(1.5, 1.2, -0.7), V3(2.6, 0.5, -1.9), 1);
+  await S.think('Lily\'nin yastığının altına. Okul parasının fazlasıyla.');
+  p.model.setWeapon(null);
+  await S.wait(1.2);
+  lilyN.model.closedEyes = false; lilyN.model.emote('smile', 3);
+  await S.say('lily', '...abi? Yastığımın altında bir şey var.');
+  await S.say('joseph', 'Uyu, Lily.');
+  await S.say('lily', 'Abi... sen bir kahramansın.');
+  await S.say('joseph', 'Hayır. Sadece ağabeyim.');
+  await S.fadeOut(1.6);
+  // ---- Arc 1 sonu: doğuda goblin izleri
+  L = await S.level(() => buildVillage({}), 'dusk');
+  S.amb('wind'); S.music('title');
+  p = spawnJoseph(18, 28, -4.5, Math.PI / 2);
+  S.cine(true); await S.shot(V3(22, 2.2, -9), V3(34, 0.8, -4), 0); await S.fadeIn(1.6);
+  await S.think('Kanalı kapatırken köyün doğusundan geçtim. Taze çamurda küçük, çıplak ayak izleri. Üç parmak ve bir pençe.');
+  for (let i = 0; i < 8; i++) { const m = new T.Mesh(new T.CircleGeometry(0.1, 5), new T.MeshBasicMaterial({ color: '#2a2018', transparent: true, opacity: 0.7, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(31 + i * 0.7, L.h(31 + i * 0.7, -4.4) + 0.03, -4.4 + Math.sin(i * 1.4) * 0.35); L.add(m); }
+  await S.shot(V3(33, 1.6, -7), V3(37, 0.2, -4.4), 3);
+  await S.think('Goblin izi. Eros\'a bu kadar yakın ilk kez görüyorum.');
+  await S.think('Fare Kralı yalnızca bir başlangıçtı. Daha büyük işler yolda. Ve ben hâlâ G rütbeyim.');
+  S.sfx('wind');
+  UI.title('Arc 1 sonu', 'Tabandaki Çocuk', 'Sürecek...');
+  await S.wait(6);
+  await S.fadeOut(2);
 });
 
 
@@ -6283,6 +7235,13 @@ const CODEX = [
   { id: 'charm', cat: 'Eşyalar', t: 'Kayın tılsımı', at: 'c1_harvest', x: 'Daniel\'in kayın dalından oyduğu küçük halka. "Tören günü cebinde dursun" dedi. "O taş ne derse desin, sen benim oğlumsun."' },
   { id: 'holloway', cat: 'Kişiler', t: 'Victor Holloway', at: 'c1_ceremony', x: 'Aynı törende taş Victor için de parladı: kan kırmızısı. Enkron\'unun ne yaptığını kimse bilmiyor; ama gülüşü artık eskisinden soğuk.' },
   { id: 'guildlady', cat: 'Kişiler', t: 'Lonca Hanımı', at: 'c1_guild', x: 'Eros loncasının başı. Köyde görülmüş tek C rütbe olduğu söylenir. Kimse onu yakından görmedi; bazen üst kattaki pencerede bir gölge belirir, o kadar.' },
+  { id: 'penalty', cat: 'Dünya', t: 'Ceza', at: 'c2_penalty', x: 'Sistem\'in verdiği görevlerin başarısızlık bedeli. İlk görevi yapamayan Joseph\'in bedensel kapasitesi, normal bir insanın dörtte birine indi. Üç hafta süren sürünme, kusma ve yeniden kalkma sonunda sıradan bir insan seviyesine döndü.' },
+  { id: 'greta', cat: 'Kişiler', t: 'Greta', at: 'c2_fee', x: 'Eros loncasının kayıt masasındaki yaşlı kadın. Sert ama adil; paranın arkasındaki hikâyeyi bilir. Ölen maceracıları defterden silmekten nefret eder.' },
+  { id: 'mira', cat: 'Kişiler', t: 'Mira Ashford', at: 'c2_fee', x: 'E rütbe maceracı, loncanın sıcak yüzü. Kast farkına rağmen alt tabakaya iyi davranır; Joseph\'e ilk su uzatan kişidir.' },
+  { id: 'garrick', cat: 'Kişiler', t: 'Garrick Stone', at: 'c2_fee', x: 'D rütbe, iri yarı bir savaşçı; Eros loncasının ikinci güçlüsü ve Isolde\'nin rakibi. Köylü çocuklarla dalga geçer ama kendi de kışlada yetişmiştir.' },
+  { id: 'gwork', cat: 'Dünya', t: 'G görevleri', at: 'c2_chores', x: 'Ahır temizliği (15 bronz), kasap avlusu (20 bronz), kapı önü (10 bronz). Loncanın en alt basamağı; para azdır, ama kimse bir şey sormaz.' },
+  { id: 'ratking', cat: 'Dünya', t: 'Fare Kralı', at: 'c2_king', x: 'Kanalların altında yaşayan, köpek büyüklüğünde, akıllı bir fare. Aylarca kimse almadı. Joseph onu güçle değil, alışkanlıklarını inceleyerek ve su akışını kullanarak yendi.' },
+  { id: 'secondbreath', cat: 'Dünya', t: 'İkinci Nefes', at: 'c2_king', x: 'Sistem\'in açtığı ilk yetenek, pasif. Yorgunken dayanıklılık yenilenir.' },
   { id: 'system', cat: 'Dünya', t: 'Sistem', at: 'c1_system', x: 'Joseph\'in Enkron\'u. Gözlerini kapattığında bile orada duran mavi bir pencere. Tören sırasında bir şey ters gitti ve pencere zayıfladı. Ama yazılarından biri "sınır yok" diyor.' },
 ];
 function openCodex() {

@@ -88,7 +88,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 #dialog .badge { font-family: var(--f-sys); font-weight: 600; font-size: 12px; line-height: 1; padding: 3px 6px; border: 1px solid currentColor; letter-spacing: .06em; }
 #dialog .dtext { font-size: clamp(18px, 2.2vw, 23px); line-height: 1.5; min-height: 2.4em; color: var(--parch); text-wrap: pretty; }
 #dialog.thought .dtext { font-style: italic; color: #d2c6ac; }
-#dialog.narr { background: transparent; border: 0; box-shadow: none; text-align: center; }
+#dialog.narr { z-index: 42; background: transparent; border: 0; box-shadow: none; text-align: center; }
 #dialog.narr .dtext { font-family: var(--f-display); font-size: clamp(22px, 2.8vw, 30px); letter-spacing: .03em; text-shadow: 0 2px 10px #000; }
 #dialog.narr .dname { display: none; }
 #dialog .dnext { position: absolute; right: 18px; bottom: 6px; color: var(--gold); font-size: 18px; opacity: 0; }

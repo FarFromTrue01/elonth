@@ -19,6 +19,8 @@ async def main():
             for j in js:
                 if j.startswith('wait:'):
                     await pg.wait_for_timeout(float(j[5:]) * 1000); continue
+                if j.startswith('until:'):
+                    await pg.wait_for_function(j[6:], timeout=120000); continue
                 if j.startswith('shot:'):
                     await pg.screenshot(path=j[5:]); continue
                 r = await pg.evaluate(j)

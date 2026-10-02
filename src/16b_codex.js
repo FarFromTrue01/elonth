@@ -14,6 +14,13 @@ const CODEX = [
   { id: 'charm', cat: 'Eşyalar', t: 'Kayın tılsımı', at: 'c1_harvest', x: 'Daniel\'in kayın dalından oyduğu küçük halka. "Tören günü cebinde dursun" dedi. "O taş ne derse desin, sen benim oğlumsun."' },
   { id: 'holloway', cat: 'Kişiler', t: 'Victor Holloway', at: 'c1_ceremony', x: 'Aynı törende taş Victor için de parladı: kan kırmızısı. Enkron\'unun ne yaptığını kimse bilmiyor; ama gülüşü artık eskisinden soğuk.' },
   { id: 'guildlady', cat: 'Kişiler', t: 'Lonca Hanımı', at: 'c1_guild', x: 'Eros loncasının başı. Köyde görülmüş tek C rütbe olduğu söylenir. Kimse onu yakından görmedi; bazen üst kattaki pencerede bir gölge belirir, o kadar.' },
+  { id: 'penalty', cat: 'Dünya', t: 'Ceza', at: 'c2_penalty', x: 'Sistem\'in verdiği görevlerin başarısızlık bedeli. İlk görevi yapamayan Joseph\'in bedensel kapasitesi, normal bir insanın dörtte birine indi. Üç hafta süren sürünme, kusma ve yeniden kalkma sonunda sıradan bir insan seviyesine döndü.' },
+  { id: 'greta', cat: 'Kişiler', t: 'Greta', at: 'c2_fee', x: 'Eros loncasının kayıt masasındaki yaşlı kadın. Sert ama adil; paranın arkasındaki hikâyeyi bilir. Ölen maceracıları defterden silmekten nefret eder.' },
+  { id: 'mira', cat: 'Kişiler', t: 'Mira Ashford', at: 'c2_fee', x: 'E rütbe maceracı, loncanın sıcak yüzü. Kast farkına rağmen alt tabakaya iyi davranır; Joseph\'e ilk su uzatan kişidir.' },
+  { id: 'garrick', cat: 'Kişiler', t: 'Garrick Stone', at: 'c2_fee', x: 'D rütbe, iri yarı bir savaşçı; Eros loncasının ikinci güçlüsü ve Isolde\'nin rakibi. Köylü çocuklarla dalga geçer ama kendi de kışlada yetişmiştir.' },
+  { id: 'gwork', cat: 'Dünya', t: 'G görevleri', at: 'c2_chores', x: 'Ahır temizliği (15 bronz), kasap avlusu (20 bronz), kapı önü (10 bronz). Loncanın en alt basamağı; para azdır, ama kimse bir şey sormaz.' },
+  { id: 'ratking', cat: 'Dünya', t: 'Fare Kralı', at: 'c2_king', x: 'Kanalların altında yaşayan, köpek büyüklüğünde, akıllı bir fare. Aylarca kimse almadı. Joseph onu güçle değil, alışkanlıklarını inceleyerek ve su akışını kullanarak yendi.' },
+  { id: 'secondbreath', cat: 'Dünya', t: 'İkinci Nefes', at: 'c2_king', x: 'Sistem\'in açtığı ilk yetenek, pasif. Yorgunken dayanıklılık yenilenir.' },
   { id: 'system', cat: 'Dünya', t: 'Sistem', at: 'c1_system', x: 'Joseph\'in Enkron\'u. Gözlerini kapattığında bile orada duran mavi bir pencere. Tören sırasında bir şey ters gitti ve pencere zayıfladı. Ama yazılarından biri "sınır yok" diyor.' },
 ];
 function openCodex() {
